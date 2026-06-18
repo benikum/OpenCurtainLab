@@ -83,7 +83,7 @@ After successful provisioning the AP closes and the device is reachable through 
 http://opencurtainlab.local/
 ```
 
-The root page redirects to `WEB_APP_URL` in station mode. Captive portal probe paths serve the setup portal in AP mode.
+In station mode, the root page tries to proxy the single-file WebUI from `WEB_APP_URL` and returns it as `text/html` from the ESP32 origin. If the proxy request fails, the firmware falls back to a normal redirect to `WEB_APP_URL`. Captive portal probe paths serve the setup portal in AP mode.
 
 ## API
 
@@ -119,6 +119,12 @@ Rebuild the compressed header after editing the HTML:
 
 ```bash
 python3 tools/build_setup_portal.py
+```
+
+The tool resolves paths from the repository root, so it can be started from any working directory. If a file is not found, run it with debug output:
+
+```bash
+python3 tools/build_setup_portal.py --debug
 ```
 
 The tool minifies the HTML, compresses it with gzip, and writes a `PROGMEM` byte array. The firmware serves it with `Content-Encoding: gzip`.
@@ -160,6 +166,18 @@ Build the single-file WebUI with:
 python3 tools/build_webui.py
 ```
 
+The tool resolves all source paths from the repository root, so it can be started from any working directory. For path diagnostics:
+
+```bash
+python3 tools/build_webui.py --debug
+```
+
+You can also enable the same diagnostics with:
+
+```bash
+OCL_DEBUG=1 python3 tools/build_webui.py
+```
+
 The default output is:
 
 ```text
@@ -168,14 +186,19 @@ web/compiled/opencurtainlab.html
 
 The compiled file embeds CSS, JavaScript, i18n JSON, and both tutorial fragments. It has no external asset dependencies and can be opened locally through `file://`.
 
-For source-mode development, serve the `web` directory through a local web server so browser `fetch()` can load the JSON and tutorial fragment files:
+For source-mode development, serve the `web` directory through the helper script so browser `fetch()` can load the JSON and tutorial fragment files:
 
 ```bash
-cd web
-python3 -m http.server 8000
+python3 tools/serve_webui.py
 ```
 
-Open `http://localhost:8000/`.
+For path diagnostics:
+
+```bash
+python3 tools/serve_webui.py --debug
+```
+
+Open `http://127.0.0.1:8000/`.
 
 The WebUI exposes this developer console command for live sensor diagnostics:
 
@@ -195,40 +218,3 @@ The firmware is an Arduino-style ESP32 sketch. Required libraries include:
 - Adafruit SSD1306
 
 Keep the sketch folder name aligned with `OpenCurtainLab.ino` when using the Arduino IDE.
-
-Before publishing a release, update these placeholders in `src/Config.h`:
-
-```cpp
-#define GITHUB_PROJECT_URL "https://github.com/your-user/OpenCurtainLab"
-#define WEB_APP_URL        "https://your-user.github.io/OpenCurtainLab/en/"
-```
-
-Also choose and add a project license before publishing the repository.
-
-## Release checklist
-
-Before creating a public release:
-
-- Build the sketch with the intended ESP32 board profile
-- Test OLED initialization and local menu control
-- Test lamp-jack protection by verifying that the lamp output stays off and `/status.deviceStatus.error` reports `lamp_connector_miswired` when the sense input is pulled low before arming
-- Test baseline calibration with the final sensor hardware
-- Test all five phototransistors and the flash-sync input
-- Test all shutter travel modes
-- Test setup AP on iOS, Android, Windows, and a normal browser
-- Test WiFi provisioning, reconnect, AP fallback, and mDNS recovery
-- Confirm `/status`, `/config`, `/data`, `/sensors`, `/calibrate`, and `/wifi/status` against the WebUI
-- Update project URLs in `src/Config.h`
-- Add license and release notes
-
-## Repository layout
-
-```text
-OpenCurtainLab.ino          Main application controller
-src/                        Firmware headers and generated setup portal header
-src/setup_portal.html       Readable setup portal source
-tools/build_setup_portal.py Setup portal minify/gzip generator
-tools/build_webui.py        Single-file WebUI generator
-web/                        WebUI source, i18n, tutorial fragments, compiled output
-API.md                      HTTP API documentation
-```

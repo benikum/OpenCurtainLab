@@ -118,10 +118,7 @@ public:
       }
     }
 
-    Serial.printf("[Engine] Measurement complete: %d sensors, flash %s, hint=%s\n",
-                  count,
-                  _result.flash.detected ? "detected" : "not detected",
-                  measurementHintKey(_result.hint));
+    Serial.printf("[Engine] Measurement complete: %d sensors, flash %s, hint=%s\n", count, _result.flash.detected ? "detected" : "not detected", measurementHintKey(_result.hint));
   }
 
   // Returns the internal capture state.

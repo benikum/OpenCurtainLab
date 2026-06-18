@@ -13,9 +13,7 @@ function extendSpeedSeriesToChartEdges(points, maxX) {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
 
-  // The measured speeds live between adjacent sensors. The visible curve is
-  // always extended to both chart edges using the nearest measured speed, while
-  // dots still mark only real calculated segment speeds.
+  // The measured speeds live between adjacent sensors.
   if (first.x > 0) out.push({ x: 0, v: first.v, synthetic: true });
   out.push(...sorted);
   if (last.x < maxX) out.push({ x: maxX, v: last.v, synthetic: true });
@@ -319,8 +317,7 @@ function drawTimeline(entry) {
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Time range in ms (relative to first open).
-     // Shared with the curtain velocity chart so both diagrams use the same time scale.
+  // Time range in ms (relative to first open)
   const scale = getMeasurementTimeScale(entry);
   if (!scale) return;
   const { tMin, T0, T1, range } = scale;
@@ -558,8 +555,7 @@ function drawTimelineVertical(entry, canvas) {
   const PAD_L  = 50;
   const PAD_R  = 12;
   const W      = Math.max(canvas.parentElement.clientWidth, active.length * COL_W + PAD_L + PAD_R);
-  // Mobile layout needs a longer vertical timeline,
-  // sonst liegen Ticks, Sensorbalken und Flashmarke schnell zu dicht zusammen.
+  // Mobile layout needs a longer vertical timeline
   const H      = Math.max(520, Math.min(760, Math.round(window.innerHeight * 0.68)));
 
   canvas.width  = W * dpr; canvas.height = H * dpr;
@@ -598,7 +594,6 @@ function drawTimelineVertical(entry, canvas) {
     const rel=t-tMin;
     ctx.fillText((rel<0?'':'+')+(tickInt<1?rel.toFixed(2):rel.toFixed(1)), PAD_L-3, y+3);
   }
-
 
   // Draw the flash trigger as a dashed line if the packet contains one.
   if (entry.flash && entry.flash.detected && entry.flash.triggerMs != null) {

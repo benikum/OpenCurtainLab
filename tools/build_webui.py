@@ -18,20 +18,76 @@ Output:
 The generated file has no CSS/JS/i18n/tutorial asset dependencies and can be
 opened locally with file:// or downloaded from a release page. By default the
 builder strips source comments and applies conservative whitespace compaction.
+
+Debugging:
+  python3 tools/build_webui.py --debug
+  OCL_DEBUG=1 python3 tools/build_webui.py
 """
 from __future__ import annotations
 
 import argparse
 import html
 import json
+import os
 import re
+import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-WEB = ROOT / 'web'
-DEFAULT_OUT = WEB / 'compiled' / 'opencurtainlab.html'
 DEFAULT_LANG = 'en'
 LANGS = ('de', 'en')
+
+
+def discover_project_root(start: Path | None = None) -> Path:
+    """Find the repository root independent of the current working directory."""
+    here = (start or Path(__file__)).resolve()
+    candidates = [here.parent, *here.parents]
+    for candidate in candidates:
+        if (candidate / 'OpenCurtainLab.ino').exists() and (candidate / 'web' / 'index.html').exists():
+            return candidate
+    return here.parents[1]
+
+
+ROOT = discover_project_root()
+WEB = ROOT / 'web'
+DEFAULT_OUT = WEB / 'compiled' / 'opencurtainlab.html'
+
+
+def debug_enabled(explicit: bool = False) -> bool:
+    return explicit or os.environ.get('OCL_DEBUG', '').lower() in {'1', 'true', 'yes', 'on'}
+
+
+def debug_print(enabled: bool, message: str) -> None:
+    if enabled:
+        print(f'[build_webui] {message}', file=sys.stderr)
+
+
+def rel(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def resolve_project_path(value: str | Path) -> Path:
+    path = Path(value)
+    if path.is_absolute():
+        return path.resolve()
+    return (ROOT / path).resolve()
+
+
+def require_files(paths: list[tuple[Path, str]]) -> None:
+    missing = [(path, label) for path, label in paths if not path.is_file()]
+    if not missing:
+        return
+    lines = [
+        'Required WebUI source files were not found.',
+        f'Current working directory: {Path.cwd()}',
+        f'Script path: {Path(__file__).resolve()}',
+        f'Detected project root: {ROOT}',
+        'Missing files:',
+    ]
+    lines.extend(f'  - {label}: {path}' for path, label in missing)
+    raise FileNotFoundError('\n'.join(lines))
 
 
 def read_text(path: Path) -> str:
@@ -46,7 +102,6 @@ def script_tag(script_id: str, mime_type: str, content: str) -> str:
     # Escape closing script tags so embedded HTML/JSON cannot terminate the script element.
     safe = content.replace('</script', '<\\/script')
     return f'<script id="{script_id}" type="{mime_type}">{safe}</script>'
-
 
 
 def strip_js_comments(source: str) -> str:
@@ -86,6 +141,7 @@ def strip_js_comments(source: str) -> str:
         out.append(line)
 
     return '\n'.join(out)
+
 
 def minify_js(source: str) -> str:
     """Apply conservative JavaScript minification suitable for inline builds."""
@@ -127,6 +183,7 @@ def minify_html_markup(source: str, *, preserve_build_markers: bool = False) -> 
     source = '\n'.join(line.strip() for line in source.splitlines() if line.strip())
     return source.strip() + '\n'
 
+
 def lookup_text(bundle: object, dotted_key: str, fallback: str = '') -> str:
     cur = bundle
     for part in dotted_key.split('.'):
@@ -140,13 +197,7 @@ def lookup_text(bundle: object, dotted_key: str, fallback: str = '') -> str:
 
 
 def apply_static_i18n_defaults(markup: str, bundle: object) -> str:
-    """Pre-render simple static i18n defaults for the compiled HTML.
-
-    The browser still applies translations at runtime, but the compiled single file
-    should already open in its default language before JavaScript finishes booting.
-    This intentionally handles only simple text nodes and translated attributes;
-    dynamic UI remains handled by the JavaScript modules.
-    """
+    """Pre-render simple static i18n defaults for the compiled HTML."""
     translated_attrs = ('title', 'aria-label', 'placeholder', 'value', 'alt')
 
     def translate_tag_attrs(match: re.Match[str]) -> str:
@@ -193,7 +244,7 @@ def remove_dev_assets(markup: str) -> str:
     return markup
 
 
-def build(default_lang: str, out_path: Path, *, minify: bool = True) -> Path:
+def webui_paths() -> tuple[Path, Path, list[Path], Path, Path]:
     index_path = WEB / 'index.html'
     css_path = WEB / 'app.css'
     js_files = [
@@ -205,15 +256,45 @@ def build(default_lang: str, out_path: Path, *, minify: bool = True) -> Path:
         WEB / 'js' / 'measurements-projects.js',
         WEB / 'js' / 'project-analysis.js',
         WEB / 'js' / 'charts.js',
-        WEB / 'js' / 'backup-export-mock.js',
+        WEB / 'js' / 'backup-export.js',
         WEB / 'app.js',
     ]
-    i18n_dir = WEB / 'i18n'
-    tutorial_dir = WEB / 'tutorial'
+    return index_path, css_path, js_files, WEB / 'i18n', WEB / 'tutorial'
+
+
+def validate_sources(debug: bool = False) -> None:
+    index_path, css_path, js_files, i18n_dir, tutorial_dir = webui_paths()
+    required: list[tuple[Path, str]] = [
+        (index_path, 'WebUI template'),
+        (css_path, 'WebUI CSS'),
+        *[(path, f'JavaScript source {rel(path)}') for path in js_files],
+        *[(i18n_dir / f'{lang}.json', f'i18n bundle {lang}') for lang in LANGS],
+        *[(tutorial_dir / f'{lang}.html', f'tutorial fragment {lang}') for lang in LANGS],
+    ]
+    debug_print(debug, f'cwd: {Path.cwd()}')
+    debug_print(debug, f'script: {Path(__file__).resolve()}')
+    debug_print(debug, f'project root: {ROOT}')
+    for path, label in required:
+        debug_print(debug, f'{label}: {path} [{"ok" if path.is_file() else "missing"}]')
+    require_files(required)
+
+
+def build(default_lang: str, out_path: Path, *, minify: bool = True, debug: bool = False) -> Path:
+    validate_sources(debug)
+    index_path, css_path, js_files, i18n_dir, tutorial_dir = webui_paths()
+
+    debug_print(debug, f'default language: {default_lang}')
+    debug_print(debug, f'minify: {minify}')
+    debug_print(debug, f'output: {out_path}')
 
     template = read_text(index_path)
     css = read_text(css_path)
-    js = '\n'.join(read_text(path) for path in js_files)
+    js_parts = []
+    for path in js_files:
+        debug_print(debug, f'embed JS: {rel(path)} ({path.stat().st_size} bytes)')
+        js_parts.append(read_text(path))
+    js = '\n'.join(js_parts)
+
     if minify:
         css = minify_css(css)
         js = minify_js(js)
@@ -224,11 +305,10 @@ def build(default_lang: str, out_path: Path, *, minify: bool = True) -> Path:
     tutorials = []
     for lang in LANGS:
         path = tutorial_dir / f'{lang}.html'
-        if path.exists():
-            tutorial_html = read_text(path)
-            if minify:
-                tutorial_html = minify_html_markup(tutorial_html)
-            tutorials.append(script_tag(f'ocl-tutorial-{lang}', 'text/html', tutorial_html))
+        tutorial_html = read_text(path)
+        if minify:
+            tutorial_html = minify_html_markup(tutorial_html)
+        tutorials.append(script_tag(f'ocl-tutorial-{lang}', 'text/html', tutorial_html))
 
     html_out = remove_dev_assets(template)
     if minify:
@@ -238,7 +318,6 @@ def build(default_lang: str, out_path: Path, *, minify: bool = True) -> Path:
     html_out = html_out.replace('<!-- OCL_INLINE_CSS -->', '<style>\n' + css + '\n</style>')
     html_out = html_out.replace('<!-- OCL_INLINE_I18N -->', script_tag('ocl-i18n-all', 'application/json', i18n_blob))
     html_out = html_out.replace('<!-- OCL_INLINE_TUTORIALS -->', '\n'.join(tutorials))
-    # Keep compatibility with older local working copies that still use this marker name.
     html_out = html_out.replace('<!-- OCL_INLINE_MANUALS -->', '\n'.join(tutorials))
     html_out = html_out.replace('<!-- OCL_INLINE_JS -->', '<script>\n' + js.replace('</script', '<\\/script') + '\n</script>')
 
@@ -253,24 +332,24 @@ def build(default_lang: str, out_path: Path, *, minify: bool = True) -> Path:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html_out, encoding='utf-8')
+    debug_print(debug, f'wrote {out_path} ({out_path.stat().st_size} bytes)')
     return out_path
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description='Build a self-contained OpenCurtainLab WebUI HTML file.')
     parser.add_argument('--lang', choices=LANGS, default=DEFAULT_LANG, help='Initial language of the generated HTML. Defaults to English for the single-file release build.')
-    parser.add_argument('--out', type=Path, default=DEFAULT_OUT, help='Output HTML path.')
+    parser.add_argument('--out', type=Path, default=DEFAULT_OUT, help='Output HTML path. Relative paths are resolved from the project root.')
     parser.add_argument('--no-minify', action='store_true', help='Embed source files without comment stripping or whitespace compaction.')
+    parser.add_argument('--debug', action='store_true', help='Print resolved paths and source-file checks before building.')
     args = parser.parse_args()
 
+    debug = debug_enabled(args.debug)
     out_arg = args.out if args.out.is_absolute() else ROOT / args.out
-    out = build(args.lang, out_arg, minify=not args.no_minify)
-    try:
-        label = out.relative_to(ROOT)
-    except ValueError:
-        label = out
-    print(f'Built {label}')
+    out = build(args.lang, out_arg.resolve(), minify=not args.no_minify, debug=debug)
+    print(f'Built {rel(out)}')
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

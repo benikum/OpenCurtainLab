@@ -26,7 +26,6 @@ The firmware separates diagnostics into three categories:
 | Network hint | `/status.network` and `/wifi/status` | Non-blocking WiFi or mDNS diagnostic |
 | Measurement hint | `/data.hint` | Diagnostic for the latest measurement |
 
-Legacy top-level status fields remain available for simple or older clients.
 
 ## `GET /status`
 
@@ -46,13 +45,6 @@ curl http://opencurtainlab.local/status
   "version": "0.1.0",
   "uptime": 1234,
   "measCount": 7,
-  "wifi": true,
-  "apMode": false,
-  "ip": "192.168.178.42",
-  "mdns": "opencurtainlab.local",
-  "rssi": -54,
-  "deviceError": "none",
-  "deviceErrorText": "",
   "deviceStatus": {
     "error": "none",
     "errorText": "",
@@ -125,7 +117,6 @@ curl http://opencurtainlab.local/config
 {
   "device": "OpenCurtainLab",
   "version": "0.1.0",
-  "ip": "192.168.178.42",
   "mdnsName": "opencurtainlab",
   "sensorDistanceXmm": 13.17,
   "sensorDistanceYmm": 7.67,
@@ -430,7 +421,6 @@ For an open network, send an empty password.
   "ok": true,
   "connected": true,
   "apMode": true,
-  "ip": "192.168.178.42",
   "apIp": "192.168.4.1",
   "hostname": "opencurtainlab",
   "mdnsStarted": false,
@@ -488,7 +478,7 @@ In AP mode these paths serve the setup portal:
 /ncsi.txt
 ```
 
-In station mode the same browser-style root routes redirect to `WEB_APP_URL`.
+In station mode the same browser-style root routes try to proxy the remote single-file WebUI from `WEB_APP_URL` and serve it as `text/html` from the ESP32 origin. If the proxy fails before response headers are sent, the firmware falls back to a normal redirect to `WEB_APP_URL`.
 
 ## CORS preflight
 
@@ -506,3 +496,13 @@ The firmware registers `OPTIONS` handlers for:
 ```
 
 Responses are empty `204` responses with CORS headers.
+
+
+## `GET /download`
+
+Streams the remote single-file WebUI through the ESP32 as a downloadable HTML file.
+
+- Station mode: proxies `WEB_APP_URL` and sends `Content-Type: text/html; charset=utf-8` plus `Content-Disposition: attachment; filename="opencurtainlab.html"`.
+- If proxying fails before data is sent: redirects to `WEB_APP_URL`.
+- Setup AP mode: falls back to the same redirect behavior.
+- The file is not stored on the ESP32.

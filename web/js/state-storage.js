@@ -16,9 +16,10 @@ const LS_DEVICE_KEY = 'ocl_device_config_v1';
 const LS_UI_KEY = 'ocl_ui_settings_v1';
 const DEFAULT_PROJECT_ID = 'p_default';
 const APP_VERSION = '0.1.0';
-const VERSION_URL = '---';
-const TUTORIAL_URL_BASE = 'tutorial';
+const VERSION_URL = 'https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/version.txt';
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
+const WEBUI_DOWNLOAD_URL = 'https://github.com/benikum/OpenCurtainLab/blob/main/web/compiled/opencurtainlab.html';
+const DEVICE_WEBUI_DOWNLOAD_PATH = '/download';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
 const MODES = [
   {key:'left', labelKey:'modes.left', fallback:'left'},
@@ -210,7 +211,6 @@ function saveHistory() {
 // Persist the project list and active project selection.
 function saveProjects() {
   writeJsonStorage(LS_PROJECTS_KEY, {
-    version: 1,
     selectedProjId: S.selectedProjId,
     projects: S.projects
   });
@@ -219,7 +219,6 @@ function saveProjects() {
 // Persist the most recent device configuration snapshot.
 function saveDeviceConfigLocal() {
   writeJsonStorage(LS_DEVICE_KEY, {
-    version: 1,
     deviceBase: S.deviceBase || '',
     deviceConfig: S.deviceConfig || null,
     deviceSettings: S.deviceSettings || null,
@@ -232,7 +231,6 @@ function saveDeviceConfigLocal() {
 // Persist UI-only preferences.
 function saveUiSettings() {
   writeJsonStorage(LS_UI_KEY, {
-    version: 1,
     interpolateCharts: !!(S.uiSettings && S.uiSettings.interpolateCharts)
   });
 }
@@ -264,11 +262,10 @@ function load() {
   S.projects.forEach(p => {
     if (!Array.isArray(p.times) || !p.times.length) p.times = ALL_TIMES.slice();
     p.times = p.times.map(Number).filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
-    if (p.targetSeries !== 'custom' && p.targetSeries !== 'standard') {
-      const sameAsStandard = p.times.length === ALL_TIMES.length && p.times.every((v, i) => v === ALL_TIMES[i]);
-      p.targetSeries = sameAsStandard ? 'standard' : 'custom';
-    }
-    if (p.targetSeries === 'custom' && (!Array.isArray(p.customTargetTimes) || !p.customTargetTimes.length)) p.customTargetTimes = p.times.slice();
+    p.targetSeries = p.targetSeries === 'custom' ? 'custom' : 'standard';
+    p.customTargetTimes = Array.isArray(p.customTargetTimes)
+      ? p.customTargetTimes.map(Number).filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b)
+      : [];
   });
   S.history = Array.isArray(historyStore.history) ? historyStore.history : [];
   S.selectedProjId = projectsStore.selectedProjId || null;

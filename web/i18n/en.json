@@ -47,7 +47,8 @@
     "deviceNotConnected": "Device not connected",
     "calibratingSensors": "Calibrating sensors...",
     "sensorsCalibrated": "Sensors calibrated",
-    "sensorCalibrationFailed": "Sensor calibration failed"
+    "sensorCalibrationFailed": "Sensor calibration failed",
+    "languageUnavailable": "Language resources are not available"
   },
   "frame": {
     "manualTitle": "OpenCurtainLab Guide"
@@ -59,7 +60,8 @@
   },
   "errors": {
     "unknown": "Unknown error",
-    "invalidBackup": "Invalid backup"
+    "invalidBackup": "Invalid backup",
+    "unsupportedMeasurementPacket": "Unsupported measurement packet"
   },
   "confirm": {
     "deleteProject": "Delete project?",
@@ -326,7 +328,10 @@
     "oledSleepOff": "off",
     "sensorTools": "Sensor tools",
     "sensorToolsHint": "Recalibrate the sensor baselines after changing lighting, covers, or the sensor board position.",
-    "calibrateSensors": "Calibrate sensors"
+    "calibrateSensors": "Calibrate sensors",
+    "localFileNoticeTitle": "Download the Web UI",
+    "localFileNoticeBody": "This single-file Web UI works best when downloaded and opened as a local file.",
+    "localFileNoticeAction": "Download HTML"
   },
   "targetSeries": {
     "standard": "Standard",

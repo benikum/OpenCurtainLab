@@ -75,8 +75,6 @@ public:
 
   // Scans all sensors and the flash input once using one shared timestamp.
   bool update() {
-    // One timestamp per full sensor scan keeps the polling loop lean and
-    // makes all edges detected in the same scan comparable.
     const int64_t scanTimestampUs = esp_timer_get_time();
 
     bool changed = false;
@@ -208,8 +206,6 @@ private:
 
   // Updates one phototransistor reading and records open/close edges.
   bool updateSensor(SensorReading& s, int64_t timestampUs) {
-    // Finished sensors no longer need ADC reads during the same measurement.
-    // This increases the scan rate as soon as early sensors have closed.
     if (s.wasActivated && !s.isActive && s.closeTimestamp > 0) return false;
 
     const int val = readFastSensor(s.pin);

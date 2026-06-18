@@ -10,7 +10,13 @@
 #define FIRMWARE_VERSION   "0.1.0"
 #define MDNS_NAME          "opencurtainlab"
 #define GITHUB_PROJECT_URL "https://github.com/benikum/OpenCurtainLab"
-#define WEB_APP_URL        "---"
+#define WEB_APP_URL "https://github.com/benikum/OpenCurtainLab/blob/main/web/compiled/opencurtainlab.html"
+#define WEB_APP_DOWNLOAD_FILENAME      "opencurtainlab.html"
+
+// Proxy to GitHub Raw
+#define WEB_APP_PROXY_TIMEOUT_MS       12000UL
+#define WEB_APP_PROXY_IDLE_TIMEOUT_MS  6000UL
+#define WEB_APP_PROXY_CHUNK_SIZE       1024
 
 // WiFi / Setup AP
 #define SETUP_AP_SSID               "OpenCurtainLab"
@@ -21,20 +27,19 @@
 #define MDNS_RETRY_INTERVAL_MS     10000UL
 
 // Hardware Pins
-// PIN_LAMP_SENSE is tied to the lamp jack and is checked only before the lamp output is enabled.
 #define PIN_SENSOR_0      36
 #define PIN_SENSOR_1      39
 #define PIN_SENSOR_2      34
 #define PIN_SENSOR_3      35
 #define PIN_SENSOR_4      32
 #define PIN_FLASH_SENSOR  33
-#define PIN_LAMP_SENSE   14
 
 #define PIN_BTN_LISTEN    25
 #define PIN_BTN_UP        26
 #define PIN_BTN_DOWN      27
 
 #define PIN_LED_ARRAY     12
+#define PIN_LAMP_SENSE   14
 
 // Display / I2C
 #define I2C_SDA              21
@@ -45,7 +50,6 @@
 #define DISPLAY_ROTATION     2
 
 // Sensor Geometry
-
 static constexpr int SENSOR_COUNT = 5;
 static constexpr float SENSOR_DISTANCE_X_MM = 13.17f;
 static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
@@ -73,13 +77,10 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define DEBOUNCE_MS       50UL
 #define MODE_HOLD_MS      1000UL
 
-// Build-time device limits
-// Maximum exposure-time denominator this firmware build supports.
-#define DEVICE_MAX_TARGET_TIME  2000
-
 // Factory defaults for runtime settings
 #define DEFAULT_MEASUREMENT_MODE "left"
 #define DEFAULT_TARGET_TIME      500
+#define DEVICE_MAX_TARGET_TIME  2000
 #define DEFAULT_SENSOR_SENSITIVITY "medium"
 #define DEFAULT_RESULT_DISPLAY "until_button"
 #define DEFAULT_OLED_SLEEP_MINUTES 5

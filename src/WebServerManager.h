@@ -5,6 +5,8 @@
 #pragma once
 #include <Arduino.h>
 #include <WebServer.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include "Config.h"
 #include "RuntimeSettings.h"
@@ -155,15 +157,95 @@ private:
     _server.send(302, "text/plain", "OpenCurtainLab Web UI");
   }
 
-  // Serves the setup portal in AP mode or redirects in station mode.
+  // Streams the remote single-file WebUI through the ESP32 so the browser receives it from the device origin.
+  // The page is not persisted on the ESP32; data is copied from the HTTPS response to the HTTP client in small chunks.
+  // When asDownload is true, the browser receives the same file as an attachment instead of rendering it.
+  bool proxyRemoteWebApp(bool asDownload = false) {
+    if (!_wifi.isConnected()) return false;
+
+    WiFiClientSecure client;
+    client.setInsecure();
+
+    HTTPClient http;
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.setTimeout(WEB_APP_PROXY_TIMEOUT_MS);
+    http.useHTTP10(false);
+
+    Serial.printf(asDownload ? "[Web] Proxying WebUI download: %s\n" : "[Web] Proxying WebUI: %s\n", WEB_APP_URL);
+    if (!http.begin(client, WEB_APP_URL)) {
+      Serial.println(F("[Web] WebUI proxy begin failed."));
+      http.end();
+      return false;
+    }
+
+    http.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+    http.addHeader("User-Agent", "OpenCurtainLab ESP32");
+    const int code = http.GET();
+    if (code != HTTP_CODE_OK) {
+      Serial.printf("[Web] WebUI proxy GET failed: %d\n", code);
+      http.end();
+      return false;
+    }
+
+    WiFiClient* input = http.getStreamPtr();
+    WiFiClient output = _server.client();
+    uint8_t buffer[WEB_APP_PROXY_CHUNK_SIZE];
+
+    // Send a plain close-delimited HTTP response. This avoids buffering the full file and avoids chunk framing.
+    output.print(F("HTTP/1.1 200 OK\r\n"));
+    output.print(F("Content-Type: text/html; charset=utf-8\r\n"));
+    if (asDownload) {
+      output.print(F("Content-Disposition: attachment; filename=\"" WEB_APP_DOWNLOAD_FILENAME "\"\r\n"));
+      output.print(F("X-OpenCurtainLab-Download: webui\r\n"));
+    }
+    output.print(F("Cache-Control: no-cache\r\n"));
+    output.print(F("X-OpenCurtainLab-Source: remote-proxy\r\n"));
+    output.print(F("Connection: close\r\n"));
+    output.print(F("\r\n"));
+
+    unsigned long lastDataMs = millis();
+    while (http.connected() && output.connected()) {
+      const size_t available = input->available();
+      if (available) {
+        const size_t want = available < sizeof(buffer) ? available : sizeof(buffer);
+        const int readLen = input->readBytes(buffer, want);
+        if (readLen > 0) {
+          output.write(buffer, readLen);
+          lastDataMs = millis();
+        }
+      } else {
+        if (millis() - lastDataMs > WEB_APP_PROXY_IDLE_TIMEOUT_MS) break;
+        delay(1);
+      }
+    }
+
+    output.flush();
+    output.stop();
+    http.end();
+    return true;
+  }
+
+
+  // Streams the remote WebUI as a downloadable file. Falls back to the external release URL when proxying fails.
+  void serveWebAppDownload() {
+    if (!proxyRemoteWebApp(true)) redirectToWebApp();
+  }
+
+  // Serves the setup portal in AP mode. In station mode, tries to proxy the remote WebUI and falls back to a redirect.
   void serveRootLikePage() {
-    _wifi.isAccessPointMode() ? serveSetupPage() : redirectToWebApp();
+    if (_wifi.isAccessPointMode()) {
+      serveSetupPage();
+      return;
+    }
+    if (!proxyRemoteWebApp()) redirectToWebApp();
   }
 
   // Registers API, setup portal, captive portal, and CORS routes.
   void setupRoutes() {
-    // Root opens the setup page in AP mode or redirects to the hosted WebUI in station mode.
+    // Root opens the setup page in AP mode or proxies the hosted WebUI in station mode.
+    // /download proxies the same remote WebUI but sends it as a file attachment.
     _server.on("/", HTTP_GET, [this]() { serveRootLikePage(); });
+    _server.on("/download", HTTP_GET, [this]() { serveWebAppDownload(); });
 
     // Common captive-portal probe paths are routed to the same setup/redirect behavior as root.
     const char* captivePaths[] = { "/generate_204", "/hotspot-detect.html", "/fwlink", "/connecttest.txt", "/ncsi.txt" };

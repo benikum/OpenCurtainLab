@@ -66,7 +66,6 @@ void setAppState(AppState next);
 bool hasBlockingDeviceError();
 bool isDeviceErrorVisibleOnOled();
 bool checkLampConnectorBeforeLightOn();
-void showMeasuringBeforeCriticalLoop();
 void cycleMeasureMode();
 void applyRuntimeSettings(bool resetSelection);
 void applyUiSettings(const RuntimeSettings& cfg);
@@ -169,7 +168,6 @@ void loop() {
     engine.update();
     if (engine.isCapturing()) {
       setAppState(AppState::MEASURING);
-      showMeasuringBeforeCriticalLoop();
       runCriticalMeasurementLoop();
     }
   }
@@ -506,14 +504,6 @@ bool checkLampConnectorBeforeLightOn() {
 
   clearDeviceError(DeviceSubsystem::Lamp);
   return true;
-}
-
-// Draws one measuring screen before entering the blocking high-rate capture loop.
-void showMeasuringBeforeCriticalLoop() {
-  if (oledSleeping) return;
-  displayManager.showMeasuring(targetFraction, measureMode);
-  displayDirty = false;
-  lastDisplayUpdate = millis();
 }
 
 // Recalibrates all sensor baselines and updates the device error state.

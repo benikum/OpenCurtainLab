@@ -47,7 +47,8 @@
     "deviceNotConnected": "Gerät nicht verbunden",
     "calibratingSensors": "Sensoren werden kalibriert...",
     "sensorsCalibrated": "Sensoren kalibriert",
-    "sensorCalibrationFailed": "Sensorkalibrierung fehlgeschlagen"
+    "sensorCalibrationFailed": "Sensorkalibrierung fehlgeschlagen",
+    "languageUnavailable": "Sprachdateien sind nicht verfügbar"
   },
   "frame": {
     "manualTitle": "OpenCurtainLab Anleitung"
@@ -59,7 +60,8 @@
   },
   "errors": {
     "unknown": "Unbekannter Fehler",
-    "invalidBackup": "Ungültiges Backup"
+    "invalidBackup": "Ungültiges Backup",
+    "unsupportedMeasurementPacket": "Nicht unterstütztes Messdatenpaket"
   },
   "confirm": {
     "deleteProject": "Projekt löschen?",
@@ -326,7 +328,10 @@
     "oledSleepOff": "aus",
     "sensorTools": "Sensorwerkzeuge",
     "sensorToolsHint": "Kalibriert die Sensor-Baselines neu, nachdem Licht, Abdeckungen oder die Sensorplatine verändert wurden.",
-    "calibrateSensors": "Sensoren kalibrieren"
+    "calibrateSensors": "Sensoren kalibrieren",
+    "localFileNoticeTitle": "WebUI herunterladen",
+    "localFileNoticeBody": "Diese Einzeldatei-WebUI funktioniert am zuverlässigsten, wenn sie heruntergeladen und als lokale Datei geöffnet wird.",
+    "localFileNoticeAction": "HTML herunterladen"
   },
   "targetSeries": {
     "standard": "Standard",

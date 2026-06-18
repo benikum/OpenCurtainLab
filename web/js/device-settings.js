@@ -157,10 +157,30 @@ function compareVersions(a, b) {
   return 0;
 }
 
+// Keep only the content inside a <pre> block when a raw text response is browser-wrapped as HTML.
+function unwrapPreContent(value) {
+  const raw = String(value || '');
+  const lower = raw.toLowerCase();
+  const preStart = lower.indexOf('<pre');
+  if (preStart < 0) return raw;
 
-// Remove non-version decorations from a version string.
+  const contentStart = lower.indexOf('>', preStart);
+  if (contentStart < 0) return raw;
+
+  const contentEnd = lower.indexOf('</pre>', contentStart + 1);
+  if (contentEnd < 0) return raw.slice(contentStart + 1);
+  return raw.slice(contentStart + 1, contentEnd);
+}
+
+// Read the first non-empty version line from plain text or <pre>-wrapped text.
 function cleanVersion(value) {
-  return String(value || '').trim();
+  const text = unwrapPreContent(value);
+  const lines = text.replace(/\r/g, '\n').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed) return trimmed;
+  }
+  return '';
 }
 
 // Format an unavailable or available version for display.

@@ -121,7 +121,6 @@ async function importBackupJSON(file) {
   }
 }
 
-
 // Clear all local WebUI data after user confirmation.
 function resetLocalWebUiData() {
   if (!confirm(tx('confirm.resetLocalData', 'Reset all local WebUI data? This removes projects, measurements and cached device settings.'))) return;

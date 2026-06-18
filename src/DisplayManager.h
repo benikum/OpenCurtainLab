@@ -96,31 +96,6 @@ public:
     _display.display();
   }
 
-
-  // Renders a short pre-capture screen before the time-critical sensor loop starts.
-  void showMeasuring(int targetFraction, MeasurementMode mode) {
-    _display.ssd1306_command(SSD1306_DISPLAYON);
-    _display.clearDisplay();
-    _display.setTextColor(SSD1306_WHITE);
-    _display.setTextSize(1);
-    _display.setCursor(0, 0);
-    _display.print("MEASURING");
-    _drawModeIcon(mode, 104, 0);
-
-    char buf[16];
-    _formatFraction(buf, sizeof(buf), targetFraction, true);
-    _display.setTextSize(3);
-    int16_t x1, y1; uint16_t w, h;
-    _display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
-    _display.setCursor((SCREEN_WIDTH - w) / 2, 22);
-    _display.print(buf);
-
-    _display.setTextSize(1);
-    _display.setCursor(0, 56);
-    _display.print("Capturing...");
-    _display.display();
-  }
-
   // Renders the result summary page or the per-sensor result page.
   void showResult(const MeasurementResult& result, const DisplayResultSummary& summary, int targetFraction, MeasurementMode mode, uint8_t page = 1) {
     _display.ssd1306_command(SSD1306_DISPLAYON);
@@ -336,8 +311,4 @@ private:
     _display.drawLine(cx + dx * 5, cy + dy * 5, cx + dx * 2 - dy * 3, cy + dy * 2 + dx * 3, SSD1306_WHITE);
     _display.drawLine(cx + dx * 5, cy + dy * 5, cx + dx * 2 + dy * 3, cy + dy * 2 - dx * 3, SSD1306_WHITE);
   }
-
-
-
-
 };

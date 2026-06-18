@@ -206,7 +206,6 @@ private:
 
   // Normalizes settings and mirrors sanitized custom times into global target lists.
   void sanitize() {
-    // DEVICE_MAX_TARGET_TIME is the build-time exposure denominator limit applied when custom times are saved.
     setCustomTargetTimes(_s.customTargetTimes, _s.customTargetTimesCount, DEVICE_MAX_TARGET_TIME);
     _s.customTargetTimesCount = targetTimesCountForSeries(TargetSeries::Custom);
     const int* customTimes = targetTimesForSeries(TargetSeries::Custom);
@@ -218,10 +217,6 @@ private:
 
     if (_s.defaultTargetTime < times[0]) _s.defaultTargetTime = times[0];
     if (_s.defaultTargetTime > times[count - 1]) _s.defaultTargetTime = times[count - 1];
-
-    // Normalize enum-like string settings so stored values stay compatible with the firmware and WebUI.
-    // Older firmware builds allowed "digital"; this hardware uses ADC phototransistor reads only, so migrate it.
-    if (_s.sensorSensitivity == "digital") _s.sensorSensitivity = DEFAULT_SENSOR_SENSITIVITY;
     if (_s.sensorSensitivity != "low" &&
         _s.sensorSensitivity != "medium" && _s.sensorSensitivity != "high") {
       _s.sensorSensitivity = DEFAULT_SENSOR_SENSITIVITY;

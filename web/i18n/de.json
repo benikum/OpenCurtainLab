@@ -280,7 +280,9 @@
     "updateAvailable": "Update Verfügbar",
     "updateAvailableWithVersion": "Neue WebUI-Version verfügbar: {version}",
     "mismatchAction": "Nutze Firmware und WebUI-Dateien aus demselben Release.",
-    "updateAction": "Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter."
+    "updateAction": "Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.",
+    "deviceLabel": "Device {version}",
+    "newestLabel": "Newest {version}"
   },
   "html": {
     "menuButtonLabel": "Menü",
@@ -325,13 +327,7 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus",
-    "sensorTools": "Sensorwerkzeuge",
-    "sensorToolsHint": "Kalibriert die Sensor-Baselines neu, nachdem Licht, Abdeckungen oder die Sensorplatine verändert wurden.",
-    "calibrateSensors": "Sensoren kalibrieren",
-    "localFileNoticeTitle": "WebUI herunterladen",
-    "localFileNoticeBody": "Diese Einzeldatei-WebUI funktioniert am zuverlässigsten, wenn sie heruntergeladen und als lokale Datei geöffnet wird.",
-    "localFileNoticeAction": "HTML herunterladen"
+    "oledSleepOff": "aus"
   },
   "targetSeries": {
     "standard": "Standard",

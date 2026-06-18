@@ -10,7 +10,7 @@
 #define FIRMWARE_VERSION   "0.1.0"
 #define MDNS_NAME          "opencurtainlab"
 #define GITHUB_PROJECT_URL "https://github.com/benikum/OpenCurtainLab"
-#define WEB_APP_URL "https://github.com/benikum/OpenCurtainLab/blob/main/web/compiled/opencurtainlab.html"
+#define WEB_APP_URL "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/opencurtainlab.html"
 #define WEB_APP_DOWNLOAD_FILENAME      "opencurtainlab.html"
 
 // Proxy to GitHub Raw
@@ -70,6 +70,7 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 // Measurement Timing
 #define MEASUREMENT_TIMEOUT_MS       5000UL
 #define MEASUREMENT_SETTLE_MS        15UL
+#define MEASUREMENT_LATE_SENSOR_SETTLE_MS 120UL
 #define FLASH_TO_SENSOR_TIMEOUT_MS   250UL
 #define LED_HOLD_MS                  1000UL
 

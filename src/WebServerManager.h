@@ -150,17 +150,16 @@ private:
     _server.send_P(200, "text/html", reinterpret_cast<const char*>(SETUP_PORTAL_HTML_GZ), SETUP_PORTAL_HTML_GZ_LEN);
   }
 
-  // Redirects normal browser root requests to the external WebUI.
+  // Redirects browser requests to the raw single-file WebUI when proxying is unavailable.
   void redirectToWebApp() {
     cors();
     _server.sendHeader("Location", WEB_APP_URL);
     _server.send(302, "text/plain", "OpenCurtainLab Web UI");
   }
 
-  // Streams the remote single-file WebUI through the ESP32 so the browser receives it from the device origin.
+  // Streams the remote single-file WebUI through the ESP32.
   // The page is not persisted on the ESP32; data is copied from the HTTPS response to the HTTP client in small chunks.
-  // When asDownload is true, the browser receives the same file as an attachment instead of rendering it.
-  bool proxyRemoteWebApp(bool asDownload = false) {
+  bool proxyRemoteWebApp() {
     if (!_wifi.isConnected()) return false;
 
     WiFiClientSecure client;
@@ -171,7 +170,7 @@ private:
     http.setTimeout(WEB_APP_PROXY_TIMEOUT_MS);
     http.useHTTP10(false);
 
-    Serial.printf(asDownload ? "[Web] Proxying WebUI download: %s\n" : "[Web] Proxying WebUI: %s\n", WEB_APP_URL);
+    Serial.printf("[Web] Proxying WebUI: %s\n", WEB_APP_URL);
     if (!http.begin(client, WEB_APP_URL)) {
       Serial.println(F("[Web] WebUI proxy begin failed."));
       http.end();
@@ -194,10 +193,6 @@ private:
     // Send a plain close-delimited HTTP response. This avoids buffering the full file and avoids chunk framing.
     output.print(F("HTTP/1.1 200 OK\r\n"));
     output.print(F("Content-Type: text/html; charset=utf-8\r\n"));
-    if (asDownload) {
-      output.print(F("Content-Disposition: attachment; filename=\"" WEB_APP_DOWNLOAD_FILENAME "\"\r\n"));
-      output.print(F("X-OpenCurtainLab-Download: webui\r\n"));
-    }
     output.print(F("Cache-Control: no-cache\r\n"));
     output.print(F("X-OpenCurtainLab-Source: remote-proxy\r\n"));
     output.print(F("Connection: close\r\n"));
@@ -226,31 +221,29 @@ private:
   }
 
 
-  // Streams the remote WebUI as a downloadable file. Falls back to the external release URL when proxying fails.
-  void serveWebAppDownload() {
-    if (!proxyRemoteWebApp(true)) redirectToWebApp();
+  // Serves the remote WebUI through the ESP32 and falls back to the raw file URL when proxying fails.
+  void serveWebApp() {
+    if (!proxyRemoteWebApp()) redirectToWebApp();
   }
 
-  // Serves the setup portal in AP mode. In station mode, tries to proxy the remote WebUI and falls back to a redirect.
+  // Serves the setup portal in AP mode. In station mode, root serves the proxied WebUI.
   void serveRootLikePage() {
     if (_wifi.isAccessPointMode()) {
       serveSetupPage();
       return;
     }
-    if (!proxyRemoteWebApp()) redirectToWebApp();
+    serveWebApp();
   }
 
   // Registers API, setup portal, captive portal, and CORS routes.
   void setupRoutes() {
-    // Root opens the setup page in AP mode or proxies the hosted WebUI in station mode.
-    // /download proxies the same remote WebUI but sends it as a file attachment.
+    // Root opens the setup page in AP mode or serves the proxied WebUI in station mode.
     _server.on("/", HTTP_GET, [this]() { serveRootLikePage(); });
-    _server.on("/download", HTTP_GET, [this]() { serveWebAppDownload(); });
 
     // Common captive-portal probe paths are routed to the same setup/redirect behavior as root.
     const char* captivePaths[] = { "/generate_204", "/hotspot-detect.html", "/fwlink", "/connecttest.txt", "/ncsi.txt" };
     for (const char* path : captivePaths) {
-      // Captive portal probes use the same root behavior.
+      // Captive portal probes use the same setup/redirect behavior as root.
       _server.on(path, HTTP_GET, [this]() { serveRootLikePage(); });
     }
 
@@ -387,7 +380,19 @@ private:
 
   // Handles POST /config and returns the sanitized settings.
   void handleConfigPost() {
-    const String body = _server.hasArg("plain") ? _server.arg("plain") : String("");
+    if (!_server.hasArg("plain") || !_server.arg("plain").length()) {
+      sendJson(400, jsonError("missing_body"));
+      return;
+    }
+
+    const String body = _server.arg("plain");
+    StaticJsonDocument<1024> validation;
+    DeserializationError err = deserializeJson(validation, body);
+    if (err) {
+      sendJson(400, jsonError("invalid_json"));
+      return;
+    }
+
     const bool changed = _settings.applyJson(body);
     if (changed) _settingsChanged = true;
 

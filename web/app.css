@@ -616,7 +616,8 @@ input[type="text"]::placeholder { color: var(--tx4); }
   justify-content: center; padding: 40px 20px; gap: 10px;
   text-align: center;
 }
-.empty-ico  { font-size: 28px; opacity: 0.3; }
+.empty-ico  { opacity: 1; color: var(--tx3); line-height: 1; }
+.empty-icon-svg { width: 42px; height: 42px; display: block; fill: currentColor; }
 .empty-txt  { font-size: 13px; color: var(--tx2); }
 .empty-sub  { font-size: 11px; color: var(--tx3); }
 
@@ -951,7 +952,6 @@ canvas#tl {
   margin: 0 0 2px;
   line-height: 1.4;
   letter-spacing: .06em;
-  text-transform: uppercase;
 }
 .webui-version-summary .version-separator { color: var(--tx3); }
 .webui-version-summary .version-mismatch { color: var(--red); font-weight: 700; }
@@ -963,6 +963,7 @@ canvas#tl {
   line-height: 1.4;
   letter-spacing: .06em;
 }
+.device-config-summary span { display: block; }
 .settings-section {
   border-top: 1px solid var(--bdr);
   padding-top: 10px;

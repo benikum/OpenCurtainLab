@@ -496,13 +496,3 @@ The firmware registers `OPTIONS` handlers for:
 ```
 
 Responses are empty `204` responses with CORS headers.
-
-
-## `GET /download`
-
-Streams the remote single-file WebUI through the ESP32 as a downloadable HTML file.
-
-- Station mode: proxies `WEB_APP_URL` and sends `Content-Type: text/html; charset=utf-8` plus `Content-Disposition: attachment; filename="opencurtainlab.html"`.
-- If proxying fails before data is sent: redirects to `WEB_APP_URL`.
-- Setup AP mode: falls back to the same redirect behavior.
-- The file is not stored on the ESP32.

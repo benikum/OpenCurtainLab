@@ -73,13 +73,11 @@ public:
     return ok;
   }
 
-  // Scans all sensors and the flash input once using one shared timestamp.
+  // Scans all sensors and the flash input once. Each ADC channel receives its own timestamp.
   bool update() {
-    const int64_t scanTimestampUs = esp_timer_get_time();
-
     bool changed = false;
-    for (int i = 0; i < SENSOR_COUNT; i++) changed |= updateSensor(_sensors[i], scanTimestampUs);
-    changed |= updateFlashInput(scanTimestampUs);
+    for (int i = 0; i < SENSOR_COUNT; i++) changed |= updateSensor(_sensors[i]);
+    changed |= updateFlashInput(esp_timer_get_time());
     return changed;
   }
 
@@ -205,10 +203,11 @@ private:
   int _sensorOffDelta;
 
   // Updates one phototransistor reading and records open/close edges.
-  bool updateSensor(SensorReading& s, int64_t timestampUs) {
+  bool updateSensor(SensorReading& s) {
     if (s.wasActivated && !s.isActive && s.closeTimestamp > 0) return false;
 
     const int val = readFastSensor(s.pin);
+    const int64_t timestampUs = esp_timer_get_time();
     s.rawValue = val;
     if (s.baselineValue <= 0) s.baselineValue = val;
 

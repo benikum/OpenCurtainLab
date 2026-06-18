@@ -56,8 +56,8 @@
 <button class="lang-option" data-lang="en" onclick="setLanguage('en')"><span aria-hidden="true" class="lang-flag">🇬🇧</span><span>English</span></button>
 </div>
 <div class="settings-panel" id="settings-panel" style="display:none;">
-<div class="webui-version-summary" data-i18n="html.webUiVersion" id="webui-version-summary">Web UI v0.1.0</div>
-<div class="device-config-summary" id="device-config-summary">OpenCurtainLab</div>
+<div class="webui-version-summary" id="webui-version-summary">WebUI v0.1.0</div>
+<div class="device-config-summary" id="device-config-summary"><span>Device unknown</span><span>Newest unknown</span></div>
 <div class="settings-section">
 <div class="settings-section-title" data-i18n="html.device">Device</div>
 <div class="settings-field">
@@ -124,13 +124,6 @@
 </div>
 </div>
 <div class="settings-save-row"><div aria-live="polite" class="settings-save-status" id="settings-save-status"></div><button class="btn btn-amber btn-sm" data-i18n="html.saveSettings" id="save-device-settings-btn" onclick="saveDeviceSettings()">SAVE SETTINGS</button></div>
-<div class="settings-section sensor-tools-section">
-<div class="settings-section-title" data-i18n="html.sensorTools">Sensor tools</div>
-<div class="settings-hint" data-i18n="html.sensorToolsHint">Recalibrate the sensor baselines after changing lighting, covers, or the sensor board position.</div>
-<div class="settings-action-row">
-<button class="btn btn-ghost btn-sm btn-icon-text" data-i18n-title="html.calibrateSensors" onclick="calibrateDeviceSensors()" title="Calibrate sensors"><svg aria-hidden="true" class="svg-icon" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M824-120 636-308q-41 32-90.5 50T440-240q-90 0-162.5-44T163-400h98q34 37 79.5 58.5T440-320q100 0 170-70t70-170q0-100-70-170t-170-70q-94 0-162.5 63.5T201-580h-80q8-127 99.5-213.5T440-880q134 0 227 93t93 227q0 56-18 105.5T692-364l188 188-56 56ZM397-400l-63-208-52 148H80v-60h160l66-190h60l61 204 43-134h60l60 120h30v60h-67l-47-94-50 154h-59Z"/></svg><span data-i18n="html.calibrateSensors">Calibrate sensors</span></button>
-</div>
-</div>
 <div class="settings-section local-data-section">
 <div class="settings-section-title" data-i18n="html.localData">Local data</div>
 <div class="backup-actions local-data-actions">
@@ -151,7 +144,7 @@
 </aside><!-- /sidebar -->
 <!-- CONTENT -->
 <main class="content" id="content">
-<div class="empty" id="main-empty" style="margin:80px auto;"><div class="empty-ico" style="font-size:48px;">◎</div><div class="empty-txt" data-i18n="html.connectDeviceTitle" style="font-size:16px;">Connect the device</div><div class="empty-sub" data-i18n="html.connectDeviceSubtitle">Connect OpenCurtainLab to your network.</div></div>
+<div class="empty" id="main-empty" style="margin:80px auto;"><div class="empty-ico"><svg class="empty-icon-svg" aria-hidden="true" focusable="false" viewBox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M480-360q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM324-111.5Q251-143 197-197t-85.5-127Q80-397 80-480t31.5-156Q143-709 197-763t127-85.5Q397-880 480-880t156 31.5Q709-817 763-763t85.5 127Q880-563 880-480t-31.5 156Q817-251 763-197t-127 85.5Q563-80 480-80t-156-31.5ZM480-160q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm0-320Zm141.5 141.5Q680-397 680-480t-58.5-141.5Q563-680 480-680t-141.5 58.5Q280-563 280-480t58.5 141.5Q397-280 480-280t141.5-58.5Z"></path></svg></div><div class="empty-txt" data-i18n="html.connectDeviceTitle" style="font-size:16px;">Connect the device</div><div class="empty-sub" data-i18n="html.connectDeviceSubtitle">Connect OpenCurtainLab to your network.</div></div>
 </main>
 </div><!-- .body -->
 </div><!-- .app -->

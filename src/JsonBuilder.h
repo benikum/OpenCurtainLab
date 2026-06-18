@@ -118,7 +118,7 @@ public:
     return serialize(doc);
   }
 
-  // Builds the /data JSON response from the last raw measurement.
+  // Builds the /data JSON response from the last raw measurement. Derived analysis remains WebUI-side.
   static String data(const MeasurementResult& result, uint32_t measurementId, const char* measurementIdString,
                      int targetFraction, MeasurementMode mode) {
     StaticJsonDocument<2304> doc;
@@ -136,7 +136,7 @@ public:
     doc["id"] = measurementIdString;
     doc["baseUs"] = result.baseTimestamp;
 
-    // The WebUI receives raw timestamps and ADC values; it performs its own calculations.
+    // The WebUI receives raw timestamps and ADC values; it performs exposure and curtain-speed calculations.
     JsonArray sensors = doc.createNestedArray("sensors");
     for (int i = 0; i < SENSOR_COUNT; i++) {
       const SensorReading& s = result.sensors[i];

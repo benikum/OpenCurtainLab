@@ -18,8 +18,6 @@ const DEFAULT_PROJECT_ID = 'p_default';
 const APP_VERSION = '0.1.0';
 const VERSION_URL = 'https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/version.txt';
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
-const WEBUI_DOWNLOAD_URL = 'https://github.com/benikum/OpenCurtainLab/blob/main/web/compiled/opencurtainlab.html';
-const DEVICE_WEBUI_DOWNLOAD_PATH = '/download';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
 const MODES = [
   {key:'left', labelKey:'modes.left', fallback:'left'},

@@ -393,7 +393,7 @@ void handleEngineState() {
 
 // Processes a newly finished capture exactly once and prepares the result screen and API data.
 void processNewResult() {
-  // The API receives raw data; calculated values are only prepared for the OLED result screen.
+  // The API keeps raw timestamps plus validity/hints; derived exposure values are prepared only for the OLED.
   engine.calculateResults(targetFraction);
 
   webServer.setLastResult(engine.getResult(), targetFraction, measureMode);

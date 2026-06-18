@@ -481,6 +481,12 @@ function renderQuickStartHtml() {
   </div>`;
 }
 
+// Render a stable inline SVG for empty-state icons. Unicode circle glyphs render
+// inconsistently across browsers/fonts and can appear as a plain "O".
+function emptyIconHtml(kind) {
+  return `<svg class="empty-icon-svg" aria-hidden="true" focusable="false" viewBox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M480-360q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM324-111.5Q251-143 197-197t-85.5-127Q80-397 80-480t31.5-156Q143-709 197-763t127-85.5Q397-880 480-880t156 31.5Q709-817 763-763t85.5 127Q880-563 880-480t-31.5 156Q817-251 763-197t-127 85.5Q563-80 480-80t-156-31.5ZM480-160q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm0-320Zm141.5 141.5Q680-397 680-480t-58.5-141.5Q563-680 480-680t-141.5 58.5Q280-563 280-480t58.5 141.5Q397-280 480-280t141.5-58.5Z"></path></svg>`;
+}
+
 // Render an appropriate empty state for the current project.
 function renderEmptyStateIfNeeded() {
   const content = document.getElementById('content');
@@ -489,34 +495,42 @@ function renderEmptyStateIfNeeded() {
   const hasRealContent = content.querySelector('.card, canvas, table, .manual-page, .help-page');
   if (S.selId || hasRealContent) return;
 
-  let title, sub, icon, action = '';
+  let title, sub, iconKind = 'aperture', action = '', stateKey = 'idle';
   const dev = S.deviceStatus || {};
   const notices = [deviceNoticeHtml(), firmwareNoticeHtml()].filter(Boolean).join('');
   let extra = notices;
 
   if (dev.error && dev.error !== 'none') {
-    icon = '!';
+    iconKind = 'error';
+    stateKey = 'device-error:' + String(dev.error || '');
     const h = deviceErrorHelp(dev.error, dev.errorText || dev.error);
     title = esc(h.title || tx('empty.deviceError', 'Device error'));
     sub = esc(h.body || dev.errorText || dev.error);
   } else if (!S.connected) {
-    icon = '◎';
+    stateKey = 'connect';
     title = esc(tx('empty.connectDevice', 'Connect the device'));
     sub = esc(tx('empty.connectDeviceSub', 'Enter the device address in Settings or use opencurtainlab.local.'));
     extra += connectionHelpHtml();
   } else if (!currentProjectEntries(true).length) {
-    icon = 'o';
+    stateKey = 'no-measurements';
     title = esc(tx('empty.noMeasurementsYet', 'No measurements yet'));
     sub = esc(tx('empty.noMeasurementsYetSub', 'Trigger the camera shutter. New measurements will appear automatically.'));
   } else {
-    icon = 'o';
+    stateKey = 'select-measurement';
     title = esc(tx('empty.selectMeasurement', 'Select a measurement'));
     sub = esc(tx('empty.selectMeasurementSub', 'Choose an entry from the history to inspect timing details.'));
   }
 
+  const emptyKey = JSON.stringify([stateKey, title, sub, extra, document.documentElement.lang || '']);
+  const existing = document.getElementById('main-empty');
+  if (existing && existing.dataset.emptyKey === emptyKey) {
+    setContentEmptyView(true);
+    return;
+  }
+
   setContentEmptyView(true);
-  content.innerHTML = `<div class="empty empty-main" id="main-empty">
-    <div class="empty-ico" style="font-size:48px;">${icon}</div>
+  content.innerHTML = `<div class="empty empty-main" id="main-empty" data-empty-key="${esc(emptyKey)}">
+    <div class="empty-ico">${emptyIconHtml(iconKind)}</div>
     <div class="empty-txt" style="font-size:16px;">${title}</div>
     <div class="empty-sub">${sub}</div>
     ${action ? `<div class="empty-actions">${action}</div>` : ''}

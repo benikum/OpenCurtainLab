@@ -420,7 +420,8 @@ function renderHistList() {
 
   if (!entries.length) {
     const name = p ? p.name : tx('project.defaultName', 'Default project');
-    el.innerHTML = `<div class="empty"><div class="empty-ico">◎</div>
+    const icon = typeof emptyIconHtml === 'function' ? emptyIconHtml('aperture') : '';
+    el.innerHTML = `<div class="empty"><div class="empty-ico">${icon}</div>
       <div class="empty-txt">${esc(tx('empty.noMeasurements', 'No measurements'))}</div>
       <div class="empty-sub">${esc(tf('empty.waitingForProjectMeasurement', 'Waiting for measurements in {project}', {project:name}))}</div></div>`;
     return;

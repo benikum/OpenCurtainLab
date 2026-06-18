@@ -40,49 +40,6 @@ function toggleLanguagePanel() {
 }
 
 
-// Check whether this page is the compiled single-file WebUI build.
-function isCompiledWebUi() {
-  return !!document.getElementById('ocl-i18n-all');
-}
-
-// Check whether the current page was opened as a local file.
-function isLocalFileUrl() {
-  const href = String(window.location.href || '').toLowerCase();
-  return window.location.protocol === 'file:' || href.startsWith('file:///');
-}
-
-// Check whether the page is currently served by the ESP32 or a local/private device address.
-function isDeviceHttpOrigin() {
-  if (!/^https?:$/.test(window.location.protocol)) return false;
-  const host = String(window.location.hostname || '').toLowerCase();
-  if (host === 'opencurtainlab.local') return true;
-  if (host === 'localhost' || host === '127.0.0.1') return true;
-  if (/^192\.168\./.test(host)) return true;
-  if (/^10\./.test(host)) return true;
-  const match = host.match(/^172\.(\d+)\./);
-  return !!match && Number(match[1]) >= 16 && Number(match[1]) <= 31;
-}
-
-// Return the best download URL for the current runtime.
-function webUiDownloadUrl() {
-  if (S.connected && S.deviceBase) {
-    return S.deviceBase.replace(/\/$/, '') + DEVICE_WEBUI_DOWNLOAD_PATH;
-  }
-  return WEBUI_DOWNLOAD_URL;
-}
-
-// Show a release-build notice when the single-file WebUI is being served over HTTP.
-function updateLocalFileNotice() {
-  const notice = document.getElementById('local-file-notice');
-  if (!notice) return;
-
-  const show = isCompiledWebUi() && !isLocalFileUrl();
-  notice.hidden = !show;
-
-  const link = document.getElementById('local-file-download-link');
-  if (link) link.href = webUiDownloadUrl();
-}
-
 // Open the project repository in a new tab.
 function openGitHub() {
   window.open(GITHUB_URL, '_blank', 'noopener');
@@ -277,7 +234,6 @@ function rerenderAfterLanguageChange() {
   renderSettingsControls(true);
   renderDeviceConfigSummary();
   renderWebUiVersionSummary();
-  updateLocalFileNotice();
 
   if (tutorialVisible) showManualPage();
   else if (S.selId) renderDetailView(S.selId);
@@ -310,7 +266,6 @@ function setLanguage(lang) {
 
 window.addEventListener('pagehide', persistUiState);
 window.oclSensors = fetchSensorDiagnostics;
-window.oclCalibrateSensors = calibrateDeviceSensors;
 
 
 // Fetch the current device status from the firmware.

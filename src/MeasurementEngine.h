@@ -31,7 +31,8 @@ public:
 
     if (_state != CaptureState::ARMED && _state != CaptureState::CAPTURING) return;
 
-    _sm.update();
+    const bool inputChanged = _sm.update();
+    if (_state == CaptureState::CAPTURING && inputChanged) _lastCaptureActivityMs = millis();
 
     switch (_state) {
       case CaptureState::ARMED:     handleArmed(); break;
@@ -53,6 +54,7 @@ public:
     _hasNewResult = false;
     _readyHint = MeasurementHint::None;
     _finishCandidateMs = 0;
+    _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
     _ledOffTime = 0;
 
@@ -70,7 +72,7 @@ public:
     return true;
   }
 
-  // Computes OLED-only summary values from the raw measurement result.
+  // Computes OLED-only summary values from the raw measurement result and keeps minimal validity metadata current.
   void calculateResults(int targetFraction) {
     if (_resultCalculated) return;
     if (targetFraction <= 0) return;
@@ -156,6 +158,7 @@ public:
     _summary.reset();
     _sm.resetTracking();
     _finishCandidateMs = 0;
+    _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
     _ledOffTime = 0;
     digitalWrite(PIN_LED_ARRAY, LOW);
@@ -175,6 +178,7 @@ private:
   unsigned long _ledOffTime = 0;
   unsigned long _stateStartedMs = 0;
   unsigned long _finishCandidateMs = 0;
+  unsigned long _lastCaptureActivityMs = 0;
   unsigned long _flashNoSensorDeadlineMs = 0;
 
   // Changes the internal capture state and records when it started.
@@ -187,6 +191,7 @@ private:
   void abortStart(MeasurementHint hint) {
     digitalWrite(PIN_LED_ARRAY, LOW);
     _ledOffTime = 0;
+    _lastCaptureActivityMs = 0;
     _readyHint = hint;
     _sm.resetTracking();
     enterState(CaptureState::IDLE);
@@ -196,6 +201,11 @@ private:
   // Returns true when the active capture exceeded the maximum duration.
   bool hasTimedOut() const {
     return (millis() - _stateStartedMs) >= MEASUREMENT_TIMEOUT_MS;
+  }
+
+  // Returns how long the input must stay quiet before a finished shutter event is accepted.
+  unsigned long finishSettleMs() const {
+    return _mode == MeasurementMode::CENTRAL ? MEASUREMENT_SETTLE_MS : MEASUREMENT_LATE_SENSOR_SETTLE_MS;
   }
 
   // Turns the LED array off after the result hold time has elapsed.
@@ -238,6 +248,7 @@ private:
 
     if (_sm.countActivated() > 0) {
       enterState(CaptureState::CAPTURING);
+      _lastCaptureActivityMs = millis();
       _flashNoSensorDeadlineMs = 0;
       _readyHint = MeasurementHint::None;
       Serial.println(F("[Engine] First sensor activation detected."));
@@ -247,7 +258,7 @@ private:
     if (_flashNoSensorDeadlineMs > 0 && millis() >= _flashNoSensorDeadlineMs) finishWithoutSensors();
   }
 
-  // Handles the capture state until sensors close, settle, or time out.
+  // Handles the capture state until sensors close, the input stays quiet, or the capture times out.
   void handleCapturing() {
     if (hasTimedOut()) {
       timeoutToFinished();
@@ -261,14 +272,13 @@ private:
         return;
       }
 
-      // A short settle window avoids ending between closely spaced sensor events.
       const unsigned long nowMs = millis();
-      if (_finishCandidateMs == 0) {
-        _finishCandidateMs = nowMs;
-        return;
-      }
+      if (_finishCandidateMs == 0) _finishCandidateMs = nowMs;
 
-      if ((nowMs - _finishCandidateMs) >= MEASUREMENT_SETTLE_MS) finishMeasurement();
+      // Use the last detected input change instead of the first closed-all moment so slow curtain travel
+      // can still activate later sensors before the capture is finalized.
+      const unsigned long referenceMs = _lastCaptureActivityMs > 0 ? _lastCaptureActivityMs : _finishCandidateMs;
+      if ((nowMs - referenceMs) >= finishSettleMs()) finishMeasurement();
     } else {
       _finishCandidateMs = 0;
     }
@@ -288,6 +298,7 @@ private:
     if (hint != MeasurementHint::None) _result.hint = hint;
 
     _finishCandidateMs = 0;
+    _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
     _ledOffTime = millis() + LED_HOLD_MS;
     _hasNewResult = true;

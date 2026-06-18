@@ -269,7 +269,7 @@
   "versions": {
     "title": "version mismatch",
     "unknown": "unknown",
-    "webUiLabel": "Web UI {version}",
+    "webUiLabel": "WebUI {version}",
     "publishedLabel": "published {version}",
     "firmwareWebUiMismatch": "Firmware {firmware} and Web UI {webui} do not match.",
     "webUiOutdated": "This Web UI is outdated. Loaded {webui}, published {cdn}.",
@@ -280,7 +280,9 @@
     "updateAvailable": "Update available",
     "updateAvailableWithVersion": "New Web UI version available: {version}",
     "mismatchAction": "Use firmware and Web UI files from the same release.",
-    "updateAction": "Download the current Web UI files from the project release."
+    "updateAction": "Download the current Web UI files from the project release.",
+    "deviceLabel": "Device {version}",
+    "newestLabel": "Newest {version}"
   },
   "html": {
     "menuButtonLabel": "Menu",
@@ -325,13 +327,7 @@
     "cancel": "Cancel",
     "create": "Create",
     "resultDisplayOff": "off",
-    "oledSleepOff": "off",
-    "sensorTools": "Sensor tools",
-    "sensorToolsHint": "Recalibrate the sensor baselines after changing lighting, covers, or the sensor board position.",
-    "calibrateSensors": "Calibrate sensors",
-    "localFileNoticeTitle": "Download the Web UI",
-    "localFileNoticeBody": "This single-file Web UI works best when downloaded and opened as a local file.",
-    "localFileNoticeAction": "Download HTML"
+    "oledSleepOff": "off"
   },
   "targetSeries": {
     "standard": "Standard",

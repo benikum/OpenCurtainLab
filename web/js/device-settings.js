@@ -8,14 +8,13 @@ function classifyFetchError(err) {
   return 'connecting';
 }
 
-// Run one background polling cycle for status and measurement data.
+// Run one background polling cycle for measurement data. /status is fetched only during connection and explicit device actions.
+// Device discovery is intentionally not retried here; otherwise the empty start screen
+// is rebuilt every polling tick while the device is offline. Manual Connect still retries.
 async function poll() {
-  if (!S.deviceBase) await initDeviceConnection(false);
   if (!S.deviceBase) { setConnState('connecting'); return; }
 
   try {
-    await fetchDeviceStatus(false);
-
     const r = await fetch(api('/data'), { signal: AbortSignal.timeout(1500), mode: 'cors' });
     if (!r.ok) throw 0;
     const d = await r.json();
@@ -346,32 +345,26 @@ function applyDeviceConfig(d) {
 function renderWebUiVersionSummary() {
   const el = document.getElementById('webui-version-summary');
   if (!el) return;
-  const items = [`<span>${esc(tf('versions.webUiLabel', 'Web UI {version}', { version: versionLabel(APP_VERSION) }))}</span>`];
-  if (S.versionMismatch) items.push(`<span class="version-mismatch">${esc(tx('versions.mismatchTitle', 'Version mismatch'))}</span>`);
-  if (S.updateAvailable) items.push(`<span class="version-update">${esc(tx('versions.updateAvailable', 'Update available'))} ${esc(versionLabel(S.cdnVersion))}</span>`);
-  el.innerHTML = items.join(' <span class="version-separator">-</span> ');
+  el.textContent = tf('versions.webUiLabel', 'WebUI {version}', { version: versionLabel(APP_VERSION) });
   el.classList.toggle('has-version-mismatch', !!S.versionMismatch);
   el.classList.toggle('has-update-available', !!S.updateAvailable);
   el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
 }
 
-// Render the connected-device configuration summary.
+// Render the compact version summary in settings.
 function renderDeviceConfigSummary() {
   renderWebUiVersionSummary();
   const el = document.getElementById('device-config-summary');
   if (!el) return;
-  const c = S.deviceConfig;
-  if (!c) { el.textContent = tx('config.none', 'No config loaded'); return; }
+  const c = S.deviceConfig || {};
+  const deviceVersion = cleanVersion(c.version);
+  const newestVersion = cleanVersion(S.cdnVersion);
 
-  // Keep this line informational only; diagnostics are delivered as popup messages.
-  const device = c.device || 'OpenCurtainLab';
-  const version = c.version || '';
-  const network = S.networkStatus || {};
-  const ip = (network && (network.ip || network.apIp)) || c.ip || c.staIp || S.deviceHost || '';
-  const parts = [`${device}${version ? ' ' + version : ''}`];
-  if (ip) parts.push(ip);
-  parts.push(`max 1/${deviceMaxTargetTime()}`);
-  el.textContent = parts.join(' - ');
+  el.innerHTML = [
+    `<span>${esc(tf('versions.deviceLabel', 'Device {version}', { version: versionLabel(deviceVersion) }))}</span>`,
+    `<span>${esc(tf('versions.newestLabel', 'Newest {version}', { version: versionLabel(newestVersion) }))}</span>`
+  ].join('');
+  el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
 }
 
 // Render all settings controls from local state and device capabilities.
@@ -664,24 +657,3 @@ async function fetchSensorDiagnostics() {
   return d;
 }
 
-// Request sensor baseline calibration from the firmware.
-async function calibrateDeviceSensors() {
-  if (!(await ensureDeviceConnection(true))) return;
-
-  try {
-    toast(tx('toast.calibratingSensors', 'Calibrating sensors...'), 'info');
-    const r = await fetch(api('/calibrate'), {
-      method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
-      body: '{}', signal: AbortSignal.timeout(4500)
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false) throw new Error(d.error || 'calibration failed');
-    await fetchDeviceStatus(true);
-    toast(tx('toast.sensorsCalibrated', 'Sensors calibrated'), 'success');
-    return d;
-  } catch (e) {
-    toast(tx('toast.sensorCalibrationFailed', 'Sensor calibration failed'), 'error');
-    console.warn('OpenCurtainLab sensor calibration failed', e);
-    return null;
-  }
-}

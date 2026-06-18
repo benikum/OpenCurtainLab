@@ -1,0 +1,335 @@
+{
+  "locale": "en-GB",
+  "modes": {
+    "left": "left",
+    "down": "down",
+    "right": "right",
+    "up": "up",
+    "central": "central shutter"
+  },
+  "resultDisplay": {
+    "none": "off",
+    "untilButton": "until button"
+  },
+  "config": {
+    "none": "No config loaded",
+    "address": "Address",
+    "series": "Series",
+    "resultDisplay": "Result display"
+  },
+  "toast": {
+    "deviceConnected": "Device connected: {host}",
+    "deviceNotFoundHost": "No OpenCurtainLab found at this address.",
+    "deviceNotFoundDefault": "No OpenCurtainLab found at opencurtainlab.local.",
+    "customTimesEmpty": "Custom target times are empty",
+    "settingsSaved": "Settings saved",
+    "settingsSaveFailed": "Settings could not be saved",
+    "newWebUi": "New Web UI available. Download the current HTML from the GitHub project.",
+    "enterProjectName": "Please enter a project name",
+    "projectCreated": "Project \"{name}\" created",
+    "backupImported": "Backup JSON imported",
+    "importFailed": "Import failed: no valid JSON file",
+    "backupExported": "Backup JSON exported",
+    "csvExported": "Camera summary CSV exported — {count} target times",
+    "projectNameExists": "A project with this name already exists",
+    "noTargetTimesSelected": "Select at least one target time",
+    "customTimesInvalid": "Invalid custom target times. Use positive numbers separated by commas.",
+    "customTimesDuplicate": "Custom target times contain duplicates",
+    "customTimesTooMany": "Maximum 16 custom target times allowed",
+    "customTimesLoaded": "Custom times loaded into the device",
+    "customTimesLoadFailed": "Custom times could not be loaded",
+    "customTimesInvalidWithMax": "Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.",
+    "customTimesDefaulted": "Standard target times loaded",
+    "localDataReset": "Local WebUI data reset",
+    "defaultProjectKept": "The default project cannot be deleted",
+    "measurementMovedToDefault": "Measurement moved to the default project",
+    "measurementAssignedToDefaultIncompatible": "Measurement assigned to the default project because it does not match the selected project.",
+    "deviceNotConnected": "Device not connected",
+    "calibratingSensors": "Calibrating sensors...",
+    "sensorsCalibrated": "Sensors calibrated",
+    "sensorCalibrationFailed": "Sensor calibration failed"
+  },
+  "frame": {
+    "manualTitle": "OpenCurtainLab Guide"
+  },
+  "connection": {
+    "connected": "CONNECTED",
+    "connecting": "CONNECTING…",
+    "networkHint": "Network issue"
+  },
+  "errors": {
+    "unknown": "Unknown error",
+    "invalidBackup": "Invalid backup"
+  },
+  "confirm": {
+    "deleteProject": "Delete project?",
+    "importBackup": "Import backup JSON? Current projects and history will be replaced.",
+    "resetLocalData": "Reset all local WebUI data? This removes projects, measurements and cached device settings."
+  },
+  "empty": {
+    "noProjectYet": "No project yet",
+    "noMeasurements": "No measurements",
+    "waitingForRelease": "Waiting for camera release",
+    "connectDevice": "Connect the device",
+    "connectDeviceSub": "Enter the device address in Settings or use opencurtainlab.local.",
+    "createFirstProject": "Create your first project",
+    "createFirstProjectSub": "Create a camera project to collect compatible measurements. Other measurements stay in the default project.",
+    "readyMeasure": "Ready to measure",
+    "readyMeasureSub": "Release the shutter.",
+    "deviceError": "Device error",
+    "createProjectAction": "Create project",
+    "noMeasurementsYet": "No measurements yet",
+    "noMeasurementsYetSub": "Trigger the camera shutter. New measurements will appear automatically.",
+    "selectMeasurement": "Select a measurement",
+    "selectMeasurementSub": "Choose an entry from the history to inspect timing details.",
+    "waitingForProjectMeasurement": "Waiting for measurements in {project}"
+  },
+  "labels": {
+    "speeds": "speeds",
+    "measurements": "measurements",
+    "noProject": "no project",
+    "target": "Target",
+    "warning": "Warning",
+    "sensorsActive": "sensors active",
+    "noFlashDetected": "no flash detected",
+    "inactive": "inactive"
+  },
+  "cards": {
+    "measurement": "Measurement",
+    "timelineOpening": "Timeline — shutter opening",
+    "timelineSpeed": "Curtain speed by sensor position",
+    "note": "Note",
+    "curtainCurve": "Curtain speed by target",
+    "projectNote": "Project note"
+  },
+  "metrics": {
+    "avgExposure": "Avg exposure time",
+    "avgDeviation": "Avg deviation",
+    "totalOpenTime": "Total open time",
+    "flashSync": "Flash sync"
+  },
+  "placeholders": {
+    "measurementNotes": "Notes for this measurement…",
+    "projectNotes": "Notes for this project…"
+  },
+  "condition": {
+    "notRated": "Not rated",
+    "veryGood": "Very good",
+    "good": "Good",
+    "checkService": "Check service",
+    "serviceRecommended": "Service recommended"
+  },
+  "charts": {
+    "notEnoughCurtain": "Not enough sensor points for curtain chart",
+    "openingCurtain": "OPENING CURTAIN",
+    "closingCurtain": "CLOSING CURTAIN",
+    "v1Speed": "Opening speed",
+    "v2Speed": "Closing speed",
+    "openingSpeed": "Opening speed",
+    "closingSpeed": "Closing speed",
+    "positionAxis": "POSITION (mm)",
+    "speedAxis": "SPEED (m/s)",
+    "targetSpeedAxis": "Target speed (1/x s)",
+    "noCurtainMeasurements": "No measurements with curtain speed data yet",
+    "timeRelative": "TIME (ms, relative to first opening)"
+  },
+  "flash": {
+    "within": "Flash within total opening",
+    "outside": "Flash outside total opening",
+    "none": "No flash detected"
+  },
+  "project": {
+    "distributionTitle": "Distribution of repeated measurements",
+    "overallRating": "Camera — overall rating",
+    "condition": "Condition",
+    "measurements": "Measurements",
+    "targetSpeedsMeasured": "target speeds measured",
+    "avgDeviation": "Avg deviation",
+    "absoluteAcrossRuns": "absolute, across all runs",
+    "avgScatter": "Avg scatter σ",
+    "repeatability": "repeatability",
+    "linearity": "Linearity",
+    "fromLocalCurtainSpeeds": "from local curtain speeds",
+    "parallelism": "Parallelism",
+    "fromSlitWidth": "from slit width at each sensor",
+    "curtainsSummary": "Curtains — speed summary",
+    "openingCurtain": "Opening curtain",
+    "closingCurtain": "Closing curtain",
+    "zeroMeas": "0 meas.",
+    "measShort": "meas.",
+    "loadCustomTimes": "Load custom times",
+    "series": "Time series",
+    "defaultName": "Default project",
+    "deleteProject": "Delete project",
+    "deleteProjectHelp": "Deletes the project. Its measurements move to the default project.",
+    "delete": "DELETE",
+    "localSpeedVariation": "local speed variation"
+  },
+  "table": {
+    "target": "Target",
+    "avgMeasurement": "Avg measurement",
+    "distribution": "Distribution",
+    "grade": "Grade",
+    "flash": "Flash",
+    "curtainSpeed": "Curtain speed"
+  },
+  "csv": {
+    "note": "Note",
+    "project": "Project",
+    "exported": "Exported"
+  },
+  "settings": {
+    "customTimesHelp": "Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.",
+    "save": "SAVE SETTINGS",
+    "saving": "SAVING...",
+    "saved": "SAVED",
+    "unsaved": "Unsaved changes",
+    "savingLabel": "Saving..."
+  },
+  "quickStart": {
+    "title": "Quick start",
+    "help": "Measurements are received automatically after each shutter test.",
+    "steps": [
+      "Connect to the device.",
+      "Create or select a project.",
+      "Set the target time on the device or in the Web UI.",
+      "Fire the camera shutter.",
+      "Review the measurement."
+    ]
+  },
+  "connectionHelp": {
+    "title": "Could not connect to OpenCurtainLab",
+    "steps": [
+      "Make sure the device is powered on.",
+      "Use opencurtainlab.local or the IP shown on the OLED.",
+      "Make sure this computer is on the same Wi-Fi network.",
+      "If setup mode is active, connect to the OpenCurtainLab Wi-Fi and open 192.168.4.1."
+    ]
+  },
+  "measurementHints": {
+    "generic": {
+      "action": "Check the camera setup and repeat the measurement."
+    },
+    "sensor_already_active_at_start": {
+      "title": "Sensor already active",
+      "body": "A sensor was already covered when the device tried to arm the measurement.",
+      "action": "Open the shutter path, check alignment, then try again."
+    },
+    "flash_without_sensor": {
+      "title": "Flash without sensor coverage",
+      "body": "The flash input fired, but no phototransistor detected shutter movement.",
+      "action": "Check the flash sync cable, camera mode, and sensor alignment."
+    },
+    "timeout_with_data": {
+      "title": "Measurement timed out",
+      "body": "Some sensor data was captured, but the shutter sequence did not finish in time.",
+      "action": "Check whether the shutter got stuck or the selected test setup is correct."
+    },
+    "incomplete_sensor_coverage": {
+      "title": "Incomplete sensor coverage",
+      "body": "Not all five sensors were covered during this measurement.",
+      "action": "Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."
+    }
+  },
+  "deviceErrors": {
+    "generic": {
+      "action": "Check the device and reconnect when the problem is fixed."
+    },
+    "sensor_baseline_too_low": {
+      "title": "Sensor baseline too low",
+      "body": "The sensors do not receive enough light for reliable measurement.",
+      "action": "Check the light source, sensor wiring, and whether a shutter blade covers the sensors."
+    },
+    "network_access_point_failed": {
+      "title": "Setup access point failed",
+      "body": "The device could not start its setup Wi-Fi network.",
+      "action": "Restart the device. If this persists, reflash the firmware or check the ESP32 board."
+    },
+    "display_init_failed": {
+      "title": "Display initialization failed",
+      "body": "The OLED display could not be initialized.",
+      "action": "Check the I2C wiring, display address, and power supply."
+    },
+    "lamp_connector_miswired": {
+      "title": "Lamp connector error",
+      "body": "The lamp socket reports a wrong or shorted plug. The lamp output remains off.",
+      "action": "Use only the OpenCurtainLab lamp cable. Do not connect flash cables, headphones, audio equipment, or microphones to the lamp socket."
+    }
+  },
+  "firmware": {
+    "title": "Version mismatch",
+    "warning": "Firmware {actual} and Web UI {expected}.x may not match.",
+    "action": "Use firmware, Web UI files and version.txt from the same release."
+  },
+  "measurement": {
+    "moveToDefault": "Move to default project"
+  },
+  "versions": {
+    "title": "version mismatch",
+    "unknown": "unknown",
+    "webUiLabel": "Web UI {version}",
+    "publishedLabel": "published {version}",
+    "firmwareWebUiMismatch": "Firmware {firmware} and Web UI {webui} do not match.",
+    "webUiOutdated": "This Web UI is outdated. Loaded {webui}, published {cdn}.",
+    "cdnMismatch": "The loaded Web UI {webui} and published version marker {cdn} do not match.",
+    "deviceCdnMismatch": "Firmware {firmware} and published project version {cdn} do not match.",
+    "action": "Use firmware, Web UI files and version.txt from the same release.",
+    "mismatchTitle": "version mismatch",
+    "updateAvailable": "Update available",
+    "updateAvailableWithVersion": "New Web UI version available: {version}",
+    "mismatchAction": "Use firmware and Web UI files from the same release.",
+    "updateAction": "Download the current Web UI files from the project release."
+  },
+  "html": {
+    "menuButtonLabel": "Menu",
+    "connecting": "Connecting…",
+    "projects": "Projects",
+    "newProject": "New project",
+    "projectMeasurements": "Project measurements",
+    "webUiVersion": "Web UI v0.1.0",
+    "device": "Device",
+    "deviceAddress": "Device address",
+    "connect": "Connect",
+    "measurement": "Measurement",
+    "targetSeries": "Target series",
+    "customTargetTimes": "Custom target times",
+    "sensitivity": "Sensitivity",
+    "sensitivityLow": "low",
+    "sensitivityMedium": "medium",
+    "sensitivityHigh": "high",
+    "display": "Display",
+    "results": "Results",
+    "untilButtonPress": "until button press",
+    "oledSleep": "OLED sleep",
+    "afterOneMinute": "after 1 min",
+    "afterFiveMinutes": "after 5 min",
+    "afterTenMinutes": "after 10 min",
+    "afterThirtyMinutes": "after 30 min",
+    "interpolateCharts": "Interpolate charts",
+    "saveSettings": "SAVE SETTINGS",
+    "localData": "Local data",
+    "exportWorkspaceBackup": "Export workspace backup",
+    "importWorkspaceBackup": "Import workspace backup",
+    "resetLocalWebUiData": "Reset local WebUI data",
+    "guide": "Guide",
+    "settings": "Settings",
+    "connectDeviceTitle": "Connect the device",
+    "connectDeviceSubtitle": "Connect OpenCurtainLab to your network.",
+    "cameraProjectName": "Camera / project name",
+    "cameraProjectNamePlaceholder": "e.g. Leica M3, Canon AE-1 …",
+    "measurementMode": "Measurement mode",
+    "timeSeries": "Time series",
+    "supportedShutterSpeeds": "Supported shutter speeds (1/x s)",
+    "cancel": "Cancel",
+    "create": "Create",
+    "resultDisplayOff": "off",
+    "oledSleepOff": "off",
+    "sensorTools": "Sensor tools",
+    "sensorToolsHint": "Recalibrate the sensor baselines after changing lighting, covers, or the sensor board position.",
+    "calibrateSensors": "Calibrate sensors"
+  },
+  "targetSeries": {
+    "standard": "Standard",
+    "custom": "Custom"
+  }
+}

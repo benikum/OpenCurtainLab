@@ -1,0 +1,223 @@
+/*
+ * Builds all JSON payloads returned by the HTTP API from runtime status, settings, and raw measurement data.
+ */
+
+#pragma once
+#include <Arduino.h>
+#include <WiFi.h>
+#include <ArduinoJson.h>
+#include "Config.h"
+#include "TargetTimes.h"
+#include "RuntimeSettings.h"
+#include "SensorManager.h"
+#include "MeasurementTypes.h"
+
+struct DeviceStatusView {
+  bool connected = false;
+  bool apMode = false;
+  bool mdnsStarted = false;
+  String ip;
+  String apIp;
+  String hostname = MDNS_NAME;
+  String mdns = MDNS_NAME ".local";
+  String savedSsid;
+  String currentSsid;
+  uint32_t measurementId = 0;
+  DeviceStatus deviceStatus;
+  NetworkHint networkHint = NetworkHint::None;
+};
+
+class JsonBuilder {
+public:
+  // Builds the /status JSON response.
+  static String status(const DeviceStatusView& view) {
+    StaticJsonDocument<1152> doc;
+    const String mdnsName = view.mdns.length() ? view.mdns : String(MDNS_NAME ".local");
+    const int rssi = view.connected ? WiFi.RSSI() : 0;
+
+    doc["device"] = DEVICE_NAME;
+    doc["version"] = FIRMWARE_VERSION;
+    doc["uptime"] = millis() / 1000;
+    doc["measCount"] = view.measurementId;
+
+    // Legacy top-level fields are kept so existing WebUIs continue to work.
+    doc["wifi"] = view.connected;
+    doc["apMode"] = view.apMode;
+    doc["ip"] = view.ip;
+    doc["mdns"] = mdnsName;
+    doc["rssi"] = rssi;
+    doc["deviceError"] = deviceErrorKey(view.deviceStatus.error);
+    doc["deviceErrorText"] = deviceErrorText(view.deviceStatus.error);
+
+    JsonObject deviceStatus = doc.createNestedObject("deviceStatus");
+    deviceStatus["error"] = deviceErrorKey(view.deviceStatus.error);
+    deviceStatus["errorText"] = deviceErrorText(view.deviceStatus.error);
+    deviceStatus["subsystem"] = deviceSubsystemKey(view.deviceStatus.subsystem);
+
+    JsonObject network = doc.createNestedObject("network");
+    network["connected"] = view.connected;
+    network["apMode"] = view.apMode;
+    network["ip"] = view.ip;
+    network["apIp"] = view.apIp;
+    network["hostname"] = view.hostname.length() ? view.hostname : String(MDNS_NAME);
+    network["mdns"] = mdnsName;
+    network["mdnsStarted"] = view.mdnsStarted;
+    network["rssi"] = rssi;
+    network["savedSsid"] = view.savedSsid;
+    network["currentSsid"] = view.currentSsid;
+    network["hint"] = networkHintKey(view.networkHint);
+    network["hintText"] = networkHintText(view.networkHint);
+
+    return serialize(doc);
+  }
+
+  // Builds the /config JSON response with capabilities and current settings.
+  static String config(const RuntimeSettings& settings) {
+    StaticJsonDocument<2560> doc;
+    doc["device"] = DEVICE_NAME;
+    doc["version"] = FIRMWARE_VERSION;
+    doc["ip"] = WiFi.isConnected() ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
+    doc["mdnsName"] = MDNS_NAME;
+    doc["sensorDistanceXmm"] = SENSOR_DISTANCE_X_MM;
+    doc["sensorDistanceYmm"] = SENSOR_DISTANCE_Y_MM;
+    doc["displayRotation"] = DISPLAY_ROTATION;
+    doc["sensorCount"] = SENSOR_COUNT;
+    doc["maxTargetTime"] = DEVICE_MAX_TARGET_TIME;
+    doc["baselineSamples"] = SENSOR_BASELINE_SAMPLES;
+    doc["baselineDurationMs"] = SENSOR_BASELINE_DURATION_MS;
+
+    // Capability arrays tell the WebUI which options this firmware supports.
+    JsonArray seriesOptions = doc.createNestedArray("targetSeriesOptions");
+    seriesOptions.add("standard");
+    seriesOptions.add("custom");
+
+    JsonArray standard = doc.createNestedArray("targetTimesStandard");
+    for (int i = 0; i < TARGET_TIMES_STANDARD_COUNT; i++) standard.add(TARGET_TIMES_STANDARD[i]);
+
+    JsonArray custom = doc.createNestedArray("targetTimesCustom");
+    for (int i = 0; i < settings.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(settings.customTargetTimes[i]);
+
+    // targetTimes mirrors the currently active series for simple clients.
+    JsonArray targetTimes = doc.createNestedArray("targetTimes");
+    const int* activeTimes = targetTimesForSeries(settings.targetSeries);
+    const int activeCount = targetTimesCountForSeries(settings.targetSeries);
+    for (int i = 0; i < activeCount; i++) targetTimes.add(activeTimes[i]);
+
+    JsonArray modes = doc.createNestedArray("modes");
+    modes.add("left");
+    modes.add("down");
+    modes.add("right");
+    modes.add("up");
+    modes.add("central");
+
+    JsonObject settingsObj = doc.createNestedObject("settings");
+    appendSettings(settingsObj, settings);
+
+    doc["githubProjectUrl"] = GITHUB_PROJECT_URL;
+    doc["webAppUrl"] = WEB_APP_URL;
+    return serialize(doc);
+  }
+
+  // Builds the /data JSON response from the last raw measurement.
+  static String data(const MeasurementResult& result, uint32_t measurementId, const char* measurementIdString,
+                     int targetFraction, MeasurementMode mode) {
+    StaticJsonDocument<2304> doc;
+    doc["measCount"] = measurementId;
+    doc["mode"] = measurementModeKey(mode);
+    doc["target"] = targetFraction;
+
+    // No measurement id means the device has not produced any result since boot.
+    if (!measurementIdString || measurementIdString[0] == '\0') {
+      doc["valid"] = false;
+      return serialize(doc);
+    }
+
+    doc["valid"] = result.valid;
+    doc["id"] = measurementIdString;
+    doc["baseUs"] = result.baseTimestamp;
+
+    // The WebUI receives raw timestamps and ADC values; it performs its own calculations.
+    JsonArray sensors = doc.createNestedArray("sensors");
+    for (int i = 0; i < SENSOR_COUNT; i++) {
+      const SensorReading& s = result.sensors[i];
+      JsonObject o = sensors.createNestedObject();
+      o["id"] = i;
+      o["activated"] = s.wasActivated;
+      o["raw"] = s.rawValue;
+      o["baseline"] = s.baselineValue;
+      o["openUs"] = s.openTimestamp;
+      o["closeUs"] = s.closeTimestamp;
+    }
+
+    doc["hint"] = measurementHintKey(result.hint);
+    doc["hintText"] = measurementHintText(result.hint);
+
+    const FlashReading& f = result.flash;
+    JsonObject flash = doc.createNestedObject("flash");
+    flash["detected"] = f.detected;
+    flash["raw"] = f.rawValue;
+    flash["triggerUs"] = f.triggerTimestamp;
+
+    return serialize(doc);
+  }
+
+  // Builds a live non-mutating sensor diagnostics snapshot for /sensors.
+  static String sensors(const SensorManager& manager) {
+    StaticJsonDocument<1536> doc;
+    doc["ok"] = true;
+    doc["timeUs"] = esp_timer_get_time();
+    doc["sensorCount"] = SENSOR_COUNT;
+    doc["onDelta"] = manager.sensorOnDelta();
+    doc["offDelta"] = manager.sensorOffDelta();
+
+    JsonArray sensors = doc.createNestedArray("sensors");
+    for (int i = 0; i < SENSOR_COUNT; i++) {
+      const SensorReading& tracked = manager.getSensor(i);
+      const int raw = manager.readDiagnosticSensorRaw(i);
+      JsonObject o = sensors.createNestedObject();
+      o["id"] = i;
+      o["pin"] = tracked.pin;
+      o["raw"] = raw;
+      o["baseline"] = tracked.baselineValue;
+      o["active"] = manager.isDiagnosticSensorActive(i, raw);
+      o["trackedActive"] = tracked.isActive;
+      o["wasActivated"] = tracked.wasActivated;
+      o["openUs"] = tracked.openTimestamp;
+      o["closeUs"] = tracked.closeTimestamp;
+    }
+
+    const FlashReading& trackedFlash = manager.getFlash();
+    const int flashRaw = manager.readDiagnosticFlashRaw();
+    JsonObject flash = doc.createNestedObject("flash");
+    flash["pin"] = trackedFlash.pin;
+    flash["raw"] = flashRaw;
+    flash["active"] = manager.isDiagnosticFlashActive(flashRaw);
+    flash["trackedActive"] = trackedFlash.isActive;
+    flash["detected"] = trackedFlash.detected;
+    flash["triggerUs"] = trackedFlash.triggerTimestamp;
+
+    return serialize(doc);
+  }
+
+  // Appends the stored runtime settings object used by /config and POST /config responses.
+  // Build-time capabilities such as maxTargetTime are reported at the top level, not inside settings.
+  static void appendSettings(JsonObject obj, const RuntimeSettings& s) {
+    obj["defaultMeasurementMode"] = measurementModeKey(s.defaultMode);
+    obj["defaultTargetTime"] = s.defaultTargetTime;
+    obj["sensorSensitivity"] = s.sensorSensitivity;
+    obj["resultDisplay"] = s.resultDisplayMode;
+    obj["targetSeries"] = targetSeriesKey(s.targetSeries);
+    JsonArray custom = obj.createNestedArray("customTargetTimes");
+    for (int i = 0; i < s.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(s.customTargetTimes[i]);
+    obj["oledSleepMinutes"] = s.oledSleepMinutes;
+  }
+
+private:
+  template <typename TDoc>
+  // Serializes a JSON document into an Arduino String.
+  static String serialize(TDoc& doc) {
+    String out;
+    serializeJson(doc, out);
+    return out;
+  }
+};

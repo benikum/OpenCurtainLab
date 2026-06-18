@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, minimum-scale=1.0" name="viewport"/>
+<title>OpenCurtainLab</title>
+<link rel="stylesheet" href="app.css" data-ocl-asset="css">
+<!-- OCL_INLINE_CSS -->
+</head>
+<body>
+<!-- Web UI source shell. CSS, JS and translations are separate during development. -->
+<div class="app">
+<!-- ══ HEADER ══════════════════════════════════ -->
+<header>
+<div style="display:flex;align-items:center;gap:10px;">
+<button aria-label="Menu" class="mob-menu-btn" data-i18n-aria-label="html.menuButtonLabel" onclick="toggleSidebar()"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" height="20" viewbox="0 -960 960 960" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M140-254.62v-59.99h680v59.99H140ZM140-450v-60h680v60H140Zm0-195.39v-59.99h680v59.99H140Z"></path></svg></button>
+<div class="logo">
+<div aria-hidden="true" class="logo-mark"><svg class="logo-camera" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M456-600h320q-27-69-82.5-118.5T566-788L456-600Zm-92 80 160-276q-11-2-22-3t-22-1q-66 0-123 25t-101 67l108 188ZM170-400h218L228-676q-32 41-50 90.5T160-480q0 21 2.5 40.5T170-400Zm224 228 108-188H184q27 69 82.5 118.5T394-172Zm86 12q66 0 123-25t101-67L596-440 436-164q11 2 21.5 3t22.5 1Zm252-124q32-41 50-90.5T800-480q0-21-2.5-40.5T790-560H572l160 276ZM480-480Zm0 400q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Z"></path></svg></div>
+<div class="logo-text">OPEN<em>CURTAIN</em>LAB</div>
+</div>
+</div>
+<div class="hdr-right">
+<div class="conn-pill">
+<span class="conn-dot" id="cdot"></span>
+<span data-i18n="html.connecting" id="clabel">Connecting…</span>
+</div>
+</div>
+</header>
+<div class="sidebar-backdrop" id="sb-back" onclick="toggleSidebar()"></div>
+<!-- ══ BODY ════════════════════════════════════ -->
+<div class="body">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+<!-- Projects -->
+<div class="sidebar-block">
+<div class="blk-hdr">
+<span class="blk-label" data-i18n="html.projects">Projects</span>
+<button aria-label="New project" class="btn btn-amber btn-sm btn-icon" data-i18n-aria-label="html.newProject" data-i18n-title="html.newProject" onclick="openNewProj()" title="New project"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" height="20" viewbox="0 -960 960 960" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M450-450H220v-60h230v-230h60v230h230v60H510v230h-60v-230Z"></path></svg></button>
+</div>
+<div id="proj-list"></div>
+</div>
+<!-- History header -->
+<div class="sidebar-block" style="padding-bottom:8px;">
+<div class="blk-hdr" style="margin-bottom:0;">
+<span class="blk-label" data-i18n="html.projectMeasurements">Project measurements</span>
+<span id="hist-count" style="font-size:10px;color:var(--tx3);">0</span>
+</div>
+</div>
+<!-- History list -->
+<div class="history-scroll" id="hist-list"></div>
+<!-- Tools / Settings -->
+<div class="sidebar-block sidebar-tools">
+<div class="language-panel" id="language-panel" style="display:none;">
+<label>Language</label>
+<button class="lang-option" data-lang="de" onclick="setLanguage('de')"><span aria-hidden="true" class="lang-flag">🇩🇪</span><span>Deutsch</span></button>
+<button class="lang-option" data-lang="en" onclick="setLanguage('en')"><span aria-hidden="true" class="lang-flag">🇬🇧</span><span>English</span></button>
+</div>
+<div class="settings-panel" id="settings-panel" style="display:none;">
+<div class="webui-version-summary" data-i18n="html.webUiVersion" id="webui-version-summary">Web UI v0.1.0</div>
+<div class="device-config-summary" id="device-config-summary">OpenCurtainLab</div>
+<div class="settings-section">
+<div class="settings-section-title" data-i18n="html.device">Device</div>
+<div class="settings-field">
+<label data-i18n="html.deviceAddress" for="device-address-input">Device address</label>
+<div class="settings-address-row">
+<input class="settings-full-input" id="device-address-input" onkeydown="if(event.key==='Enter') connectToDeviceAddress()" placeholder="opencurtainlab.local" type="text"/>
+<button class="btn btn-amber btn-sm" data-i18n="html.connect" onclick="connectToDeviceAddress()">Connect</button>
+</div>
+<div aria-live="polite" class="settings-error" id="device-address-error"></div>
+</div>
+</div>
+<div class="settings-section">
+<div class="settings-section-title" data-i18n="html.measurement">Measurement</div>
+<div class="settings-line">
+<label data-i18n="html.targetSeries" for="set-target-series">Target series</label>
+<select class="h-proj-select" id="set-target-series" onchange="onTargetSeriesChanged()">
+<option data-i18n="targetSeries.standard" value="standard">Standard</option>
+<option data-i18n="targetSeries.custom" value="custom">Custom</option>
+</select>
+</div>
+<div class="settings-field">
+<label data-i18n="html.customTargetTimes" for="set-custom-target-times">Custom target times</label>
+<input class="settings-full-input" id="set-custom-target-times" oninput="validateCustomTargetTimesField()" placeholder="1,2,5,10,25,50,100,250,500,1000,2000" type="text"/>
+<div class="settings-hint" id="custom-target-times-help"></div>
+<div aria-live="polite" class="settings-error" id="custom-target-times-error"></div>
+</div>
+<div class="settings-line">
+<label data-i18n="html.sensitivity" for="set-sensitivity">Sensitivity</label>
+<select class="h-proj-select" id="set-sensitivity">
+<option data-i18n="html.sensitivityLow" value="low">low</option>
+<option data-i18n="html.sensitivityMedium" value="medium">medium</option>
+<option data-i18n="html.sensitivityHigh" value="high">high</option>
+</select>
+</div>
+</div>
+<div class="settings-section">
+<div class="settings-section-title" data-i18n="html.display">Display</div>
+<div class="settings-line">
+<label data-i18n="html.results" for="set-result-display">Results</label>
+<select class="h-proj-select" id="set-result-display">
+<option data-i18n="html.untilButtonPress" value="until_button">until button press</option>
+<option value="2s">2 s</option>
+<option value="5s">5 s</option>
+<option value="10s">10 s</option>
+<option data-i18n="html.resultDisplayOff" value="none">off</option>
+</select>
+</div>
+<div class="settings-line">
+<label data-i18n="html.oledSleep" for="set-oled-sleep">OLED sleep</label>
+<select class="h-proj-select" id="set-oled-sleep">
+<option data-i18n="html.oledSleepOff" value="0">off</option>
+<option data-i18n="html.afterOneMinute" value="1">after 1 min</option>
+<option data-i18n="html.afterFiveMinutes" value="5">after 5 min</option>
+<option data-i18n="html.afterTenMinutes" value="10">after 10 min</option>
+<option data-i18n="html.afterThirtyMinutes" value="30">after 30 min</option>
+</select>
+</div>
+<div class="settings-line settings-toggle-line">
+<label data-i18n="html.interpolateCharts" for="ui-interpolate-charts">Interpolate charts</label>
+<label class="switch">
+<input id="ui-interpolate-charts" onchange="setChartInterpolation(this.checked)" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+</div>
+<div class="settings-save-row"><div aria-live="polite" class="settings-save-status" id="settings-save-status"></div><button class="btn btn-amber btn-sm" data-i18n="html.saveSettings" id="save-device-settings-btn" onclick="saveDeviceSettings()">SAVE SETTINGS</button></div>
+<div class="settings-section sensor-tools-section">
+<div class="settings-section-title" data-i18n="html.sensorTools">Sensor tools</div>
+<div class="settings-hint" data-i18n="html.sensorToolsHint">Recalibrate the sensor baselines after changing lighting, covers, or the sensor board position.</div>
+<div class="settings-action-row">
+<button class="btn btn-ghost btn-sm btn-icon-text" data-i18n-title="html.calibrateSensors" onclick="calibrateDeviceSensors()" title="Calibrate sensors"><svg aria-hidden="true" class="svg-icon" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor"><path d="M824-120 636-308q-41 32-90.5 50T440-240q-90 0-162.5-44T163-400h98q34 37 79.5 58.5T440-320q100 0 170-70t70-170q0-100-70-170t-170-70q-94 0-162.5 63.5T201-580h-80q8-127 99.5-213.5T440-880q134 0 227 93t93 227q0 56-18 105.5T692-364l188 188-56 56ZM397-400l-63-208-52 148H80v-60h160l66-190h60l61 204 43-134h60l60 120h30v60h-67l-47-94-50 154h-59Z"/></svg><span data-i18n="html.calibrateSensors">Calibrate sensors</span></button>
+</div>
+</div>
+<div class="settings-section local-data-section">
+<div class="settings-section-title" data-i18n="html.localData">Local data</div>
+<div class="backup-actions local-data-actions">
+<button aria-label="Export workspace backup" class="btn btn-ghost btn-sm btn-icon" data-i18n-aria-label="html.exportWorkspaceBackup" data-i18n-title="html.exportWorkspaceBackup" onclick="exportBackupJSON()" title="Export workspace backup"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M160-80v-80h640v80H160Zm320-160L200-600h160v-280h240v280h160L480-240Zm0-130 116-150h-76v-280h-80v280h-76l116 150Zm0-150Z"></path></svg></button>
+<button aria-label="Import workspace backup" class="btn btn-ghost btn-sm btn-icon" data-i18n-aria-label="html.importWorkspaceBackup" data-i18n-title="html.importWorkspaceBackup" onclick="document.getElementById('backup-file').click()" title="Import workspace backup"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M160-80v-80h640v80H160Zm200-160v-280H200l280-360 280 360H600v280H360Zm80-80h80v-280h76L480-750 364-600h76v280Zm40-280Z"></path></svg></button>
+<button aria-label="Reset local WebUI data" class="btn btn-ghost btn-sm btn-icon danger-icon" data-i18n-aria-label="html.resetLocalWebUiData" data-i18n-title="html.resetLocalWebUiData" onclick="resetLocalWebUiData()" title="Reset local WebUI data"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"></path></svg></button>
+</div>
+<input accept="application/json,.json" id="backup-file" style="display:none" type="file"/>
+</div>
+</div>
+<div class="settings-actions">
+<button aria-label="GitHub" class="btn btn-ghost btn-sm btn-icon" onclick="openGitHub()" title="GitHub"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M160-80q-33 0-56.5-23.5T80-160v-600q0-33 23.5-56.5T160-840h40v-40q0-17 11.5-28.5T240-920h160q17 0 28.5 11.5T440-880v40h40q33 0 56.5 23.5T560-760h320v600H560q0 33-23.5 56.5T480-80H160Zm0-80h320v-80h320v-440H480v-80H160v600Zm200-120h80v-80h-80v80Zm0-280h80v-80h-80v80Zm160 280h80v-80h-80v80Zm0-280h80v-80h-80v80Zm160 280h80v-80h-80v80Zm0-280h80v-80h-80v80ZM320-460Z"></path></svg></button>
+<button aria-label="Guide" class="btn btn-ghost btn-sm btn-icon" data-i18n-aria-label="html.guide" data-i18n-title="html.guide" onclick="showManualPage()" title="Guide"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M423.5-103.5Q400-127 400-160h160q0 33-23.5 56.5T480-80q-33 0-56.5-23.5ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Zm24-80h252q45-32 69.5-79T700-580q0-92-64-156t-156-64q-92 0-156 64t-64 156q0 54 24.5 101t69.5 79Zm126 0Z"></path></svg></button>
+<button aria-label="English" class="btn btn-ghost btn-sm btn-icon language-btn" id="language-btn" onclick="toggleLanguagePanel()" title="English"><span aria-hidden="true" class="language-btn-flag">🇬🇧</span></button>
+<button aria-label="Settings" class="btn btn-ghost btn-sm btn-icon" data-i18n-aria-label="html.settings" data-i18n-title="html.settings" id="settings-toggle-btn" onclick="toggleSettings()" title="Settings"><svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"></path></svg></button>
+</div>
+</div>
+</aside><!-- /sidebar -->
+<!-- CONTENT -->
+<main class="content" id="content">
+<div class="empty" id="main-empty" style="margin:80px auto;"><div class="empty-ico" style="font-size:48px;">◎</div><div class="empty-txt" data-i18n="html.connectDeviceTitle" style="font-size:16px;">Connect the device</div><div class="empty-sub" data-i18n="html.connectDeviceSubtitle">Connect OpenCurtainLab to your network.</div></div>
+</main>
+</div><!-- .body -->
+</div><!-- .app -->
+<!-- ══ MODAL: NEW PROJECT ═════════════════════ -->
+<div class="overlay" id="modal-proj">
+<div class="modal">
+<div class="modal-hdr">
+<span class="modal-title" data-i18n="html.newProject">New project</span>
+<button class="modal-close" onclick="closeModal('modal-proj')">✕</button>
+</div>
+<div class="modal-body">
+<div class="fg">
+<label data-i18n="html.cameraProjectName">Camera / project name</label>
+<input data-i18n-placeholder="html.cameraProjectNamePlaceholder" id="proj-name" placeholder="e.g. Leica M3, Canon AE-1 …" type="text"/>
+</div>
+<div class="fg">
+<label data-i18n="html.measurementMode">Measurement mode</label>
+<select class="h-proj-select" id="proj-mode" style="width:100%;padding:7px 11px;"></select>
+</div>
+<div class="fg">
+<label data-i18n="html.timeSeries">Time series</label>
+<select class="h-proj-select" id="proj-series" onchange="updateProjectTimePicker()" style="width:100%;padding:7px 11px;">
+<option data-i18n="targetSeries.standard" value="standard">Standard</option>
+<option data-i18n="targetSeries.custom" value="custom">Custom</option>
+</select>
+</div>
+<div class="fg">
+<label data-i18n="html.supportedShutterSpeeds">Supported shutter speeds (1/x s)</label>
+<div class="time-grid" id="time-picker"></div>
+</div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+<button class="btn btn-ghost" data-i18n="html.cancel" onclick="closeModal('modal-proj')">Cancel</button>
+<button class="btn btn-amber" data-i18n="html.create" onclick="createProj()">Create</button>
+</div>
+</div>
+</div>
+</div>
+<div id="toast"></div>
+<!-- ══ JAVASCRIPT ══════════════════════════════ -->
+<script id="ocl-source-config" type="application/json">{"i18nDir":"i18n","tutorialDir":"tutorial"}</script>
+<!-- OCL_INLINE_I18N -->
+<!-- OCL_INLINE_TUTORIALS -->
+<script src="js/i18n.js" defer data-ocl-asset="js"></script>
+<script src="js/utils.js" defer data-ocl-asset="js"></script>
+<script src="js/state-storage.js" defer data-ocl-asset="js"></script>
+<script src="js/device-settings.js" defer data-ocl-asset="js"></script>
+<script src="js/navigation.js" defer data-ocl-asset="js"></script>
+<script src="js/measurements-projects.js" defer data-ocl-asset="js"></script>
+<script src="js/project-analysis.js" defer data-ocl-asset="js"></script>
+<script src="js/charts.js" defer data-ocl-asset="js"></script>
+<script src="js/backup-export-mock.js" defer data-ocl-asset="js"></script>
+<script src="app.js" defer data-ocl-asset="js"></script>
+<!-- OCL_INLINE_JS -->
+</body>
+</html>

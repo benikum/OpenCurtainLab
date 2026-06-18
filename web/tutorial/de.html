@@ -1,0 +1,143 @@
+<article class="manual-page tutorial guide">
+<section class="hero">
+<div class="eyebrow">OpenCurtainLab Anleitung</div>
+<h1>Benutzung des Testers an Kameras</h1>
+<p>Diese Anleitung beschreibt, wie OpenCurtainLab an Kameras eingesetzt wird: korrekte Positionierung, Wahl der Verschlussrichtung, wiederholbare Messungen und praktische Bewertung der Werte bei der Reparatur.</p>
+<div>
+<span class="badge">Kameraaufbau</span>
+<span class="badge">Verschlusstest</span>
+<span class="badge">Reparaturbewertung</span>
+<span class="badge">Blitzsynchronisation</span>
+</div>
+</section>
+<section class="card toc">
+<div class="card-hdr"><h2>Inhalt</h2></div>
+<div class="card-body grid">
+<a href="#prepare">Kamera vorbereiten</a>
+<a href="#connector-safety">Anschlüsse sicher verwenden</a>
+<a href="#position">Tester positionieren</a>
+<a href="#modes">Richtung wählen</a>
+<a href="#run">Messung durchführen</a>
+<a href="#read">Ergebnis lesen</a>
+<a href="#charts">Diagramme nutzen</a>
+<a href="#repair">Reparatur bewerten</a>
+<a href="#flash">Blitzsynchronisation prüfen</a>
+</div>
+</section>
+<section class="card" id="connector-safety">
+<div class="card-hdr"><h2>Anschlüsse sicher verwenden</h2></div>
+<div class="card-body">
+<div class="warn"><strong>Warnung:</strong> Die Lampenbuchse ist kein Audioanschluss. Schließe keine Kopfhörer, Audiogeräte, Mikrofone oder Blitzkabel an die Lampenbuchse an. An der Lampenbuchse können 12 V anliegen. Sie ist ausschließlich für die OpenCurtainLab-Lampe vorgesehen.</div>
+<p>Blitzsynchronbuchse und Lampenbuchse haben getrennte Funktionen. Prüfe die Symbole am Gehäuse, bevor du Kabel anschließt.</p>
+</div>
+</section>
+<section class="card" id="prepare">
+<div class="card-hdr"><h2>Kamera vorbereiten</h2></div>
+<div class="card-body">
+<ol>
+<li>Stelle an der Kamera die Verschlusszeit ein, die geprüft werden soll.</li>
+<li>Öffne die Kamerarückwand oder platziere den Tester dort, wo normalerweise Film oder Sensor liegt.</li>
+<li>Nutze eine gleichmäßige, stabile Lichtquelle durch Bajonett, Objektivöffnung oder Frontöffnung.</li>
+<li>Stelle sicher, dass vor dem Auslösen kein Verschlussblatt, Dunkelschieber, Spiegel oder Halter die Sensorreihe verdeckt.</li>
+<li>Löse mechanische Verschlüsse vor der eigentlichen Bewertung einige Male aus.</li>
+</ol>
+<div class="warn">Vermeide flackernde Lampen und PWM-gesteuerte LED-Lichtquellen. Sie können unregelmäßige Sensorsignale erzeugen, die wie Verschlussfehler aussehen.</div>
+<div class="ok">Bei Reparaturen sollte jede wichtige Zeit mehrfach gemessen werden. Eine einzelne Auslösung kann bei alten mechanischen Kameras irreführend sein.</div>
+</div>
+</section>
+<section class="card" id="position">
+<div class="card-hdr"><h2>Tester positionieren</h2></div>
+<div class="card-body">
+<p>Platziere die Sensorreihe möglichst nah an der Filmebene. Die Reihe soll so liegen, dass sie zur Laufrichtung des Verschlusses passt.</p>
+<div class="grid">
+<div class="box"><strong>Schlitzverschluss</strong><br/>Richte die Sensorreihe entlang der Vorhangbewegung aus. Vor dem Auslösen sollen alle fünf Sensoren Licht erhalten.</div>
+<div class="box"><strong>Zentral- oder Lamellenverschluss</strong><br/>Platziere den Tester im Bildfeld und wähle den Zentralverschluss-Modus. Ein Vorhanggeschwindigkeitsdiagramm wird hier nicht verwendet.</div>
+<div class="box"><strong>Objektivverschluss in einer Kamera</strong><br/>Öffne die Blende weit genug, damit alle Sensoren Licht bekommen. Wenn die Blende die Reihe abschattet, kann die Messung unvollständig wirken.</div>
+</div>
+</div>
+</section>
+<section class="card" id="modes">
+<div class="card-hdr"><h2>Verschlussrichtung wählen</h2></div>
+<div class="card-body">
+<p>Wähle die Richtung, in der die Öffnung des Verschlusses über den Tester läuft.</p>
+<table><tbody>
+<tr><td>nach links</td><td>Die Öffnung läuft von rechts nach links. Im V(x)-Diagramm liegt 0 mm rechts, damit das Diagramm der Laufrichtung folgt.</td></tr>
+<tr><td>nach rechts</td><td>Die Öffnung läuft von links nach rechts.</td></tr>
+<tr><td>nach oben</td><td>Die Öffnung läuft von unten nach oben.</td></tr>
+<tr><td>nach unten</td><td>Die Öffnung läuft von oben nach unten. Für die Positionsachse wird der vertikale Sensorabstand genutzt.</td></tr>
+<tr><td>Zentralverschluss</td><td>Für Lamellenverschlüsse und andere Verschlüsse, die um die Mitte öffnen statt als Vorhänge zu laufen.</td></tr>
+</tbody></table>
+<div class="note">Wenn die Richtung falsch gewählt ist, kann die Belichtungszeit trotzdem sichtbar sein, aber Vorhanggeschwindigkeit und Positionsdiagramm werden irreführend.</div>
+</div>
+</section>
+<section class="card" id="run">
+<div class="card-hdr"><h2>Messung durchführen</h2></div>
+<div class="card-body">
+<ol>
+<li>Stelle die Zielzeit am Gerät oder in der verbundenen Oberfläche ein.</li>
+<li>Warte, bis das Gerät bereit ist.</li>
+<li>Löse den Kameraverschluss normal aus.</li>
+<li>Wiederhole dieselbe Zeit mehrfach, bevor du eine Reparatur bewertest.</li>
+<li>Prüfe schnelle, mittlere und langsame Zeiten getrennt, weil sie oft unterschiedliche Fehlerursachen haben.</li>
+</ol>
+<div class="warn">Wenn ein Sensor schon vor dem Auslösen verdeckt ist, kann das Gerät keine saubere Messung starten. Prüfe Ausrichtung und Beleuchtung der Sensorreihe.</div>
+</div>
+</section>
+<section class="card" id="read">
+<div class="card-hdr"><h2>Ergebnis lesen</h2></div>
+<div class="card-body">
+<table><tbody>
+<tr><td>Gemessene Zeit</td><td>Die wirksame Belichtungszeit aus den Sensorzeiten.</td></tr>
+<tr><td>Abweichung EV</td><td>Abweichung zur eingestellten Zielzeit in Blendenstufen. Positive Werte bedeuten längere, negative Werte kürzere Belichtung.</td></tr>
+<tr><td>Streuung</td><td>Unterschied zwischen den Sensoren. Kleine Streuung bedeutet gleichmäßige Belichtung. Große Streuung weist auf Capping, ungleiche Schlitzbreite oder ungleichmäßigen Vorhanglauf hin.</td></tr>
+<tr><td>Totale Öffnungsdauer</td><td>Zeit zwischen dem ersten Öffnen und dem letzten Schließen des Bildfensters. Das ist besonders für Blitzsynchronisation hilfreich.</td></tr>
+<tr><td>Messhinweis</td><td>Hinweis zur Auslösung, zum Beispiel unvollständige Sensorabdeckung oder Timeout. Das ist Diagnoseinformation und nicht automatisch ein Gerätefehler.</td></tr>
+</tbody></table>
+<div class="note">Eine Kamera kann konstant danebenliegen und trotzdem gut wiederholen. Das deutet eher auf Justage hin. Zufällige Schwankungen deuten eher auf Reibung, klebende Teile, schwache Federn oder ein instabiles Hemmwerk hin.</div>
+</div>
+</section>
+<section class="card" id="charts">
+<div class="card-hdr"><h2>Diagramme nutzen</h2></div>
+<div class="card-body">
+<p>Der Zeitstrahl zeigt, wann jeder Sensor geöffnet und geschlossen wurde. Damit erkennt man Capping oder unvollständige Abläufe sehr schnell.</p>
+<p>Das V(x)-Diagramm zeigt die lokale Vorhanggeschwindigkeit über der Sensorposition. Die Messpunkte werden zwischen benachbarten Sensoren berechnet. Eine geglättete Linie kann das Lesen erleichtern, aber die Messpunkte sind die maßgeblichen Werte.</p>
+<div class="grid">
+<div class="box"><strong>Ruhige Linie</strong><br/>Der Vorhang läuft gleichmäßig über das Bildfeld.</div>
+<div class="box"><strong>Steigender oder fallender Verlauf</strong><br/>Der Vorhang beschleunigt oder bremst während des Laufs.</div>
+<div class="box"><strong>Starker Unterschied zwischen Öffnen und Schließen</strong><br/>Die Schlitzbreite ändert sich über das Bildfeld und kann zu ungleichmäßiger Belichtung führen.</div>
+</div>
+</div>
+</section>
+<section class="card" id="repair">
+<div class="card-hdr"><h2>Reparatur bewerten</h2></div>
+<div class="card-body">
+<table><tbody>
+<tr><td>Alle Zeiten zu langsam oder zu schnell</td><td>Allgemeine Spannung, Zeitjustage oder Verschlussregulierung prüfen.</td></tr>
+<tr><td>Schnelle Zeiten ungleichmäßig</td><td>Vorhangspannung, Bremse, Schlitzbreite und Parallelität der Vorhänge prüfen.</td></tr>
+<tr><td>Langsame Zeiten unregelmäßig</td><td>Hemmwerk, alte Schmierung und Verzögerungsmechanik prüfen.</td></tr>
+<tr><td>Nur ein Teil der Sensorreihe wird belichtet</td><td>Auf Capping, Rückschlag, blockierten Lauf oder falsche Positionierung des Testers prüfen.</td></tr>
+<tr><td>Werte ändern sich nach mehreren Auslösungen</td><td>Alte Schmierung, klebende Lager oder schwache Federn können sich kurzzeitig lösen oder erwärmen.</td></tr>
+</tbody></table>
+<div class="ok">Nach einer Justage sind mehrere Wiederholungen bei derselben Zeit wichtiger als eine einzelne perfekte Auslösung.</div>
+</div>
+</section>
+<section class="card" id="flash">
+<div class="card-hdr"><h2>Blitzsynchronisation prüfen</h2></div>
+<div class="card-body">
+<ol>
+<li>Verbinde den Blitzsynchronkontakt der Kamera mit dem Tester.</li>
+<li>Nutze die X-Synchronisation oder die vom Servicemanual empfohlene Zeit.</li>
+<li>Führe eine Messung durch und prüfe, ob das Blitzsignal während der vollständigen Öffnung des Bildfensters liegt.</li>
+</ol>
+<div class="warn">Liegt das Blitzsignal außerhalb der totalen Öffnungszeit, kann der Synchronkontakt zu früh, zu spät, verschmutzt oder mechanisch verstellt sein.</div>
+<div class="warn">Stecke das Blitzsynchronkabel nicht in die Lampenbuchse. Die Lampenbuchse ist ein 12-V-Lampenausgang und kein Audio- oder Blitzanschluss.</div>
+<p class="small">Bei Schlitzverschlüssen sollte Blitzsynchronisation bei oder unterhalb der angegebenen Synchronzeit geprüft werden. Schnellere Zeiten belichten das Bild oft nur als wandernden Schlitz.</p>
+</div>
+</section>
+<section class="card">
+<div class="card-hdr"><h2>Test abschließen</h2></div>
+<div class="card-body">
+<p>Exportiere nach dem Test die CSV-Datei und lege sie zu den Reparaturnotizen. Sie dokumentiert gemessene Zeiten, Abweichungen, Streuung, Blitzprüfung und Bemerkungen für spätere Vergleiche.</p>
+</div>
+</section>
+</article>

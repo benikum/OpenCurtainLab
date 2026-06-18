@@ -1,0 +1,143 @@
+<article class="manual-page tutorial guide">
+<section class="hero">
+<div class="eyebrow">OpenCurtainLab Guide</div>
+<h1>Using the tester on cameras</h1>
+<p>This guide explains how to place OpenCurtainLab in or near the film plane, how to choose the correct shutter direction, how to run repeatable tests, and how to interpret the results when servicing cameras.</p>
+<div>
+<span class="badge">camera setup</span>
+<span class="badge">shutter testing</span>
+<span class="badge">repair assessment</span>
+<span class="badge">flash sync</span>
+</div>
+</section>
+<section class="card toc">
+<div class="card-hdr"><h2>Contents</h2></div>
+<div class="card-body grid">
+<a href="#prepare">Prepare the camera</a>
+<a href="#connector-safety">Connector safety</a>
+<a href="#position">Place the tester</a>
+<a href="#modes">Choose the direction</a>
+<a href="#run">Run a test</a>
+<a href="#read">Read the result</a>
+<a href="#charts">Use the charts</a>
+<a href="#repair">Assess repairs</a>
+<a href="#flash">Check flash sync</a>
+</div>
+</section>
+<section class="card" id="connector-safety">
+<div class="card-hdr"><h2>Connector safety</h2></div>
+<div class="card-body">
+<div class="warn"><strong>Warning:</strong> The lamp connector is not an audio connector. Do not connect headphones, audio equipment, microphones, or camera flash cables to the lamp socket. The lamp socket can carry 12 V and is only intended for the OpenCurtainLab lamp.</div>
+<p>The flash-sync connector and the lamp connector are separate functions. Check the symbols on the housing before connecting cables.</p>
+</div>
+</section>
+<section class="card" id="prepare">
+<div class="card-hdr"><h2>Prepare the camera</h2></div>
+<div class="card-body">
+<ol>
+<li>Set the camera to the shutter speed you want to test.</li>
+<li>Open the camera back or place the tester where the film or sensor would normally sit.</li>
+<li>Use a steady, even light source through the lens mount or front opening.</li>
+<li>Make sure no shutter blade, dark slide, mirror, or test fixture covers the sensor row before release.</li>
+<li>For mechanical shutters, fire the camera a few times before recording final values.</li>
+</ol>
+<div class="warn">Avoid flickering lamps and PWM LED light sources. They can create irregular sensor signals that look like shutter problems.</div>
+<div class="ok">For service work, measure each important speed several times. A single release can be misleading on old mechanical cameras.</div>
+</div>
+</section>
+<section class="card" id="position">
+<div class="card-hdr"><h2>Place the tester</h2></div>
+<div class="card-body">
+<p>Place the sensor row as close as possible to the film plane. The row should cross the image area in the same direction that the shutter travels.</p>
+<div class="grid">
+<div class="box"><strong>Focal-plane shutter</strong><br/>Align the row with the curtain travel. All five sensors should be illuminated before the shutter is released.</div>
+<div class="box"><strong>Leaf or central shutter</strong><br/>Place the tester in the image area and choose the central shutter mode. Curtain speed charts are not used for central shutters.</div>
+<div class="box"><strong>Lens shutter in a camera</strong><br/>Keep the aperture open enough that all sensors receive light. If the aperture clips the row, the measurement can look incomplete.</div>
+</div>
+</div>
+</section>
+<section class="card" id="modes">
+<div class="card-hdr"><h2>Choose the shutter direction</h2></div>
+<div class="card-body">
+<p>Select the direction in which the shutter opening travels across the tester.</p>
+<table><tbody>
+<tr><td>left</td><td>The opening travels from right to left across the sensor row. In the V(x) chart, 0 mm is shown on the right so the chart follows the travel direction.</td></tr>
+<tr><td>right</td><td>The opening travels from left to right.</td></tr>
+<tr><td>up</td><td>The opening travels from bottom to top.</td></tr>
+<tr><td>down</td><td>The opening travels from top to bottom. The vertical sensor spacing is used for the distance axis.</td></tr>
+<tr><td>central</td><td>Use this for leaf shutters and other shutters that open around the centre instead of travelling as curtains.</td></tr>
+</tbody></table>
+<div class="note">If the direction is wrong, exposure time may still be visible, but curtain speed and position charts will be misleading.</div>
+</div>
+</section>
+<section class="card" id="run">
+<div class="card-hdr"><h2>Run a test</h2></div>
+<div class="card-body">
+<ol>
+<li>Set the target speed on the device or in the connected interface.</li>
+<li>Wait until the device is ready.</li>
+<li>Release the camera shutter normally.</li>
+<li>Repeat the same speed several times before judging a repair.</li>
+<li>Test fast speeds, medium speeds, and slow speeds separately because they often fail for different reasons.</li>
+</ol>
+<div class="warn">If a sensor is already covered before release, the device cannot start a clean measurement. Check alignment and make sure light reaches all sensors.</div>
+</div>
+</section>
+<section class="card" id="read">
+<div class="card-hdr"><h2>Read the result</h2></div>
+<div class="card-body">
+<table><tbody>
+<tr><td>Measured exposure</td><td>The effective exposure time calculated from the sensor timings.</td></tr>
+<tr><td>Deviation EV</td><td>Difference from the selected target speed in stops. Positive values mean the exposure was longer; negative values mean it was shorter.</td></tr>
+<tr><td>Spread</td><td>Variation between sensors. A small spread means the frame is exposed evenly. A large spread points to capping, uneven slit width, or uneven curtain travel.</td></tr>
+<tr><td>Total open time</td><td>The time between the first part of the frame opening and the last part closing. This is useful for flash sync checks.</td></tr>
+<tr><td>Measurement hint</td><td>A warning about the captured release, for example incomplete sensor coverage or a timeout. Treat it as diagnostic information, not automatically as a device fault.</td></tr>
+</tbody></table>
+<div class="note">A camera can be consistently off but repeatable. That usually means adjustment is needed. Random variation usually means friction, sticking parts, weak springs, or an unstable slow-speed mechanism.</div>
+</div>
+</section>
+<section class="card" id="charts">
+<div class="card-hdr"><h2>Use the charts</h2></div>
+<div class="card-body">
+<p>The timeline shows when each sensor opened and closed. It is the fastest way to spot capping or an incomplete run.</p>
+<p>The V(x) chart shows local curtain speed over the sensor position. The measured points are calculated between neighbouring sensors. The line may be interpolated for easier reading, but the measured points are the important data.</p>
+<div class="grid">
+<div class="box"><strong>Smooth line</strong><br/>The curtain moves evenly across the frame.</div>
+<div class="box"><strong>Rising or falling trend</strong><br/>The curtain speeds up or slows down during travel.</div>
+<div class="box"><strong>Strong opening/closing difference</strong><br/>The slit width changes across the frame, which can create uneven exposure.</div>
+</div>
+</div>
+</section>
+<section class="card" id="repair">
+<div class="card-hdr"><h2>Assess repairs</h2></div>
+<div class="card-body">
+<table><tbody>
+<tr><td>All speeds too slow or too fast</td><td>Check general tension, timing adjustment, or shutter regulation.</td></tr>
+<tr><td>Fast speeds uneven</td><td>Check curtain tension, brake action, slit width, and curtain parallelism.</td></tr>
+<tr><td>Slow speeds irregular</td><td>Inspect the slow-speed escapement, old lubricant, and delayed release mechanisms.</td></tr>
+<tr><td>Only part of the sensor row is exposed</td><td>Look for capping, shutter bounce, blocked travel, or incorrect tester placement.</td></tr>
+<tr><td>Results change after repeated releases</td><td>Old lubrication, sticky bearings, or weak springs may be warming up or freeing temporarily.</td></tr>
+</tbody></table>
+<div class="ok">After adjustment, compare several repeated measurements at the same speed. Repeatability is often more important than one perfect release.</div>
+</div>
+</section>
+<section class="card" id="flash">
+<div class="card-hdr"><h2>Check flash sync</h2></div>
+<div class="card-body">
+<ol>
+<li>Connect the camera flash sync contact to the tester.</li>
+<li>Use the camera's X-sync setting or the speed recommended by the service manual.</li>
+<li>Run a measurement and check whether the flash event happens while the frame is fully open.</li>
+</ol>
+<div class="warn">If the flash event is outside the total opening time, the sync contact may be early, late, dirty, or mechanically misadjusted.</div>
+<div class="warn">Do not plug the flash-sync cable into the lamp socket. The lamp socket is a 12 V lamp output and is not an audio or flash-sync connector.</div>
+<p class="small">For focal-plane shutters, flash sync should be assessed at or below the camera's specified sync speed. Faster speeds often expose the frame as a travelling slit.</p>
+</div>
+</section>
+<section class="card">
+<div class="card-hdr"><h2>Finish the test</h2></div>
+<div class="card-body">
+<p>After the camera has been tested, export the CSV file and keep it with the repair notes. It documents the measured speeds, deviations, spread, flash result, and remarks for later comparison.</p>
+</div>
+</section>
+</article>

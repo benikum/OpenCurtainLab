@@ -1,0 +1,254 @@
+/*
+ * Defines raw sensor readings, flash readings, device status, network hints, measurement hints, and result summary structs.
+ */
+
+#pragma once
+#include <Arduino.h>
+#include "Config.h"
+#include "MeasurementMode.h"
+
+struct SensorReading {
+  uint8_t id = 0;
+  uint8_t pin = 0;
+
+  int rawValue = 0;
+  int baselineValue = 0;
+
+  bool isActive = false;
+  bool wasActivated = false;
+
+  int64_t openTimestamp = 0;
+  int64_t closeTimestamp = 0;
+  int64_t lastEdgeTimestamp = 0;
+
+  // Clears per-measurement sensor edge state while keeping pin and baseline data.
+  void resetMeasurement() {
+    isActive = false;
+    wasActivated = false;
+    openTimestamp = 0;
+    closeTimestamp = 0;
+    lastEdgeTimestamp = 0;
+  }
+
+  // Resets the sensor structure while preserving its id and pin assignment.
+  void reset() {
+    const uint8_t oldId = id;
+    const uint8_t oldPin = pin;
+    *this = SensorReading();
+    id = oldId;
+    pin = oldPin;
+  }
+};
+
+struct FlashReading {
+  uint8_t pin = PIN_FLASH_SENSOR;
+  int rawValue = HIGH;
+  int baselineValue = HIGH;
+
+  bool isActive = false;
+  bool detected = false;
+  bool triggeredThisUpdate = false;
+
+  int64_t triggerTimestamp = 0;
+
+  // Clears per-measurement flash trigger state while keeping pin and baseline data.
+  void resetMeasurement() {
+    detected = false;
+    triggeredThisUpdate = false;
+    triggerTimestamp = 0;
+  }
+
+  // Resets the flash structure to its idle electrical state.
+  void reset() {
+    pin = PIN_FLASH_SENSOR;
+    rawValue = HIGH;
+    baselineValue = HIGH;
+    isActive = false;
+    resetMeasurement();
+  }
+};
+
+enum class DeviceSubsystem : uint8_t {
+  None,
+  Sensor,
+  Network,
+  Storage,
+  Display,
+  Lamp
+};
+
+// Converts a device subsystem to its API key.
+static inline const char* deviceSubsystemKey(DeviceSubsystem subsystem) {
+  switch (subsystem) {
+    case DeviceSubsystem::None: return "none";
+    case DeviceSubsystem::Sensor: return "sensor";
+    case DeviceSubsystem::Network: return "network";
+    case DeviceSubsystem::Storage: return "storage";
+    case DeviceSubsystem::Display: return "display";
+    case DeviceSubsystem::Lamp: return "lamp";
+  }
+  return "unknown";
+}
+
+enum class DeviceError : uint8_t {
+  None,
+  SensorBaselineTooLow,
+  NetworkAccessPointFailed,
+  DisplayInitFailed,
+  LampConnectorMiswired
+};
+
+struct DeviceStatus {
+  DeviceError error = DeviceError::None;
+  DeviceSubsystem subsystem = DeviceSubsystem::None;
+
+  // Returns whether the status contains a device-level error.
+  bool hasError() const { return error != DeviceError::None; }
+};
+
+// Converts a device-level error to its API key.
+static inline const char* deviceErrorKey(DeviceError error) {
+  switch (error) {
+    case DeviceError::None: return "none";
+    case DeviceError::SensorBaselineTooLow: return "sensor_baseline_too_low";
+    case DeviceError::NetworkAccessPointFailed: return "network_access_point_failed";
+    case DeviceError::DisplayInitFailed: return "display_init_failed";
+    case DeviceError::LampConnectorMiswired: return "lamp_connector_miswired";
+  }
+  return "unknown";
+}
+
+// Converts a device-level error to display text.
+static inline const char* deviceErrorText(DeviceError error) {
+  switch (error) {
+    case DeviceError::None: return "";
+    case DeviceError::SensorBaselineTooLow: return "Sensor baseline too low";
+    case DeviceError::NetworkAccessPointFailed: return "Setup access point failed";
+    case DeviceError::DisplayInitFailed: return "Display initialization failed";
+    case DeviceError::LampConnectorMiswired: return "Lamp connector is shorted or plugged into the flash contact";
+  }
+  return "Unknown device error";
+}
+
+enum class NetworkHint : uint8_t {
+  None,
+  NoCredentials,
+  AccessPointActive,
+  ConnectionFailed,
+  Reconnecting,
+  MdnsFailed
+};
+
+// Converts a network hint to its API key.
+static inline const char* networkHintKey(NetworkHint hint) {
+  switch (hint) {
+    case NetworkHint::None: return "none";
+    case NetworkHint::NoCredentials: return "no_credentials";
+    case NetworkHint::AccessPointActive: return "access_point_active";
+    case NetworkHint::ConnectionFailed: return "connection_failed";
+    case NetworkHint::Reconnecting: return "reconnecting";
+    case NetworkHint::MdnsFailed: return "mdns_failed";
+  }
+  return "unknown";
+}
+
+// Converts a network hint to display/API text.
+static inline const char* networkHintText(NetworkHint hint) {
+  switch (hint) {
+    case NetworkHint::None: return "";
+    case NetworkHint::NoCredentials: return "No saved WiFi credentials";
+    case NetworkHint::AccessPointActive: return "Setup access point is active";
+    case NetworkHint::ConnectionFailed: return "WiFi connection failed";
+    case NetworkHint::Reconnecting: return "WiFi reconnecting";
+    case NetworkHint::MdnsFailed: return "mDNS responder failed";
+  }
+  return "Unknown network hint";
+}
+
+enum class MeasurementHint : uint8_t {
+  None,
+  SensorAlreadyActiveAtStart,
+  FlashWithoutSensor,
+  TimeoutWithData,
+  IncompleteSensorCoverage
+};
+
+// Converts a measurement hint to its API key.
+static inline const char* measurementHintKey(MeasurementHint hint) {
+  switch (hint) {
+    case MeasurementHint::None: return "none";
+    case MeasurementHint::SensorAlreadyActiveAtStart: return "sensor_already_active_at_start";
+    case MeasurementHint::FlashWithoutSensor: return "flash_without_sensor";
+    case MeasurementHint::TimeoutWithData: return "timeout_with_data";
+    case MeasurementHint::IncompleteSensorCoverage: return "incomplete_sensor_coverage";
+  }
+  return "unknown";
+}
+
+// Converts a measurement hint to display text.
+static inline const char* measurementHintText(MeasurementHint hint) {
+  switch (hint) {
+    case MeasurementHint::None: return "";
+    case MeasurementHint::SensorAlreadyActiveAtStart: return "Sensor already active at start";
+    case MeasurementHint::FlashWithoutSensor: return "Flash contact triggered, but no sensor activated";
+    case MeasurementHint::TimeoutWithData: return "Timeout: measurement finished with available raw data";
+    case MeasurementHint::IncompleteSensorCoverage: return "Incomplete measurement: not all sensors were covered";
+  }
+  return "Unknown measurement hint";
+}
+
+struct SensorDisplaySummary {
+  float measuredSeconds = 0.0f;
+  int measuredFraction = 0;
+  float deviationStops = 0.0f;
+
+  // Clears the OLED calculation values for one sensor.
+  void reset() {
+    measuredSeconds = 0.0f;
+    measuredFraction = 0;
+    deviationStops = 0.0f;
+  }
+};
+
+struct DisplayResultSummary {
+  bool valid = false;
+  int activatedCount = 0;
+  float avgSeconds = 0.0f;
+  int avgFraction = 0;
+  float avgDeviationStops = 0.0f;
+  float spreadStops = 0.0f;
+  SensorDisplaySummary sensors[SENSOR_COUNT];
+
+  // Clears the OLED result summary and all per-sensor display summaries.
+  void reset() {
+    valid = false;
+    activatedCount = 0;
+    avgSeconds = 0.0f;
+    avgFraction = 0;
+    avgDeviationStops = 0.0f;
+    spreadStops = 0.0f;
+    for (int i = 0; i < SENSOR_COUNT; i++) sensors[i].reset();
+  }
+};
+
+struct MeasurementResult {
+  bool valid = false;
+  int activatedCount = 0;
+
+  int64_t baseTimestamp = 0;
+  SensorReading sensors[SENSOR_COUNT];
+  FlashReading flash;
+  MeasurementMode mode = MeasurementMode::LEFT;
+  MeasurementHint hint = MeasurementHint::None;
+
+  // Clears the raw measurement result, including all sensors, flash data, mode, and hint.
+  void reset() {
+    valid = false;
+    activatedCount = 0;
+    baseTimestamp = 0;
+    for (int i = 0; i < SENSOR_COUNT; i++) sensors[i].reset();
+    flash.reset();
+    mode = MeasurementMode::LEFT;
+    hint = MeasurementHint::None;
+  }
+};

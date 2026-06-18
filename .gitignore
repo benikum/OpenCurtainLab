@@ -1,0 +1,43 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# PlatformIO, falls später genutzt
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+
+# Arduino / build output
+build/
+*.elf
+*.bin
+*.hex
+*.map
+
+# Logs / temporary files
+*.log
+*.tmp
+tmp_*
+temp_*
+
+# Node, falls später Tools dazukommen
+node_modules/
+npm-debug.log*
+
+# Local environment files
+.env
+.env.local

@@ -13,7 +13,7 @@ Development source layout:
   web/tutorial/en.html
 
 Output:
-  web/compiled/opencurtainlab.html
+  web/compiled/compiled-v<APP_VERSION>.html
 
 The generated file has no CSS/JS/i18n/tutorial asset dependencies and can be
 opened locally with file:// or downloaded from a release page. By default the
@@ -49,7 +49,21 @@ def discover_project_root(start: Path | None = None) -> Path:
 
 ROOT = discover_project_root()
 WEB = ROOT / 'web'
-DEFAULT_OUT = WEB / 'compiled' / 'opencurtainlab.html'
+
+default_version_re = re.compile(r"const\s+APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]")
+
+def discover_app_version() -> str:
+    try:
+        text = (WEB / 'js' / 'state-storage.js').read_text(encoding='utf-8')
+        match = default_version_re.search(text)
+        if match:
+            return match.group(1)
+    except OSError:
+        pass
+    return '0.1.0'
+
+
+DEFAULT_OUT = WEB / 'compiled' / f'compiled-v{discover_app_version()}.html'
 
 
 def debug_enabled(explicit: bool = False) -> bool:

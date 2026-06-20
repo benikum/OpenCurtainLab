@@ -129,9 +129,9 @@ curl http://opencurtainlab.local/config
   "targetTimesStandard": [1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000, 2000],
   "targetTimesCustom": [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2000],
   "targetTimes": [1, 2, 4, 8, 15, 30, 60, 125, 250, 500, 1000, 2000],
-  "modes": ["left", "down", "right", "up", "central"],
+  "modes": ["vertical", "horizontal", "central"],
   "settings": {
-    "defaultMeasurementMode": "left",
+    "defaultMeasurementMode": "horizontal",
     "defaultTargetTime": 500,
     "sensorSensitivity": "medium",
     "resultDisplay": "until_button",
@@ -139,8 +139,8 @@ curl http://opencurtainlab.local/config
     "customTargetTimes": [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2000],
     "oledSleepMinutes": 5
   },
-  "githubProjectUrl": "https://github.com/your-user/OpenCurtainLab",
-  "webAppUrl": "https://your-user.github.io/OpenCurtainLab/en/"
+  "githubProjectUrl": "https://github.com/benikum/OpenCurtainLab",
+  "webAppUrl": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.0.html"
 }
 ```
 
@@ -156,7 +156,7 @@ Applies partial runtime settings. Only fields that should change need to be sent
 curl -X POST http://opencurtainlab.local/config \
   -H "Content-Type: application/json" \
   -d '{
-    "defaultMeasurementMode": "right",
+    "defaultMeasurementMode": "vertical",
     "defaultTargetTime": 250,
     "sensorSensitivity": "high",
     "resultDisplay": "5s",
@@ -173,7 +173,7 @@ curl -X POST http://opencurtainlab.local/config \
   "ok": true,
   "changed": true,
   "settings": {
-    "defaultMeasurementMode": "right",
+    "defaultMeasurementMode": "vertical",
     "defaultTargetTime": 250,
     "sensorSensitivity": "high",
     "resultDisplay": "5s",
@@ -188,7 +188,7 @@ curl -X POST http://opencurtainlab.local/config \
 
 | Field | Type | Values |
 |---|---|---|
-| `defaultMeasurementMode` | string | `left`, `down`, `right`, `up`, `central` |
+| `defaultMeasurementMode` | string | `vertical`, `horizontal`, `central` |
 | `defaultTargetTime` | integer | Exposure denominator, for example `500` for 1/500 s |
 | `sensorSensitivity` | string | `low`, `medium`, `high` |
 | `resultDisplay` | string | `until_button`, `2s`, `5s`, `10s`, `none` |
@@ -215,7 +215,7 @@ curl http://opencurtainlab.local/data
 ```json
 {
   "measCount": 0,
-  "mode": "left",
+  "mode": "horizontal",
   "target": 500,
   "valid": false
 }
@@ -226,11 +226,13 @@ curl http://opencurtainlab.local/data
 ```json
 {
   "measCount": 7,
-  "mode": "left",
+  "mode": "horizontal",
   "target": 500,
   "valid": true,
   "id": "m_123456_7",
   "baseUs": 987654321,
+  "sensorDistanceXmm": 13.17,
+  "sensorDistanceYmm": 7.67,
   "sensors": [
     { "id": 0, "activated": true, "raw": 2340, "baseline": 3150, "openUs": 987654321, "closeUs": 987656400 },
     { "id": 1, "activated": true, "raw": 2310, "baseline": 3140, "openUs": 987654450, "closeUs": 987656530 },
@@ -478,7 +480,7 @@ In AP mode these paths serve the setup portal:
 /ncsi.txt
 ```
 
-In station mode the same browser-style root routes try to proxy the remote single-file WebUI from `WEB_APP_URL` and serve it as `text/html` from the ESP32 origin. If the proxy fails before response headers are sent, the firmware falls back to a normal redirect to `WEB_APP_URL`.
+In station mode the same browser-style root routes try to proxy the versioned remote single-file WebUI from `WEB_APP_URL` and serve it as `text/html` from the ESP32 origin. The proxied response keeps the client-facing filename `opencurtainlab.html`. If the proxy fails before response headers are sent, the firmware falls back to a normal redirect to `WEB_APP_URL`.
 
 ## CORS preflight
 

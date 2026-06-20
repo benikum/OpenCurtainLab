@@ -8,11 +8,11 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include "Config.h"
-#include "MeasurementMode.h"
+#include "MeasurementTypes.h"
 #include "TargetTimes.h"
 
 struct RuntimeSettings {
-  MeasurementMode defaultMode = MeasurementMode::LEFT;
+  MeasurementMode defaultMode = MeasurementMode::HORIZONTAL;
   int defaultTargetTime = DEFAULT_TARGET_TIME;
   String sensorSensitivity = DEFAULT_SENSOR_SENSITIVITY;
   String resultDisplayMode = DEFAULT_RESULT_DISPLAY;

@@ -4,7 +4,7 @@
 function applyDeviceStatus(status) {
   if (!status) return;
 
-  // Firmware v10 exposes structured status data while keeping older top-level fields for compatibility.
+  // Current firmware exposes structured status data while keeping older top-level fields for compatibility.
   if (status.deviceStatus) {
     S.deviceStatus = Object.assign({ error: 'none', errorText: '', subsystem: 'none' }, status.deviceStatus);
   } else {
@@ -27,6 +27,13 @@ function applyDeviceStatus(status) {
     hint: 'none',
     hintText: ''
   }, network);
+
+  S.deviceRuntime = Object.assign({}, S.deviceRuntime || {}, {
+    uptime: Number.isFinite(Number(status.uptime)) ? Number(status.uptime) : null,
+    measCount: Number.isFinite(Number(status.measCount)) ? Number(status.measCount) : null,
+    device: status.device || (S.deviceConfig && S.deviceConfig.device) || '',
+    version: status.version || (S.deviceConfig && S.deviceConfig.version) || ''
+  });
 
   notifyDeviceStatusChanges();
   renderDeviceConfigSummary();
@@ -65,16 +72,18 @@ function connectionLabelForState(state) {
   return tx('connection.connecting', 'CONNECTING...');
 }
 
-// Check the local WebUI version file in development mode.
+// Check the remote project version through the device proxy to avoid browser CORS issues.
 async function checkAppVersion() {
   try {
-    const r = await fetch(VERSION_URL + '?t=' + Date.now(), { cache:'no-store' });
+    const base = S.deviceBase || '';
+    const url = base ? api(VERSION_PATH) : VERSION_PATH;
+    const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store', mode:'cors', signal: AbortSignal.timeout(2200) });
     if (!r.ok) return;
     S.cdnVersion = cleanVersion(await r.text());
     updateVersionWarnings(true);
     renderDeviceConfigSummary();
   } catch(e) {
-    // Offline use is supported; absence of version.txt only disables CDN version checks.
+    // Offline use is supported; absence of /version only disables update checks.
   }
 }
 
@@ -165,7 +174,9 @@ function buildEntryFromPacket(d) {
       count: 0,
       sensors: [],
       flash: d.flash || null,
-      projId: activeProjectIdForMeasurement(d.target || null, d.mode || 'left'),
+      sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
+      sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
+      projId: activeProjectIdForMeasurement(d.target || null, normalizeMeasurementMode(d.mode)),
       raw: d,
     };
   }
@@ -224,7 +235,7 @@ function buildEntryFromPacket(d) {
       valid: true,
       ts: Date.now(),
       targetFrac: target,
-      mode: d.mode || 'left',
+      mode: normalizeMeasurementMode(d.mode),
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 && targetSec > 0 ? Math.log2(avgSec / targetSec) : 0,
@@ -232,10 +243,12 @@ function buildEntryFromPacket(d) {
       count: act.length,
       sensors,
       flash,
+      sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
+      sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
-      projId: activeProjectIdForMeasurement(target, d.mode || 'left'),
+      projId: activeProjectIdForMeasurement(target, normalizeMeasurementMode(d.mode)),
       raw: d,
     };
     entry.flashSyncOk = isFlashSyncOk(entry);
@@ -255,11 +268,13 @@ function buildEntryFromPacket(d) {
     count:       d.activatedCount,
     sensors:     d.sensors,
     flash:       d.flash || null,
+    sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
+    sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
     hint:        d.hint || 'none',
     hintText:    d.hintText || '',
     warning:     d.hintText || d.warning || d.error || '',
-    mode:        d.mode || 'left',
-    projId:      activeProjectIdForMeasurement(d.target, d.mode || 'left'),
+    mode:        normalizeMeasurementMode(d.mode),
+    projId:      activeProjectIdForMeasurement(d.target, normalizeMeasurementMode(d.mode)),
     raw:         d,
   };
   entry.flashSyncOk = isFlashSyncOk(entry);
@@ -283,8 +298,34 @@ function autoProjectIdForTarget(targetFrac, mode) {
 
 // Return a localized label for a measurement mode.
 function modeLabel(mode) {
-  const m = MODES.find(x => x.key === mode);
-  return m ? tx(m.labelKey, m.fallback) : tx('modes.left', 'left');
+  const normalizedMode = normalizeMeasurementMode(mode);
+  const m = MODES.find(x => x.key === normalizedMode);
+  return m ? tx(m.labelKey, m.fallback) : tx('modes.horizontal', 'horizontal');
+}
+
+// Return the automatically detected travel direction for a measurement entry.
+function detectedTravelDirectionLabel(entry) {
+  const mode = normalizeMeasurementMode(entry && entry.mode);
+  if (!entry || mode === 'central') return '';
+  const sensors = (entry.sensors || [])
+    .map((sensor, index) => ({ ...sensor, index: Number.isFinite(Number(sensor.id)) ? Number(sensor.id) : index }))
+    .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs))
+    .sort((a, b) => a.openMs - b.openMs);
+  if (sensors.length < 2) return '';
+  const first = sensors[0].index;
+  const last = sensors[sensors.length - 1].index;
+  if (first === last) return '';
+  if (mode === 'vertical') {
+    return first < last ? tx('directions.topDown', 'top → bottom') : tx('directions.bottomTop', 'bottom → top');
+  }
+  return first < last ? tx('directions.leftRight', 'left → right') : tx('directions.rightLeft', 'right → left');
+}
+
+// Return a measurement-mode label with detected direction when available.
+function measurementModeSummary(entry) {
+  const base = modeLabel(entry && entry.mode);
+  const direction = detectedTravelDirectionLabel(entry);
+  return direction ? `${base} · ${direction}` : base;
 }
 
 // Return a localized label for a target-time series.
@@ -346,7 +387,7 @@ function createProj() {
   }
   const times = [...document.querySelectorAll('.t-tog.on')].map(e => +e.dataset.t).filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
   if (!times.length) { toast(tx('toast.noTargetTimesSelected', 'Select at least one target time'), 'warning'); return; }
-  const mode = document.getElementById('proj-mode').value || 'left';
+  const mode = normalizeMeasurementMode(document.getElementById('proj-mode').value);
   const seriesEl = document.getElementById('proj-series');
   const targetSeries = seriesEl && seriesEl.value === 'custom' ? 'custom' : 'standard';
   const p = {
@@ -446,7 +487,7 @@ function renderHistList() {
     return `<div class="h-entry ${sel}" id="he-${e.id}" onclick="selectEntry('${e.id}')">
       <div class="h-time">1/${e.avgFrac}</div>
       <div class="h-dev ${dc}">${ds}<br><span style="font-size:9px;opacity:0.6">EV</span></div>
-      <div class="h-meta">${ts} · ${modeLabel(e.mode)} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.${e.warning ? ' · ' + tx('labels.warning', 'Warning') : ''}</div>
+      <div class="h-meta">${ts} · ${measurementModeSummary(e)} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.${e.warning ? ' · ' + tx('labels.warning', 'Warning') : ''}</div>
     </div>`;
   }).join('');
 }
@@ -473,7 +514,7 @@ function renderDetailView(id) {
   const ts  = new Date(e.ts).toLocaleString(uiLocale());
   const ds  = (e.avgDev>=0?'+':'') + e.avgDev.toFixed(3);
   const devC = devColor(e.avgDev);
-  const isCentral = (e.mode === 'central');
+  const isCentral = (normalizeMeasurementMode(e.mode) === 'central');
 
   // Sensor boxes
   const sboxes = e.sensors.map((s,i) => {
@@ -497,6 +538,7 @@ function renderDetailView(id) {
   // Persist note
   const noteKey = 'note_' + id;
 
+  setSettingsNavActive(false);
   setContentEmptyView(false);
   setContentFlush(false);
   const moveToDefaultAction = e.projId === DEFAULT_PROJECT_ID ? '' : `<button class="btn btn-ghost btn-sm" onclick="moveMeasurementToDefault('${id}')">${esc(tx('measurement.moveToDefault', 'Move to default project'))}</button>`;
@@ -505,7 +547,7 @@ function renderDetailView(id) {
     <!-- Summary -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">${tx('cards.measurement', 'Measurement')} — ${ts} — ${modeLabel(e.mode)}</span>
+        <span class="card-title">${tx('cards.measurement', 'Measurement')} — ${ts} — ${measurementModeSummary(e)}</span>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
           ${moveToDefaultAction}
           <span style="font-size:10px;color:var(--tx4)">${e.id}</span>

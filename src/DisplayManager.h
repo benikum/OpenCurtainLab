@@ -7,7 +7,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "Config.h"
-#include "MeasurementMode.h"
 #include "MeasurementTypes.h"
 
 class DisplayManager {
@@ -293,25 +292,32 @@ private:
     _display.drawBitmap(x, y, LOGO_BITMAP, LOGO_BITMAP_WIDTH, LOGO_BITMAP_HEIGHT, SSD1306_WHITE);
   }
 
-  // Draws the shutter travel mode icon inside a fixed frame.
+  // Draws the shutter measurement mode icon inside a fixed frame.
   void _drawModeIcon(MeasurementMode mode, int x, int y) {
-  _display.drawRect(x, y, 21, 15, SSD1306_WHITE);
+    _display.drawRect(x, y, 21, 15, SSD1306_WHITE);
 
-  int cx = x + 10, cy = y + 7;
-  if (mode == MeasurementMode::CENTRAL) {
-    _display.drawCircle(cx, cy, 5, SSD1306_WHITE);
-    _display.fillCircle(cx, cy, 1, SSD1306_WHITE);
-    return;
+    const int cx = x + 10;
+    const int cy = y + 7;
+    if (mode == MeasurementMode::CENTRAL) {
+      _display.drawCircle(cx, cy, 5, SSD1306_WHITE);
+      _display.fillCircle(cx, cy, 1, SSD1306_WHITE);
+      return;
+    }
+
+    if (mode == MeasurementMode::VERTICAL) {
+      _display.drawLine(cx, y + 3, cx, y + 11, SSD1306_WHITE);
+      _display.drawLine(cx, y + 3, cx - 3, y + 6, SSD1306_WHITE);
+      _display.drawLine(cx, y + 3, cx + 3, y + 6, SSD1306_WHITE);
+      _display.drawLine(cx, y + 11, cx - 3, y + 8, SSD1306_WHITE);
+      _display.drawLine(cx, y + 11, cx + 3, y + 8, SSD1306_WHITE);
+      return;
+    }
+
+    _display.drawLine(x + 4, cy, x + 16, cy, SSD1306_WHITE);
+    _display.drawLine(x + 4, cy, x + 7, cy - 3, SSD1306_WHITE);
+    _display.drawLine(x + 4, cy, x + 7, cy + 3, SSD1306_WHITE);
+    _display.drawLine(x + 16, cy, x + 13, cy - 3, SSD1306_WHITE);
+    _display.drawLine(x + 16, cy, x + 13, cy + 3, SSD1306_WHITE);
   }
 
-  int dx = 0, dy = 0;
-  if (mode == MeasurementMode::LEFT) dx = -1;
-  if (mode == MeasurementMode::RIGHT) dx = 1;
-  if (mode == MeasurementMode::UP) dy = -1;
-  if (mode == MeasurementMode::DOWN) dy = 1;
-
-  _display.drawLine(cx - dx * 5, cy - dy * 5, cx + dx * 5, cy + dy * 5, SSD1306_WHITE);
-  _display.drawLine(cx + dx * 5, cy + dy * 5, cx + dx * 2 - dy * 3, cy + dy * 2 + dx * 3, SSD1306_WHITE);
-  _display.drawLine(cx + dx * 5, cy + dy * 5, cx + dx * 2 + dy * 3, cy + dy * 2 - dx * 3, SSD1306_WHITE);
-}
 };

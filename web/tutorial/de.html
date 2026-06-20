@@ -16,7 +16,7 @@
 <a href="#prepare">Kamera vorbereiten</a>
 <a href="#connector-safety">Anschlüsse sicher verwenden</a>
 <a href="#position">Tester positionieren</a>
-<a href="#modes">Richtung wählen</a>
+<a href="#modes">Messmodus wählen</a>
 <a href="#run">Messung durchführen</a>
 <a href="#read">Ergebnis lesen</a>
 <a href="#charts">Diagramme nutzen</a>
@@ -57,17 +57,15 @@
 </div>
 </section>
 <section class="card" id="modes">
-<div class="card-hdr"><h2>Verschlussrichtung wählen</h2></div>
+<div class="card-hdr"><h2>Messmodus wählen</h2></div>
 <div class="card-body">
-<p>Wähle die Richtung, in der die Öffnung des Verschlusses über den Tester läuft.</p>
+<p>Wähle nur die Messgeometrie. Die Laufrichtung erkennt die WebUI aus dem Sensor, der zuerst öffnet.</p>
 <table><tbody>
-<tr><td>nach links</td><td>Die Öffnung läuft von rechts nach links. Im V(x)-Diagramm liegt 0 mm rechts, damit das Diagramm der Laufrichtung folgt.</td></tr>
-<tr><td>nach rechts</td><td>Die Öffnung läuft von links nach rechts.</td></tr>
-<tr><td>nach oben</td><td>Die Öffnung läuft von unten nach oben.</td></tr>
-<tr><td>nach unten</td><td>Die Öffnung läuft von oben nach unten. Für die Positionsachse wird der vertikale Sensorabstand genutzt.</td></tr>
+<tr><td>Vertikal</td><td>Für Verschlüsse, deren Öffnung über die vertikale Sensorachse läuft.</td></tr>
+<tr><td>Horizontal</td><td>Für Verschlüsse, deren Öffnung über die horizontale Sensorachse läuft.</td></tr>
 <tr><td>Zentralverschluss</td><td>Für Lamellenverschlüsse und andere Verschlüsse, die um die Mitte öffnen statt als Vorhänge zu laufen.</td></tr>
 </tbody></table>
-<div class="note">Wenn die Richtung falsch gewählt ist, kann die Belichtungszeit trotzdem sichtbar sein, aber Vorhanggeschwindigkeit und Positionsdiagramm werden irreführend.</div>
+<div class="note">Die erkannte Richtung wird aus der Reihenfolge der Sensorflanken abgeleitet.</div>
 </div>
 </section>
 <section class="card" id="run">

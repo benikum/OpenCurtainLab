@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include "src/Config.h"
-#include "src/MeasurementMode.h"
+#include "src/MeasurementTypes.h"
 #include "src/TargetTimes.h"
 #include "src/RuntimeSettings.h"
 #include "src/SensorManager.h"
@@ -32,7 +32,7 @@ AppState appState = AppState::READY;
 int targetIndex = 0;
 int targetFraction = DEFAULT_TARGET_TIME;
 TargetSeries targetSeries = TargetSeries::Standard;
-MeasurementMode measureMode = MeasurementMode::LEFT;
+MeasurementMode measureMode = MeasurementMode::HORIZONTAL;
 String resultDisplayMode = DEFAULT_RESULT_DISPLAY;
 int oledSleepMinutes = DEFAULT_OLED_SLEEP_MINUTES;
 
@@ -51,7 +51,7 @@ const unsigned long READY_ARM_RETRY_MS = 250;
 MeasurementResult displayedResult;
 DisplayResultSummary displayedSummary;
 int displayedTargetFraction = DEFAULT_TARGET_TIME;
-MeasurementMode displayedMode = MeasurementMode::LEFT;
+MeasurementMode displayedMode = MeasurementMode::HORIZONTAL;
 
 uint8_t menuIndex = 0;
 const uint8_t MENU_COUNT = 5;
@@ -103,8 +103,6 @@ void setup() {
   Serial.println(F("     OpenCurtainLab ESP32"));
   Serial.println(F("=============================="));
 
-  pinMode(PIN_LED_ARRAY, OUTPUT);
-  digitalWrite(PIN_LED_ARRAY, LOW);
   pinMode(PIN_LAMP_SENSE, INPUT_PULLUP);
 
   const bool displayOk = displayManager.begin();
@@ -477,10 +475,7 @@ void setAppState(AppState next) {
 // Returns true only for device errors that should block measurement capture before a new start attempt.
 bool hasBlockingDeviceError() {
   const DeviceError err = currentDeviceError();
-  // Display faults do not prevent sensor/API operation.
-  // Lamp connector faults are rechecked on every lamp-on attempt so users can fix the cable without rebooting.
   return err != DeviceError::None
-      && err != DeviceError::DisplayInitFailed
       && err != DeviceError::LampConnectorMiswired;
 }
 
@@ -683,7 +678,7 @@ String menuDraftJson() {
 void refreshDisplay() {
   if (oledSleeping) return;
 
-  // Only the four user-visible app states draw screens; MEASURING is drawn once before the critical loop.
+  // Only the four user-visible app states draw screens
   switch (appState) {
     case AppState::READY: {
       const String net = webServer.getNetworkLine();
@@ -693,7 +688,6 @@ void refreshDisplay() {
     }
 
     case AppState::MEASURING:
-      // Do not update or clear the OLED during a measurement.
       return;
 
     case AppState::RESULTS:

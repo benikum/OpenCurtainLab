@@ -98,7 +98,7 @@ async function loadSourceI18n() {
     }
   }
 
-  console.warn('OpenCurtainLab i18n files could not be loaded. Serve web/ through a local HTTP server or build/open web/compiled/opencurtainlab.html.', OCL_I18N_LOAD_ERROR);
+  console.warn('OpenCurtainLab i18n files could not be loaded. Serve web/ through a local HTTP server or build/open web/compiled/compiled-v0.1.0.html.', OCL_I18N_LOAD_ERROR);
   OCL_I18N_ALL = OCL_I18N_ALL || null;
   return false;
 }

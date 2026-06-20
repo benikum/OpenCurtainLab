@@ -9,25 +9,23 @@ const ID_COLORS = ['#f5b030','#68a8e0','#56c47e','#e86060','#c47aff'];
 const ID_BG     = ['rgba(245,176,48,0.18)','rgba(104,168,224,0.18)',
                        'rgba(86,196,126,0.18)','rgba(232,96,96,0.18)','rgba(196,122,255,0.18)'];
 const POLL_MS = 1000;
-const STATUS_POLL_MS = 3000;
+const STATUS_POLL_MS = 20000;
 const LS_HISTORY_KEY = 'ocl_history_v1';
 const LS_PROJECTS_KEY = 'ocl_projects_v1';
 const LS_DEVICE_KEY = 'ocl_device_config_v1';
 const LS_UI_KEY = 'ocl_ui_settings_v1';
 const DEFAULT_PROJECT_ID = 'p_default';
 const APP_VERSION = '0.1.0';
-const VERSION_URL = 'https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/version.txt';
+const VERSION_PATH = '/version';
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
 const MODES = [
-  {key:'left', labelKey:'modes.left', fallback:'left'},
-  {key:'down', labelKey:'modes.down', fallback:'down'},
-  {key:'right', labelKey:'modes.right', fallback:'right'},
-  {key:'up', labelKey:'modes.up', fallback:'up'},
+  {key:'vertical', labelKey:'modes.vertical', fallback:'vertical'},
+  {key:'horizontal', labelKey:'modes.horizontal', fallback:'horizontal'},
   {key:'central', labelKey:'modes.central', fallback:'central shutter'},
 ];
 const DEFAULT_DEVICE_SETTINGS = {
-  defaultMeasurementMode: 'left',
+  defaultMeasurementMode: 'horizontal',
   defaultTargetTime: 500,
   sensorSensitivity: 'medium',
   resultDisplay: 'until_button',
@@ -57,6 +55,7 @@ let S = {
   deviceConfig: null,
   deviceStatus: { error: 'none', errorText: '', subsystem: 'none' },
   networkStatus: { hint: 'none', hintText: '', connected: false, apMode: false, mdnsStarted: false },
+  deviceRuntime: { uptime: null, measCount: null, device: '', version: '' },
   lastStatusAt: 0,
   lastDeviceErrorNotice: '',
   lastNetworkHintNotice: '',
@@ -71,8 +70,6 @@ let S = {
   settingsDirty: false,
   settingsSaving: false,
   deviceSettings: Object.assign({}, DEFAULT_DEVICE_SETTINGS),
-  sensorDistanceXmm: 7.62,
-  sensorDistanceYmm: 5.08,
   targetTimes: ALL_TIMES.filter(t => t <= 1000),
   uiSettings: Object.assign({}, DEFAULT_UI_SETTINGS),
 };
@@ -137,16 +134,24 @@ function projectById(id) {
   return S.projects.find(p => p.id === id) || null;
 }
 
+// Normalize a measurement mode key to one of the supported current geometries.
+function normalizeMeasurementMode(mode) {
+  const key = String(mode || '').toLowerCase();
+  if (key === 'vertical') return 'vertical';
+  if (key === 'central') return 'central';
+  return 'horizontal';
+}
+
 // Check whether a project accepts a measurement packet based on mode and target series.
 function projectSupportsMeasurement(p, targetFrac, mode) {
   if (!p) return false;
   if (isDefaultProject(p)) return true;
 
   const target = Number(targetFrac || 0);
-  const normalizedMode = mode || 'left';
+  const normalizedMode = normalizeMeasurementMode(mode);
   const times = Array.isArray(p.times) ? p.times.map(Number) : [];
 
-  return String(p.mode || '') === String(normalizedMode) &&
+  return normalizeMeasurementMode(p.mode) === normalizedMode &&
          target > 0 &&
          times.includes(target);
 }
@@ -220,8 +225,6 @@ function saveDeviceConfigLocal() {
     deviceBase: S.deviceBase || '',
     deviceConfig: S.deviceConfig || null,
     deviceSettings: S.deviceSettings || null,
-    sensorDistanceXmm: S.sensorDistanceXmm,
-    sensorDistanceYmm: S.sensorDistanceYmm,
     targetTimes: S.targetTimes
   });
 }
@@ -275,8 +278,6 @@ function load() {
   S.deviceConfig = deviceStore.deviceConfig || null;
   S.deviceSettings = sanitizeDeviceSettings(deviceStore.deviceSettings || {});
   S.uiSettings = sanitizeUiSettings(uiStore);
-  if (deviceStore.sensorDistanceXmm) S.sensorDistanceXmm = Number(deviceStore.sensorDistanceXmm);
-  if (deviceStore.sensorDistanceYmm) S.sensorDistanceYmm = Number(deviceStore.sensorDistanceYmm);
   if (Array.isArray(deviceStore.targetTimes)) S.targetTimes = deviceStore.targetTimes.map(Number);
   ensureDefaultProject();
   sanitizeMeasurementAssignments();

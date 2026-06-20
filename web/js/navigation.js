@@ -12,29 +12,60 @@ function setContentEmptyView(enabled) {
   if (content) content.classList.toggle('empty-view', !!enabled);
 }
 
+const SIDEBAR_TOOL_BUTTON_IDS = ['github-btn', 'manual-toggle-btn', 'language-btn', 'settings-toggle-btn'];
+
+// Keep sidebar tool highlighting mutually exclusive.
+function setSidebarToolActive(btnId) {
+  for (const id of SIDEBAR_TOOL_BUTTON_IDS) {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('active', !!btnId && id === btnId);
+  }
+}
+
 // Open or close a side tool panel.
 function setToolPanel(panelId, btnId, open) {
   const panel = document.getElementById(panelId);
-  const btn = document.getElementById(btnId);
   if (!panel) return;
   panel.style.display = open ? 'block' : 'none';
   if (open) panel.scrollTop = 0;
-  if (btn) btn.classList.toggle('active', !!open);
+  if (open) setSidebarToolActive(btnId);
+  else if (btnId && document.getElementById(btnId)?.classList.contains('active')) setSidebarToolActive(null);
 }
 
-// Toggle the settings panel.
-function toggleSettings() {
-  const panel = document.getElementById('settings-panel');
-  const open = panel && panel.style.display === 'none';
+// Mark the settings navigation button as active only while the settings page is shown.
+function setSettingsNavActive(active) {
+  setSidebarToolActive(active ? 'settings-toggle-btn' : null);
+}
+
+// Return whether the settings page is currently rendered in the content area.
+function isSettingsPageVisible() {
+  const content = document.getElementById('content');
+  return !!(content && content.querySelector('.settings-page'));
+}
+
+// Render settings as a normal content page.
+function showSettingsPage() {
+  const content = document.getElementById('content');
+  const tpl = document.getElementById('settings-page-template');
+  if (!content || !tpl) return;
+  S.selId = null;
+  renderHistList();
   setToolPanel('language-panel', 'language-btn', false);
-  setToolPanel('settings-panel', 'settings-toggle-btn', open);
+  setContentEmptyView(false);
+  setContentFlush(false);
+  content.innerHTML = tpl.innerHTML;
+  applyStaticTranslations();
+  renderSettingsControls(true);
+  renderDeviceConfigSummary();
+  renderWebUiVersionSummary();
+  setSettingsNavActive(true);
+  if (window.innerWidth <= 767) toggleSidebar();
 }
 
 // Toggle the language selection panel.
 function toggleLanguagePanel() {
   const panel = document.getElementById('language-panel');
   const open = panel && panel.style.display === 'none';
-  setToolPanel('settings-panel', 'settings-toggle-btn', false);
   setToolPanel('language-panel', 'language-btn', open);
   updateLanguageButton();
 }
@@ -42,6 +73,8 @@ function toggleLanguagePanel() {
 
 // Open the project repository in a new tab.
 function openGitHub() {
+  setSidebarToolActive('github-btn');
+  setToolPanel('language-panel', 'language-btn', false);
   window.open(GITHUB_URL, '_blank', 'noopener');
 }
 
@@ -130,6 +163,8 @@ function showTutorialHtml(html, title) {
   if (!content) return;
   S.selId = null;
   renderHistList();
+  setSidebarToolActive('manual-toggle-btn');
+  setToolPanel('language-panel', 'language-btn', false);
   setContentEmptyView(false);
   setContentFlush(false);
   content.innerHTML = html;
@@ -170,6 +205,8 @@ function showManualPage() {
     .catch(() => {
       const content = document.getElementById('content');
       if (!content) return;
+      setSidebarToolActive('manual-toggle-btn');
+      setToolPanel('language-panel', 'language-btn', false);
       setContentEmptyView(true);
       setContentFlush(false);
       content.innerHTML = `<div class="empty"><div class="empty-ico">?</div><div class="empty-txt">${esc(title)}</div><div class="empty-sub">${esc(tx('frame.manualLoadFailed', 'The guide could not be loaded.'))}</div></div>`;
@@ -236,6 +273,7 @@ function rerenderAfterLanguageChange() {
   renderWebUiVersionSummary();
 
   if (tutorialVisible) showManualPage();
+  else if (isSettingsPageVisible()) showSettingsPage();
   else if (S.selId) renderDetailView(S.selId);
   else renderEmptyStateIfNeeded();
 

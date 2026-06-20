@@ -6,12 +6,14 @@
 #include <Arduino.h>
 
 // Project / URLs
-#define DEVICE_NAME        "OpenCurtainLab"
-#define FIRMWARE_VERSION   "0.1.0"
-#define MDNS_NAME          "opencurtainlab"
-#define GITHUB_PROJECT_URL "https://github.com/benikum/OpenCurtainLab"
-#define WEB_APP_URL "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/opencurtainlab.html"
-#define WEB_APP_DOWNLOAD_FILENAME      "opencurtainlab.html"
+#define DEVICE_NAME                 "OpenCurtainLab"
+#define FIRMWARE_VERSION            "0.1.0"
+#define MDNS_NAME                   "opencurtainlab"
+#define GITHUB_PROJECT_URL          "https://github.com/benikum/OpenCurtainLab"
+#define WEB_APP_RELEASE_FILENAME    "compiled-v" FIRMWARE_VERSION ".html"
+#define WEB_APP_URL                 "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/" WEB_APP_RELEASE_FILENAME
+#define WEB_VERSION_URL             "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/version.txt"
+#define WEB_APP_DOWNLOAD_FILENAME   "opencurtainlab.html"
 
 // Proxy to GitHub Raw
 #define WEB_APP_PROXY_TIMEOUT_MS       12000UL
@@ -19,12 +21,12 @@
 #define WEB_APP_PROXY_CHUNK_SIZE       1024
 
 // WiFi / Setup AP
-#define SETUP_AP_SSID               "OpenCurtainLab"
-#define SETUP_AP_PASSWORD           ""
-#define WIFI_CONNECT_TIMEOUT_MS     12000UL
-#define WIFI_RECONNECT_INTERVAL_MS  30000UL
-#define WIFI_FALLBACK_TO_AP_TIMEOUT_MS 90000UL
-#define MDNS_RETRY_INTERVAL_MS     10000UL
+#define SETUP_AP_SSID                    "OpenCurtainLab"
+#define SETUP_AP_PASSWORD                ""
+#define WIFI_CONNECT_TIMEOUT_MS          12000UL
+#define WIFI_RECONNECT_INTERVAL_MS       30000UL
+#define WIFI_FALLBACK_TO_AP_TIMEOUT_MS   90000UL
+#define MDNS_RETRY_INTERVAL_MS           10000UL
 
 // Hardware Pins
 #define PIN_SENSOR_0      36
@@ -38,8 +40,7 @@
 #define PIN_BTN_UP        26
 #define PIN_BTN_DOWN      27
 
-#define PIN_LED_ARRAY     12
-#define PIN_LAMP_SENSE   14
+#define PIN_LAMP_SENSE    14
 
 // Display / I2C
 #define I2C_SDA              21
@@ -72,16 +73,16 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define MEASUREMENT_SETTLE_MS        15UL
 #define MEASUREMENT_LATE_SENSOR_SETTLE_MS 120UL
 #define FLASH_TO_SENSOR_TIMEOUT_MS   250UL
-#define LED_HOLD_MS                  1000UL
+#define LAMP_SENSE_CONFIRM_MS        1000UL
 
 // Buttons
 #define DEBOUNCE_MS       50UL
 #define MODE_HOLD_MS      1000UL
 
 // Factory defaults for runtime settings
-#define DEFAULT_MEASUREMENT_MODE "left"
-#define DEFAULT_TARGET_TIME      500
-#define DEVICE_MAX_TARGET_TIME  2000
-#define DEFAULT_SENSOR_SENSITIVITY "medium"
-#define DEFAULT_RESULT_DISPLAY "until_button"
-#define DEFAULT_OLED_SLEEP_MINUTES 5
+#define DEFAULT_MEASUREMENT_MODE    "horizontal"
+#define DEFAULT_TARGET_TIME         500
+#define DEVICE_MAX_TARGET_TIME      2000
+#define DEFAULT_SENSOR_SENSITIVITY  "medium"
+#define DEFAULT_RESULT_DISPLAY      "until_button"
+#define DEFAULT_OLED_SLEEP_MINUTES  5

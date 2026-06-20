@@ -1,11 +1,38 @@
 /*
- * Defines raw sensor readings, flash readings, device status, network hints, measurement hints, and result summary structs.
+ * Defines measurement modes, raw sensor readings, flash readings, device status, network hints, measurement hints, and result summary structs.
  */
 
 #pragma once
 #include <Arduino.h>
 #include "Config.h"
-#include "MeasurementMode.h"
+
+enum class MeasurementMode : uint8_t {
+  VERTICAL = 0,
+  HORIZONTAL = 1,
+  CENTRAL = 2
+};
+
+// Converts a measurement mode enum value to its stable API/settings key.
+static inline const char* measurementModeKey(MeasurementMode mode) {
+  switch (mode) {
+    case MeasurementMode::VERTICAL:   return "vertical";
+    case MeasurementMode::HORIZONTAL: return "horizontal";
+    case MeasurementMode::CENTRAL:    return "central";
+  }
+  return "horizontal";
+}
+
+// Parses a stable mode key. Unknown keys fall back to the default horizontal geometry.
+static inline MeasurementMode measurementModeFromKey(const String& key) {
+  if (key == "vertical") return MeasurementMode::VERTICAL;
+  if (key == "central") return MeasurementMode::CENTRAL;
+  return MeasurementMode::HORIZONTAL;
+}
+
+// Returns the next mode in the local button cycle.
+static inline MeasurementMode nextMeasurementMode(MeasurementMode mode) {
+  return static_cast<MeasurementMode>((static_cast<uint8_t>(mode) + 1) % 3);
+}
 
 struct SensorReading {
   uint8_t id = 0;
@@ -238,7 +265,7 @@ struct MeasurementResult {
   int64_t baseTimestamp = 0;
   SensorReading sensors[SENSOR_COUNT];
   FlashReading flash;
-  MeasurementMode mode = MeasurementMode::LEFT;
+  MeasurementMode mode = MeasurementMode::HORIZONTAL;
   MeasurementHint hint = MeasurementHint::None;
 
   // Clears the raw measurement result, including all sensors, flash data, mode, and hint.
@@ -248,7 +275,7 @@ struct MeasurementResult {
     baseTimestamp = 0;
     for (int i = 0; i < SENSOR_COUNT; i++) sensors[i].reset();
     flash.reset();
-    mode = MeasurementMode::LEFT;
+    mode = MeasurementMode::HORIZONTAL;
     hint = MeasurementHint::None;
   }
 };

@@ -2,7 +2,7 @@
 <section class="hero">
 <div class="eyebrow">OpenCurtainLab Guide</div>
 <h1>Using the tester on cameras</h1>
-<p>This guide explains how to place OpenCurtainLab in or near the film plane, how to choose the correct shutter direction, how to run repeatable tests, and how to interpret the results when servicing cameras.</p>
+<p>This guide explains how to place OpenCurtainLab in or near the film plane, how to choose the correct measurement mode, how to run repeatable tests, and how to interpret the results when servicing cameras.</p>
 <div>
 <span class="badge">camera setup</span>
 <span class="badge">shutter testing</span>
@@ -16,7 +16,7 @@
 <a href="#prepare">Prepare the camera</a>
 <a href="#connector-safety">Connector safety</a>
 <a href="#position">Place the tester</a>
-<a href="#modes">Choose the direction</a>
+<a href="#modes">Choose the mode</a>
 <a href="#run">Run a test</a>
 <a href="#read">Read the result</a>
 <a href="#charts">Use the charts</a>
@@ -57,17 +57,15 @@
 </div>
 </section>
 <section class="card" id="modes">
-<div class="card-hdr"><h2>Choose the shutter direction</h2></div>
+<div class="card-hdr"><h2>Choose the measurement mode</h2></div>
 <div class="card-body">
-<p>Select the direction in which the shutter opening travels across the tester.</p>
+<p>Select only the measurement geometry. The WebUI detects the travel direction from the first sensor that opens.</p>
 <table><tbody>
-<tr><td>left</td><td>The opening travels from right to left across the sensor row. In the V(x) chart, 0 mm is shown on the right so the chart follows the travel direction.</td></tr>
-<tr><td>right</td><td>The opening travels from left to right.</td></tr>
-<tr><td>up</td><td>The opening travels from bottom to top.</td></tr>
-<tr><td>down</td><td>The opening travels from top to bottom. The vertical sensor spacing is used for the distance axis.</td></tr>
-<tr><td>central</td><td>Use this for leaf shutters and other shutters that open around the centre instead of travelling as curtains.</td></tr>
+<tr><td>Vertical</td><td>For shutters whose opening travels along the vertical sensor axis.</td></tr>
+<tr><td>Horizontal</td><td>For shutters whose opening travels along the horizontal sensor axis.</td></tr>
+<tr><td>Central shutter</td><td>Use this for leaf shutters and other shutters that open around the centre instead of travelling as curtains.</td></tr>
 </tbody></table>
-<div class="note">If the direction is wrong, exposure time may still be visible, but curtain speed and position charts will be misleading.</div>
+<div class="note">The detected direction is derived from the order of the sensor edges.</div>
 </div>
 </section>
 <section class="card" id="run">

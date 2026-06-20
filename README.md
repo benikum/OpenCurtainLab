@@ -49,13 +49,11 @@ The menu currently contains:
 
 The firmware supports these shutter travel modes:
 
-- `left`
-- `down`
-- `right`
-- `up`
+- `vertical`
+- `horizontal`
 - `central`
 
-The WebUI receives raw timestamps and sensor values. It performs its own timing and deviation calculations.
+The WebUI receives raw timestamps, sensor values, and the sensor geometry with each measurement. It performs its own timing, deviation, and curtain-speed calculations.
 
 ## Device status model
 
@@ -83,7 +81,7 @@ After successful provisioning the AP closes and the device is reachable through 
 http://opencurtainlab.local/
 ```
 
-In station mode, the root page tries to proxy the single-file WebUI from `WEB_APP_URL` and returns it as `text/html` from the ESP32 origin. If the proxy request fails, the firmware falls back to a normal redirect to `WEB_APP_URL`. Captive portal probe paths serve the setup portal in AP mode.
+In station mode, the root page tries to proxy the versioned single-file WebUI from `WEB_APP_URL` and returns it as `text/html` from the ESP32 origin. The proxied client-facing filename remains `opencurtainlab.html`. If the proxy request fails, the firmware falls back to a normal redirect to `WEB_APP_URL`. Captive portal probe paths serve the setup portal in AP mode.
 
 ## API
 
@@ -148,7 +146,7 @@ web/js/navigation.js        Main view switching, tutorial, language panel
 web/js/measurements-projects.js Measurement ingestion and project lists
 web/js/project-analysis.js  Project statistics and summary views
 web/js/charts.js            Canvas timeline and curtain charts
-web/js/backup-export-mock.js Backup/import, CSV export, notes, mock data
+web/js/backup-export.js      Backup/import, CSV export, notes, mock data
 web/i18n/de.json            German UI strings
 web/i18n/en.json            English UI strings
 web/tutorial/de.html        German tutorial HTML fragment
@@ -181,10 +179,10 @@ OCL_DEBUG=1 python3 tools/build_webui.py
 The default output is:
 
 ```text
-web/compiled/opencurtainlab.html
+web/compiled/compiled-v0.1.0.html
 ```
 
-The compiled file embeds CSS, JavaScript, i18n JSON, and both tutorial fragments. It has no external asset dependencies and can be opened locally through `file://`.
+The compiled file embeds CSS, JavaScript, i18n JSON, and both tutorial fragments. It has no external asset dependencies and can be opened locally through `file://`. Firmware fetches the versioned file matching `FIRMWARE_VERSION`; the ESP32 proxy still presents it to the browser as `opencurtainlab.html`.
 
 For source-mode development, serve the `web` directory through the helper script so browser `fetch()` can load the JSON and tutorial fragment files:
 
@@ -218,3 +216,11 @@ The firmware is an Arduino-style ESP32 sketch. Required libraries include:
 - Adafruit SSD1306
 
 Keep the sketch folder name aligned with `OpenCurtainLab.ino` when using the Arduino IDE.
+
+## Development transparency
+
+OpenCurtainLab is a hardware-tested project developed and maintained by the author.
+
+AI tools were used during development as an assistant for code review, refactoring, documentation, and exploring implementation options. The project is not generated and published without review: hardware behavior, firmware changes, API behavior, and measurement results are checked manually before release.
+
+All design decisions, project direction, and release responsibility remain with the maintainer.

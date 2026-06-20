@@ -148,7 +148,7 @@ function buildProjectSummary(p) {
 }
 // Build the curtain-speed summary cards.
 function buildCurtainSummary(p) {
-  if ((p.mode || 'left') === 'central') return '';
+  if (normalizeMeasurementMode(p.mode) === 'central') return '';
   const a = projectAnalysis(p);
   const fmt = (v, d=2) => v == null ? '—' : v.toFixed(d);
   const pct = v => v == null ? '—' : v.toFixed(1) + ' %';
@@ -289,7 +289,7 @@ function showProject(projId) {
       </div>
     </div>
 
-    ${p.mode === 'central' ? '' : `<!-- Curtain chart -->
+    ${normalizeMeasurementMode(p.mode) === 'central' ? '' : `<!-- Curtain chart -->
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">${tx('cards.curtainCurve', 'Curtain speed by target')}</span>
@@ -492,7 +492,7 @@ function renderEmptyStateIfNeeded() {
   const content = document.getElementById('content');
   if (!content) return;
 
-  const hasRealContent = content.querySelector('.card, canvas, table, .manual-page, .help-page');
+  const hasRealContent = content.querySelector('.card, canvas, table, .manual-page, .help-page, .settings-page');
   if (S.selId || hasRealContent) return;
 
   let title, sub, iconKind = 'aperture', action = '', stateKey = 'idle';
@@ -528,6 +528,7 @@ function renderEmptyStateIfNeeded() {
     return;
   }
 
+  setSettingsNavActive(false);
   setContentEmptyView(true);
   content.innerHTML = `<div class="empty empty-main" id="main-empty" data-empty-key="${esc(emptyKey)}">
     <div class="empty-ico">${emptyIconHtml(iconKind)}</div>

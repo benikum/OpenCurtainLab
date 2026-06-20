@@ -8,7 +8,7 @@ function classifyFetchError(err) {
   return 'connecting';
 }
 
-// Run one background polling cycle for measurement data. /status is fetched only during connection and explicit device actions.
+// Run one background polling cycle for measurement data. /status is rate-limited by STATUS_POLL_MS.
 // Device discovery is intentionally not retried here; otherwise the empty start screen
 // is rebuilt every polling tick while the device is offline. Manual Connect still retries.
 async function poll() {
@@ -26,6 +26,7 @@ async function poll() {
       S.lastMeasId = d.id;
       ingestMeasurement(d);
     }
+    await fetchDeviceStatus(false);
   } catch(e) {
     S.connectionProblem = { type: classifyFetchError(e), message: tx('connectionHelp.title', 'Could not connect to OpenCurtainLab') };
     setConnState(classifyFetchError(e));
@@ -57,6 +58,7 @@ async function initDeviceConnection(showMessages = true, hostOnly = false) {
       saveDeviceConfigLocal();
       applyDeviceConfig(cfg);
       await fetchDeviceStatus(true);
+      await checkAppVersion();
       S.connectionProblem = null;
       setConnState('connected');
       if (showMessages) toast(tf('toast.deviceConnected', 'Device connected: {host}', {host: S.deviceHost}), 'success');
@@ -81,7 +83,7 @@ function normalizeDeviceBase(v) {
 function sanitizeDeviceSettings(input) {
   const raw = Object.assign({}, input || {});
   const settings = Object.assign({}, DEFAULT_DEVICE_SETTINGS);
-  if (typeof raw.defaultMeasurementMode === 'string') settings.defaultMeasurementMode = raw.defaultMeasurementMode;
+  if (typeof raw.defaultMeasurementMode === 'string') settings.defaultMeasurementMode = normalizeMeasurementMode(raw.defaultMeasurementMode);
   if (Number.isFinite(Number(raw.defaultTargetTime))) settings.defaultTargetTime = Number(raw.defaultTargetTime);
   if (typeof raw.sensorSensitivity === 'string' && SENSOR_SENSITIVITIES.includes(raw.sensorSensitivity)) {
     settings.sensorSensitivity = raw.sensorSensitivity;
@@ -119,13 +121,13 @@ function setCustomTargetTimesError(message = '') {
 
 // Build helper text for the custom target-time editor.
 function customTargetTimesHelpText() {
-  return tf('settings.customTimesHelp', 'Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.', {max: deviceMaxTargetTime()});
+  return '';
 }
 
-// Render helper text under the custom target-time editor.
+// Custom target times are always visible; this hook is kept for older compiled markup.
 function renderCustomTargetTimesHelp() {
   const el = document.getElementById('custom-target-times-help');
-  if (el) el.textContent = customTargetTimesHelpText();
+  if (el) el.textContent = '';
 }
 
 // Display or clear the device-address validation message.
@@ -145,8 +147,8 @@ function normalizeHint(packet) {
 
 // Compare two dotted semantic-ish version strings.
 function compareVersions(a, b) {
-  const pa = String(a || '').split('.').map(v => parseInt(v, 10) || 0);
-  const pb = String(b || '').split('.').map(v => parseInt(v, 10) || 0);
+  const pa = versionParts(a);
+  const pb = versionParts(b);
   const len = Math.max(pa.length, pb.length);
   for (let i = 0; i < len; i++) {
     const da = pa[i] || 0;
@@ -154,6 +156,18 @@ function compareVersions(a, b) {
     if (da !== db) return da - db;
   }
   return 0;
+}
+
+// Split release.api.bugfix versions into numeric parts.
+function versionParts(value) {
+  return String(value || '').split('.').map(v => parseInt(v, 10) || 0);
+}
+
+// Firmware and WebUI are API-compatible when release and API version match.
+function sameApiVersion(a, b) {
+  const pa = versionParts(a);
+  const pb = versionParts(b);
+  return (pa[0] || 0) === (pb[0] || 0) && (pa[1] || 0) === (pb[1] || 0);
 }
 
 // Keep only the content inside a <pre> block when a raw text response is browser-wrapped as HTML.
@@ -192,19 +206,18 @@ function versionLabel(value) {
 function updateVersionWarnings(showToast = false) {
   const firmware = cleanVersion(S.deviceConfig && S.deviceConfig.version);
   const webui = cleanVersion(APP_VERSION);
-  const cdn = cleanVersion(S.cdnVersion);
+  const remote = cleanVersion(S.cdnVersion);
 
-  // A firmware/Web UI version mismatch is a compatibility warning.
-  S.versionMismatch = (firmware && firmware !== webui)
-    ? tf('versions.firmwareWebUiMismatch', 'Firmware {firmware} and Web UI {webui} do not match.', {
+  // Release/API mismatches are compatibility warnings. Bugfix-only differences are allowed.
+  S.versionMismatch = (firmware && webui && !sameApiVersion(firmware, webui))
+    ? tf('versions.firmwareWebUiMismatch', 'Firmware {firmware} and Web UI {webui} use different API versions.', {
         firmware: versionLabel(firmware),
         webui: versionLabel(webui)
       })
     : '';
 
-  // The CDN marker is only shown when it advertises a newer Web UI release.
-  S.updateAvailable = (cdn && compareVersions(cdn, webui) > 0)
-    ? tf('versions.updateAvailableWithVersion', 'Update available: {version}', { version: versionLabel(cdn) })
+  S.updateAvailable = (remote && compareVersions(remote, webui) > 0)
+    ? tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remote) })
     : '';
 
   S.versionWarning = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
@@ -312,10 +325,7 @@ function measurementHintNoticeHtml(entry) {
 function applyDeviceConfig(d) {
   if (!d) return;
 
-  // /config is the authority for device geometry, target lists and runtime settings.
-  if (d.sensorDistanceXmm) S.sensorDistanceXmm = Number(d.sensorDistanceXmm);
-  if (d.sensorDistanceYmm) S.sensorDistanceYmm = Number(d.sensorDistanceYmm);
-
+  // /config is the authority for target lists and runtime settings. Measurement geometry is stored per measurement packet.
   if (Array.isArray(d.targetTimes)) {
     const maxT = Number(d.maxTargetTime || Math.max(...d.targetTimes));
     S.targetTimes = d.targetTimes.map(Number).filter(t => t > 0 && t <= maxT);
@@ -341,30 +351,82 @@ function applyDeviceConfig(d) {
   saveDeviceConfigLocal();
 }
 
-// Render the WebUI version row in settings.
-function renderWebUiVersionSummary() {
-  const el = document.getElementById('webui-version-summary');
+function renderVersionSummary() {
+  const el = document.getElementById('settings-version-summary');
   if (!el) return;
-  el.textContent = tf('versions.webUiLabel', 'WebUI {version}', { version: versionLabel(APP_VERSION) });
+  const c = S.deviceConfig || {};
+  const rt = S.deviceRuntime || {};
+  const deviceVersion = cleanVersion(rt.version || c.version);
+  const remoteVersion = cleanVersion(S.cdnVersion);
+
+  let statusClass = 'version-ok';
+  let statusText = tx('versions.upToDate', 'Software up to date');
+  if (S.versionMismatch) {
+    statusClass = 'version-mismatch';
+    statusText = tx('versions.mismatchTitle', 'Version mismatch');
+  } else if (S.updateAvailable) {
+    statusClass = 'version-update';
+    statusText = tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remoteVersion) });
+  } else if (!remoteVersion) {
+    statusClass = 'version-unknown';
+    statusText = tx('versions.updateUnknown', 'Update unknown');
+  }
+
+  el.innerHTML = [
+    `<span>${esc(tf('versions.webUiLabel', 'WebUI {version}', { version: versionLabel(APP_VERSION) }))}</span>`,
+    `<span>${esc(tf('versions.deviceLabel', 'Device {version}', { version: versionLabel(deviceVersion) }))}</span>`,
+    `<span class="${statusClass}">${esc(statusText)}</span>`
+  ].join('');
   el.classList.toggle('has-version-mismatch', !!S.versionMismatch);
   el.classList.toggle('has-update-available', !!S.updateAvailable);
   el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
 }
 
-// Render the compact version summary in settings.
-function renderDeviceConfigSummary() {
-  renderWebUiVersionSummary();
-  const el = document.getElementById('device-config-summary');
-  if (!el) return;
-  const c = S.deviceConfig || {};
-  const deviceVersion = cleanVersion(c.version);
-  const newestVersion = cleanVersion(S.cdnVersion);
+// Format seconds from /status as a compact uptime string.
+function formatSettingsUptime(seconds) {
+  const n = Number(seconds);
+  if (!Number.isFinite(n) || n < 0) return tx('settingsInfo.unavailable', '—');
+  const days = Math.floor(n / 86400);
+  const hours = Math.floor((n % 86400) / 3600);
+  const minutes = Math.floor((n % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
 
-  el.innerHTML = [
-    `<span>${esc(tf('versions.deviceLabel', 'Device {version}', { version: versionLabel(deviceVersion) }))}</span>`,
-    `<span>${esc(tf('versions.newestLabel', 'Newest {version}', { version: versionLabel(newestVersion) }))}</span>`
-  ].join('');
-  el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
+// Render important /status details in the device settings card.
+function renderSettingsDeviceInfo() {
+  const el = document.getElementById('settings-device-info');
+  if (!el) return;
+  const cfg = S.deviceConfig || {};
+  const net = S.networkStatus || {};
+  const dev = S.deviceStatus || {};
+  const rt = S.deviceRuntime || {};
+  const dash = tx('settingsInfo.unavailable', '—');
+  const statusOk = !(dev.error && dev.error !== 'none');
+  const connected = !!(S.connected || net.connected);
+  const statusValue = !connected
+    ? tx('settingsInfo.notConnected', 'not connected')
+    : statusOk ? tx('settingsInfo.ok', 'OK') : (dev.errorText || dev.error || tx('settingsInfo.problem', 'problem'));
+  const rows = [
+    { label: tx('settingsInfo.status', 'Status'), value: statusValue, cls: !connected ? 'warn' : (statusOk ? 'ok' : 'err') },
+    { label: tx('settingsInfo.ip', 'IP'), value: net.ip || cfg.ip || dash },
+    { label: tx('settingsInfo.uptime', 'Uptime'), value: formatSettingsUptime(rt.uptime) },
+    { label: tx('settingsInfo.measurementId', 'Measurement ID'), value: Number.isFinite(Number(rt.measCount)) ? String(rt.measCount) : dash }
+  ];
+
+  el.innerHTML = rows.map(row => `<div class="settings-info-row"><span class="settings-info-label">${esc(row.label)}</span><span class="settings-info-value ${row.cls || ''}">${esc(row.value)}</span></div>`).join('');
+}
+
+// Render the WebUI version row in settings.
+function renderWebUiVersionSummary() {
+  renderVersionSummary();
+}
+
+// Render the compact version and device-status summary in settings.
+function renderDeviceConfigSummary() {
+  renderVersionSummary();
+  renderSettingsDeviceInfo();
 }
 
 // Render all settings controls from local state and device capabilities.
@@ -469,16 +531,12 @@ function bindBackupFileInput() {
 }
 // React to switching between standard and custom target time series.
 function onTargetSeriesChanged(markDirty = true) {
-  const seriesSel = document.getElementById('set-target-series');
   const customEl = document.getElementById('set-custom-target-times');
   const helpEl = document.getElementById('custom-target-times-help');
   const errorEl = document.getElementById('custom-target-times-error');
-  if (!seriesSel || !customEl) return;
-  const showCustom = seriesSel.value === 'custom';
-  customEl.style.display = showCustom ? 'block' : 'none';
-  if (helpEl) helpEl.style.display = showCustom ? 'block' : 'none';
-  if (errorEl) errorEl.style.display = showCustom ? 'block' : 'none';
-  if (!showCustom) setCustomTargetTimesError('');
+  if (customEl) customEl.style.display = '';
+  if (helpEl) helpEl.style.display = 'none';
+  if (errorEl) errorEl.style.display = '';
   if (markDirty) updateSettingsSaveState();
 }
 // Parse and validate a comma-separated list of target times.
@@ -566,6 +624,7 @@ async function connectToDeviceAddress() {
     S.deviceHost = base.replace(/^https?:\/\//, '');
     applyDeviceConfig(cfg);
     await fetchDeviceStatus(true);
+    await checkAppVersion();
     saveDeviceConfigLocal();
     S.connectionProblem = null;
     setConnState('connected');
@@ -577,6 +636,28 @@ async function connectToDeviceAddress() {
     S.connectionProblem = { type: 'not_found', message: msg };
     setDeviceAddressError(msg);
     toast(msg, 'error');
+  }
+}
+
+// Recalibrate sensor baselines through the firmware API.
+async function calibrateSensors() {
+  if (!(await ensureDeviceConnection(true))) return;
+  const btn = document.getElementById('calibrate-sensors-btn');
+  try {
+    if (btn) btn.disabled = true;
+    toast(tx('toast.calibratingSensors', 'Calibrating sensors...'), 'info');
+    const r = await fetch(api('/calibrate'), {
+      method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
+      body: '{}', signal: AbortSignal.timeout(5000)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false || d.calibrated === false) throw new Error(d.error || 'calibration failed');
+    await fetchDeviceStatus(true);
+    toast(tx('toast.sensorsCalibrated', 'Sensors calibrated'), 'success');
+  } catch(e) {
+    toast(tx('toast.sensorCalibrationFailed', 'Sensor calibration failed'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 

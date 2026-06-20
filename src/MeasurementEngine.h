@@ -5,7 +5,6 @@
 #pragma once
 #include <Arduino.h>
 #include "Config.h"
-#include "MeasurementMode.h"
 #include "SensorManager.h"
 #include "MeasurementTypes.h"
 
@@ -20,15 +19,13 @@ class MeasurementEngine {
 public:
   // Stores the sensor manager reference and clears all measurement buffers.
   explicit MeasurementEngine(SensorManager& sm)
-    : _sm(sm), _state(CaptureState::IDLE), _mode(MeasurementMode::LEFT) {
+    : _sm(sm), _state(CaptureState::IDLE), _mode(MeasurementMode::HORIZONTAL) {
     _result.reset();
     _summary.reset();
   }
 
-  // Advances the capture state machine and LED hold timer.
+  // Advances the capture state machine.
   void update() {
-    updateLedHold();
-
     if (_state != CaptureState::ARMED && _state != CaptureState::CAPTURING) return;
 
     const bool inputChanged = _sm.update();
@@ -42,7 +39,7 @@ public:
   }
 
   // Arms the engine for a new capture if the sensors are currently idle.
-  bool startListening(MeasurementMode mode = MeasurementMode::LEFT) {
+  bool startListening(MeasurementMode mode = MeasurementMode::HORIZONTAL) {
     if (_state == CaptureState::CAPTURING) return false;
 
     // Start from a clean result and summary so stale data cannot leak into the next capture.
@@ -56,7 +53,6 @@ public:
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
-    _ledOffTime = 0;
 
     // A fresh scan detects blocked sensors before the engine is allowed to arm.
     _sm.resetTracking();
@@ -66,7 +62,6 @@ public:
       return false;
     }
 
-    digitalWrite(PIN_LED_ARRAY, HIGH);
     enterState(CaptureState::ARMED);
     Serial.println(F("[Engine] Armed - waiting for shutter opening..."));
     return true;
@@ -160,8 +155,6 @@ public:
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
-    _ledOffTime = 0;
-    digitalWrite(PIN_LED_ARRAY, LOW);
     enterState(CaptureState::IDLE);
     Serial.println(F("[Engine] Capture cancelled."));
   }
@@ -169,13 +162,12 @@ public:
 private:
   SensorManager& _sm;
   CaptureState _state = CaptureState::IDLE;
-  MeasurementMode _mode = MeasurementMode::LEFT;
+  MeasurementMode _mode = MeasurementMode::HORIZONTAL;
   MeasurementResult _result;
   DisplayResultSummary _summary;
   MeasurementHint _readyHint = MeasurementHint::None;
   bool _resultCalculated = false;
   bool _hasNewResult = false;
-  unsigned long _ledOffTime = 0;
   unsigned long _stateStartedMs = 0;
   unsigned long _finishCandidateMs = 0;
   unsigned long _lastCaptureActivityMs = 0;
@@ -189,8 +181,6 @@ private:
 
   // Aborts arming because the current conditions are unsuitable for capture.
   void abortStart(MeasurementHint hint) {
-    digitalWrite(PIN_LED_ARRAY, LOW);
-    _ledOffTime = 0;
     _lastCaptureActivityMs = 0;
     _readyHint = hint;
     _sm.resetTracking();
@@ -206,14 +196,6 @@ private:
   // Returns how long the input must stay quiet before a finished shutter event is accepted.
   unsigned long finishSettleMs() const {
     return _mode == MeasurementMode::CENTRAL ? MEASUREMENT_SETTLE_MS : MEASUREMENT_LATE_SENSOR_SETTLE_MS;
-  }
-
-  // Turns the LED array off after the result hold time has elapsed.
-  void updateLedHold() {
-    if (_ledOffTime > 0 && millis() >= _ledOffTime) {
-      digitalWrite(PIN_LED_ARRAY, LOW);
-      _ledOffTime = 0;
-    }
   }
 
   // Copies the current sensor and flash snapshot into the raw result buffer.
@@ -300,7 +282,6 @@ private:
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
     _flashNoSensorDeadlineMs = 0;
-    _ledOffTime = millis() + LED_HOLD_MS;
     _hasNewResult = true;
     enterState(CaptureState::FINISHED);
   }

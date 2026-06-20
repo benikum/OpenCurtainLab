@@ -25,10 +25,23 @@ function initNoteFields() {
 // ════════════════════════════════════════════
    // CURTAIN CALCULATION
 // ════════════════════════════════════════════
-function distanceForMode(mode) {
-  if (mode === 'up' || mode === 'down') return S.sensorDistanceYmm;
-  if (mode === 'central') return 0;
-  return S.sensorDistanceXmm;
+function currentMeasurementGeometry() {
+  const cfg = S.deviceConfig || {};
+  const geometry = {};
+  const x = Number(cfg.sensorDistanceXmm);
+  const y = Number(cfg.sensorDistanceYmm);
+  if (Number.isFinite(x) && x > 0) geometry.sensorDistanceXmm = x;
+  if (Number.isFinite(y) && y > 0) geometry.sensorDistanceYmm = y;
+  return geometry;
+}
+
+function distanceForMode(mode, entry = null) {
+  const normalizedMode = normalizeMeasurementMode(mode);
+  if (normalizedMode === 'central') return 0;
+  const source = entry || {};
+  const rawDistance = normalizedMode === 'vertical' ? source.sensorDistanceYmm : source.sensorDistanceXmm;
+  const distance = Number(rawDistance);
+  return Number.isFinite(distance) && distance > 0 ? distance : null;
 }
 
 // Calculate curtain travel speed between two sensor timestamps.
@@ -78,8 +91,6 @@ function exportBackupJSON() {
     app: 'OpenCurtainLab',
     version: 5,
     exportedAt: new Date().toISOString(),
-    sensorDistanceXmm: S.sensorDistanceXmm,
-    sensorDistanceYmm: S.sensorDistanceYmm,
     selectedProjId: S.selectedProjId,
     projects: S.projects,
     history: S.history,
@@ -105,8 +116,6 @@ async function importBackupJSON(file) {
     S.selectedProjId = data.selectedProjId && projects.some(p => p.id === data.selectedProjId) ? data.selectedProjId : null;
     ensureDefaultProject();
     sanitizeMeasurementAssignments();
-    S.sensorDistanceXmm = Number(data.sensorDistanceXmm || S.sensorDistanceXmm || 7.62);
-    S.sensorDistanceYmm = Number(data.sensorDistanceYmm || S.sensorDistanceYmm || 5.08);
     S.uiSettings = sanitizeUiSettings(data.uiSettings || S.uiSettings || {});
     saveUiSettings();
     S.selId = null;
@@ -251,7 +260,7 @@ function esc(s) {
 // ════════════════════════════════════════════
    // MOCK DATA (dev)
 // ════════════════════════════════════════════
-function injectMock(targetFrac, flash = 'ok', direction = 'left') {
+function injectMock(targetFrac, flash = 'ok', modeInput = 'horizontal') {
   const availableTimes = (S.targetTimes && S.targetTimes.length ? S.targetTimes : ALL_TIMES);
   const tf = Number(targetFrac) || availableTimes[Math.floor(Math.random() * availableTimes.length)];
 
@@ -259,14 +268,11 @@ function injectMock(targetFrac, flash = 'ok', direction = 'left') {
     return String(v || '').toLowerCase().replace(/[-_\s]/g, '');
   }
 
-  function normDirection(v) {
-    const m = norm(v || 'left');
-    if (m === 'left') return 'left';
-    if (m === 'down') return 'down';
-    if (m === 'right') return 'right';
-    if (m === 'up') return 'up';
+  function normMode(v) {
+    const m = norm(v || 'horizontal');
     if (m === 'central') return 'central';
-    return 'left';
+    if (m === 'vertical') return 'vertical';
+    return 'horizontal';
   }
 
   function normFlash(v) {
@@ -280,18 +286,14 @@ function injectMock(targetFrac, flash = 'ok', direction = 'left') {
     return 'ok';
   }
 
-  const mode = normDirection(direction);
+  const mode = normMode(modeInput);
   const flashMode = normFlash(flash);
   const targetSec = 1 / tf;
   const baseUs = 1000000 + Math.floor(Math.random() * 100000);
   const nominalDurationUs = Math.round(targetSec * 1e6);
 
-  // Sensor order for the simulated curtain movement. The five sensors are diagonal; horizontal and vertical modes use different distances in analysis, but the simulated event order can stay the same.
-  const order = (() => {
-    if (mode === 'central') return [0, 1, 2, 3, 4];
-    if (mode === 'left' || mode === 'up') return [4, 3, 2, 1, 0];
-    return [0, 1, 2, 3, 4];
-  })();
+  // Sensor order for the simulated curtain movement. The five sensors are diagonal; horizontal and vertical modes use different distances in analysis.
+  const order = mode === 'central' ? [0, 1, 2, 3, 4] : [0, 1, 2, 3, 4];
 
   // Curtain travel time between neighboring sensors. Fast target speeds use shorter travel steps so the simulated packet remains plausible.
   const stepUs = mode === 'central'
@@ -350,13 +352,11 @@ function injectMock(targetFrac, flash = 'ok', direction = 'left') {
     }
   }
 
-  ingestMeasurement({
+  ingestMeasurement(Object.assign({
     valid: true,
     id: 'mock_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     target: tf,
     baseUs,
-    sensorDistanceXmm: S.sensorDistanceXmm,
-    sensorDistanceYmm: S.sensorDistanceYmm,
     mode,
     sensors,
     flash: {
@@ -366,5 +366,5 @@ function injectMock(targetFrac, flash = 'ok', direction = 'left') {
       baseline: 3200,
       triggerUs: detected ? triggerUs : 0
     }
-  });
+  }, currentMeasurementGeometry()));
 }

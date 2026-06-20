@@ -104,10 +104,8 @@ public:
     for (int i = 0; i < activeCount; i++) targetTimes.add(activeTimes[i]);
 
     JsonArray modes = doc.createNestedArray("modes");
-    modes.add("left");
-    modes.add("down");
-    modes.add("right");
-    modes.add("up");
+    modes.add("vertical");
+    modes.add("horizontal");
     modes.add("central");
 
     JsonObject settingsObj = doc.createNestedObject("settings");
@@ -125,6 +123,8 @@ public:
     doc["measCount"] = measurementId;
     doc["mode"] = measurementModeKey(mode);
     doc["target"] = targetFraction;
+    doc["sensorDistanceXmm"] = SENSOR_DISTANCE_X_MM;
+    doc["sensorDistanceYmm"] = SENSOR_DISTANCE_Y_MM;
 
     // No measurement id means the device has not produced any result since boot.
     if (!measurementIdString || measurementIdString[0] == '\0') {

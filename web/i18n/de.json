@@ -1,10 +1,8 @@
 {
   "locale": "de-DE",
   "modes": {
-    "left": "nach links",
-    "down": "nach unten",
-    "right": "nach rechts",
-    "up": "nach oben",
+    "vertical": "Vertikal",
+    "horizontal": "Horizontal",
     "central": "Zentralverschluss"
   },
   "resultDisplay": {
@@ -254,7 +252,7 @@
     },
     "lamp_connector_miswired": {
       "title": "Lampenanschluss-Fehler",
-      "body": "Die Lampenbuchse meldet einen falschen oder kurzgeschlossenen Stecker. Die Lampe bleibt ausgeschaltet.",
+      "body": "Die Lampenbuchse meldet einen falschen oder kurzgeschlossenen Stecker.",
       "action": "Nutze nur das OpenCurtainLab-Lampenkabel. Schließe keine Blitzkabel, Kopfhörer, Audiogeräte oder Mikrofone an die Lampenbuchse an."
     }
   },
@@ -271,18 +269,19 @@
     "unknown": "unbekannt",
     "webUiLabel": "WebUI {version}",
     "publishedLabel": "veröffentlicht {version}",
-    "firmwareWebUiMismatch": "Firmware {firmware} und WebUI {webui} passen nicht zusammen.",
+    "firmwareWebUiMismatch": "Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.",
     "webUiOutdated": "Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.",
     "cdnMismatch": "Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.",
     "deviceCdnMismatch": "Firmware {firmware} und veröffentlichte Projektversion {cdn} passen nicht zusammen.",
     "action": "Nutze Firmware, WebUI-Dateien und version.txt aus demselben Release.",
     "mismatchTitle": "Versionsunterschied",
-    "updateAvailable": "Update Verfügbar",
-    "updateAvailableWithVersion": "Neue WebUI-Version verfügbar: {version}",
+    "updateAvailable": "Update verfügbar",
+    "updateAvailableWithVersion": "Update verfügbar {version}",
     "mismatchAction": "Nutze Firmware und WebUI-Dateien aus demselben Release.",
     "updateAction": "Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.",
-    "deviceLabel": "Device {version}",
-    "newestLabel": "Newest {version}"
+    "deviceLabel": "Gerät {version}",
+    "upToDate": "Software auf neuestem Stand",
+    "updateUnknown": "Update unbekannt"
   },
   "html": {
     "menuButtonLabel": "Menü",
@@ -312,9 +311,9 @@
     "interpolateCharts": "Diagramme interpolieren",
     "saveSettings": "EINSTELLUNGEN SPEICHERN",
     "localData": "Lokale Daten",
-    "exportWorkspaceBackup": "Arbeitsstand exportieren",
-    "importWorkspaceBackup": "Arbeitsstand importieren",
-    "resetLocalWebUiData": "Lokale WebUI-Daten zurücksetzen",
+    "exportWorkspaceBackup": "Exportieren",
+    "importWorkspaceBackup": "Importieren",
+    "resetLocalWebUiData": "Zurücksetzen",
     "guide": "Anleitung",
     "settings": "Einstellungen",
     "connectDeviceTitle": "Verbinde das Gerät",
@@ -327,10 +326,34 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus"
+    "oledSleepOff": "aus",
+    "sensorCalibration": "Sensoren",
+    "calibrateSensors": "Kalibrieren"
   },
   "targetSeries": {
     "standard": "Standard",
     "custom": "Benutzerdefiniert"
+  },
+  "settingsInfo": {
+    "connection": "Verbindung",
+    "connected": "verbunden",
+    "notConnected": "nicht verbunden",
+    "ip": "IP",
+    "hostname": "Hostname",
+    "wifi": "WLAN",
+    "signal": "Signal",
+    "uptime": "Laufzeit",
+    "measurements": "Messungen",
+    "status": "Status",
+    "ok": "OK",
+    "unavailable": "—",
+    "measurementId": "Measurement-ID",
+    "problem": "Problem"
+  },
+  "directions": {
+    "leftRight": "links → rechts",
+    "rightLeft": "rechts → links",
+    "topDown": "oben → unten",
+    "bottomTop": "unten → oben"
   }
 }

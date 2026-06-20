@@ -49,7 +49,7 @@ function drawSpeedPath(ctx, points, toX, toY, smooth) {
 
 // Collect ordered sensor samples for curtain-speed calculation.
 function getCurtainSamples(entry) {
-  if (!entry || (entry.mode || 'left') === 'central') return null;
+  if (!entry || normalizeMeasurementMode(entry.mode) === 'central') return null;
   const sensors = (entry.sensors || [])
     .map((sensor, index) => ({ ...sensor, index }))
     .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs) && Number.isFinite(sensor.closeMs));
@@ -61,15 +61,17 @@ function getCurtainSamples(entry) {
     ...sensor,
     positionIndex,
   }));
-  const distanceMm = distanceForMode(entry.mode || 'left');
-  return { sensors: ordered, distanceMm };
+  const distanceMm = distanceForMode(entry.mode, entry);
+  if (distanceMm == null) return null;
+  const reverseAxis = ordered.length > 1 && ordered[0].index > ordered[ordered.length - 1].index;
+  return { sensors: ordered, distanceMm, reverseAxis };
 }
 
 // Convert sensor timing samples into curtain-speed segments.
 function curtainSpeedProfile(entry) {
   const sample = getCurtainSamples(entry);
   if (!sample) return null;
-  const { sensors: act, distanceMm } = sample;
+  const { sensors: act, distanceMm, reverseAxis } = sample;
   const open = [];
   const close = [];
 
@@ -89,6 +91,7 @@ function curtainSpeedProfile(entry) {
     distanceMm,
     maxPositionMm: Math.max((act.length - 1) * distanceMm, 0),
     sensorCount: act.length,
+    reverseAxis,
   };
 }
 
@@ -139,9 +142,8 @@ function drawCurtainTimeChart(entry) {
   const all = [...profile.open, ...profile.close];
   const maxX = Math.max(4 * profile.distanceMm, profile.maxPositionMm || 0, 1);
   const vMax = Math.max(...all.map(point => Math.abs(point.v)), 1) * 1.20;
-  // Left-running shutters are drawn in their physical travel direction:
-  // 0 mm starts at the right edge and increasing distance moves left.
-  const reversePositionAxis = (entry.mode || 'left') === 'left';
+  // Draw the detected travel direction when the sensor order runs from a high to a low index.
+  const reversePositionAxis = !!profile.reverseAxis;
   const toX = x => reversePositionAxis
     ? (W - PAD_R) - (x / maxX) * PW
     : PAD_L + (x / maxX) * PW;

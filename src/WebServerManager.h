@@ -110,7 +110,7 @@ private:
 
   MeasurementResult _result;
   int _targetFraction = DEFAULT_TARGET_TIME;
-  MeasurementMode _mode = MeasurementMode::LEFT;
+  MeasurementMode _mode = MeasurementMode::HORIZONTAL;
   uint32_t _measurementId = 0;
   char _measIdStr[32] = "";
   DeviceStatus _deviceStatus;
@@ -193,6 +193,7 @@ private:
     // Send a plain close-delimited HTTP response. This avoids buffering the full file and avoids chunk framing.
     output.print(F("HTTP/1.1 200 OK\r\n"));
     output.print(F("Content-Type: text/html; charset=utf-8\r\n"));
+    output.print(F("Content-Disposition: inline; filename=\"" WEB_APP_DOWNLOAD_FILENAME "\"\r\n"));
     output.print(F("Cache-Control: no-cache\r\n"));
     output.print(F("X-OpenCurtainLab-Source: remote-proxy\r\n"));
     output.print(F("Connection: close\r\n"));
@@ -218,6 +219,49 @@ private:
     output.stop();
     http.end();
     return true;
+  }
+
+
+  // Fetches the remote plain-text version marker through the ESP32 to avoid browser CORS issues.
+  bool proxyRemoteVersion() {
+    if (!_wifi.isConnected()) return false;
+
+    WiFiClientSecure client;
+    client.setInsecure();
+
+    HTTPClient http;
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.setTimeout(WEB_APP_PROXY_TIMEOUT_MS);
+
+    Serial.printf("[Web] Proxying version: %s\n", WEB_VERSION_URL);
+    if (!http.begin(client, WEB_VERSION_URL)) {
+      Serial.println(F("[Web] Version proxy begin failed."));
+      http.end();
+      return false;
+    }
+
+    http.addHeader("Accept", "text/plain,*/*;q=0.8");
+    http.addHeader("User-Agent", "OpenCurtainLab ESP32");
+    const int code = http.GET();
+    if (code != HTTP_CODE_OK) {
+      Serial.printf("[Web] Version proxy GET failed: %d\n", code);
+      http.end();
+      return false;
+    }
+
+    String body = http.getString();
+    http.end();
+    body.trim();
+    cors();
+    _server.send(200, "text/plain; charset=utf-8", body);
+    return true;
+  }
+
+  // Serves the remote version marker as plain text.
+  void serveVersion() {
+    if (proxyRemoteVersion()) return;
+    cors();
+    _server.send(502, "text/plain; charset=utf-8", "");
   }
 
 
@@ -250,6 +294,7 @@ private:
     // Every API route gets an explicit OPTIONS handler for browser-based WebUIs.
     registerOptions("/data");
     registerOptions("/status");
+    registerOptions("/version");
     registerOptions("/config");
     registerOptions("/sensors");
     registerOptions("/calibrate");
@@ -260,6 +305,8 @@ private:
     // Core API routes are read-only except /config and /wifi.
     // /status reports device, WiFi, uptime, measurement count, and device-level error.
     _server.on("/status", HTTP_GET, [this]() { sendJson(200, buildStatusJson()); });
+    // /version proxies the remote plain-text version marker for the WebUI.
+    _server.on("/version", HTTP_GET, [this]() { serveVersion(); });
     // GET /config reports firmware capabilities and sanitized runtime settings.
     _server.on("/config", HTTP_GET, [this]() { sendJson(200, JsonBuilder::config(_settings.get())); });
     // /data returns the latest raw measurement for WebUI-side calculation.

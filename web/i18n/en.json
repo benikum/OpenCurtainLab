@@ -1,10 +1,8 @@
 {
   "locale": "en-GB",
   "modes": {
-    "left": "left",
-    "down": "down",
-    "right": "right",
-    "up": "up",
+    "vertical": "vertical",
+    "horizontal": "horizontal",
     "central": "central shutter"
   },
   "resultDisplay": {
@@ -254,7 +252,7 @@
     },
     "lamp_connector_miswired": {
       "title": "Lamp connector error",
-      "body": "The lamp socket reports a wrong or shorted plug. The lamp output remains off.",
+      "body": "The lamp socket reports a wrong or shorted plug.",
       "action": "Use only the OpenCurtainLab lamp cable. Do not connect flash cables, headphones, audio equipment, or microphones to the lamp socket."
     }
   },
@@ -271,18 +269,19 @@
     "unknown": "unknown",
     "webUiLabel": "WebUI {version}",
     "publishedLabel": "published {version}",
-    "firmwareWebUiMismatch": "Firmware {firmware} and Web UI {webui} do not match.",
+    "firmwareWebUiMismatch": "Firmware {firmware} and Web UI {webui} use different API versions.",
     "webUiOutdated": "This Web UI is outdated. Loaded {webui}, published {cdn}.",
     "cdnMismatch": "The loaded Web UI {webui} and published version marker {cdn} do not match.",
     "deviceCdnMismatch": "Firmware {firmware} and published project version {cdn} do not match.",
     "action": "Use firmware, Web UI files and version.txt from the same release.",
-    "mismatchTitle": "version mismatch",
+    "mismatchTitle": "Version mismatch",
     "updateAvailable": "Update available",
-    "updateAvailableWithVersion": "New Web UI version available: {version}",
+    "updateAvailableWithVersion": "Update available {version}",
     "mismatchAction": "Use firmware and Web UI files from the same release.",
     "updateAction": "Download the current Web UI files from the project release.",
     "deviceLabel": "Device {version}",
-    "newestLabel": "Newest {version}"
+    "upToDate": "Software up to date",
+    "updateUnknown": "Update unknown"
   },
   "html": {
     "menuButtonLabel": "Menu",
@@ -312,9 +311,9 @@
     "interpolateCharts": "Interpolate charts",
     "saveSettings": "SAVE SETTINGS",
     "localData": "Local data",
-    "exportWorkspaceBackup": "Export workspace backup",
-    "importWorkspaceBackup": "Import workspace backup",
-    "resetLocalWebUiData": "Reset local WebUI data",
+    "exportWorkspaceBackup": "Export",
+    "importWorkspaceBackup": "Import",
+    "resetLocalWebUiData": "Reset",
     "guide": "Guide",
     "settings": "Settings",
     "connectDeviceTitle": "Connect the device",
@@ -327,10 +326,34 @@
     "cancel": "Cancel",
     "create": "Create",
     "resultDisplayOff": "off",
-    "oledSleepOff": "off"
+    "oledSleepOff": "off",
+    "sensorCalibration": "Sensors",
+    "calibrateSensors": "Calibrate"
   },
   "targetSeries": {
     "standard": "Standard",
     "custom": "Custom"
+  },
+  "settingsInfo": {
+    "connection": "Connection",
+    "connected": "connected",
+    "notConnected": "not connected",
+    "ip": "IP",
+    "hostname": "Hostname",
+    "wifi": "Wi-Fi",
+    "signal": "Signal",
+    "uptime": "Uptime",
+    "measurements": "Measurements",
+    "status": "Status",
+    "ok": "OK",
+    "unavailable": "—",
+    "measurementId": "Measurement ID",
+    "problem": "problem"
+  },
+  "directions": {
+    "leftRight": "left → right",
+    "rightLeft": "right → left",
+    "topDown": "top → bottom",
+    "bottomTop": "bottom → top"
   }
 }

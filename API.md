@@ -254,7 +254,6 @@ Headers on manifest success:
 ```http
 X-OpenCurtainLab-Version-Source: manifest
 X-OpenCurtainLab-WebUI-Match: 0.1.x
-X-OpenCurtainLab-WebUI-SHA256: 7f074230c8ebc409d959b5b5dd8f33c9c68b71c680bbb9b77acfc4a1b4b7ae9d
 ```
 
 ## WebUI manifest

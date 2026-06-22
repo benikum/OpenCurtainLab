@@ -43,13 +43,11 @@
     "measurementMovedToDefault": "Messung ins Standardprojekt verschoben",
     "measurementAssignedToDefaultIncompatible": "Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.",
     "deviceNotConnected": "Gerät nicht verbunden",
-    "calibratingSensors": "Sensoren werden kalibriert...",
-    "sensorsCalibrated": "Sensoren kalibriert",
-    "sensorCalibrationFailed": "Sensorkalibrierung fehlgeschlagen",
     "languageUnavailable": "Sprachdateien sind nicht verfügbar"
   },
   "frame": {
-    "manualTitle": "OpenCurtainLab Anleitung"
+    "manualTitle": "OpenCurtainLab Anleitung",
+    "manualLoadFailed": "Die Anleitung konnte nicht geladen werden."
   },
   "connection": {
     "connected": "VERBUNDEN",
@@ -229,16 +227,16 @@
       "title": "Unvollständige Sensorabdeckung",
       "body": "Nicht alle fünf Sensoren wurden während dieser Messung abgedeckt.",
       "action": "Prüfe Kameraausrichtung, Vorhangweg oder ob der Schlitz die gesamte Sensorreihe abdeckt."
+    },
+    "flash_already_active_at_start": {
+      "title": "Blitzkontakt bereits aktiv",
+      "body": "Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.",
+      "action": "Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."
     }
   },
   "deviceErrors": {
     "generic": {
       "action": "Prüfe das Gerät und verbinde erneut, wenn der Fehler behoben ist."
-    },
-    "sensor_baseline_too_low": {
-      "title": "Sensor-Basiswert zu niedrig",
-      "body": "Die Sensoren erhalten zu wenig Licht für eine zuverlässige Messung.",
-      "action": "Prüfe Lichtquelle, Sensorverdrahtung und ob ein Verschlussblatt die Sensoren abdeckt."
     },
     "network_access_point_failed": {
       "title": "Setup-Access-Point fehlgeschlagen",
@@ -249,17 +247,12 @@
       "title": "Display konnte nicht initialisiert werden",
       "body": "Das OLED-Display konnte nicht initialisiert werden.",
       "action": "Prüfe I2C-Verdrahtung, Display-Adresse und Stromversorgung."
-    },
-    "lamp_connector_miswired": {
-      "title": "Lampenanschluss-Fehler",
-      "body": "Die Lampenbuchse meldet einen falschen oder kurzgeschlossenen Stecker.",
-      "action": "Nutze nur das OpenCurtainLab-Lampenkabel. Schließe keine Blitzkabel, Kopfhörer, Audiogeräte oder Mikrofone an die Lampenbuchse an."
     }
   },
   "firmware": {
     "title": "Versionskonflikt",
     "warning": "Firmware {actual} und WebUI {expected}.x passen möglicherweise nicht zusammen.",
-    "action": "Nutze Firmware, WebUI-Dateien und version.txt aus demselben Release."
+    "action": "Nutze Firmware und eine im Manifest kompatible WebUI-Version."
   },
   "measurement": {
     "moveToDefault": "Ins Standardprojekt verschieben"
@@ -272,8 +265,8 @@
     "firmwareWebUiMismatch": "Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.",
     "webUiOutdated": "Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.",
     "cdnMismatch": "Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.",
-    "deviceCdnMismatch": "Firmware {firmware} und veröffentlichte Projektversion {cdn} passen nicht zusammen.",
-    "action": "Nutze Firmware, WebUI-Dateien und version.txt aus demselben Release.",
+    "deviceCdnMismatch": "Firmware {firmware} und die im Manifest gewählte WebUI {cdn} nutzen unterschiedliche API-Versionen.",
+    "action": "Nutze Firmware und eine im Manifest kompatible WebUI-Version.",
     "mismatchTitle": "Versionsunterschied",
     "updateAvailable": "Update verfügbar",
     "updateAvailableWithVersion": "Update verfügbar {version}",
@@ -326,9 +319,7 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus",
-    "sensorCalibration": "Sensoren",
-    "calibrateSensors": "Kalibrieren"
+    "oledSleepOff": "aus"
   },
   "targetSeries": {
     "standard": "Standard",

@@ -10,15 +10,13 @@
 #define FIRMWARE_VERSION            "0.1.0"
 #define MDNS_NAME                   "opencurtainlab"
 #define GITHUB_PROJECT_URL          "https://github.com/benikum/OpenCurtainLab"
-#define WEB_APP_RELEASE_FILENAME    "compiled-v" FIRMWARE_VERSION ".html"
-#define WEB_APP_URL                 "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/" WEB_APP_RELEASE_FILENAME
-#define WEB_VERSION_URL             "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/version.txt"
+#define WEB_MANIFEST_URL            "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/manifest.json"
 #define WEB_APP_DOWNLOAD_FILENAME   "opencurtainlab.html"
 
-// Proxy to GitHub Raw
+// Remote manifest/download proxy
+#define WEB_MANIFEST_TIMEOUT_MS        8000UL
 #define WEB_APP_PROXY_TIMEOUT_MS       12000UL
-#define WEB_APP_PROXY_IDLE_TIMEOUT_MS  6000UL
-#define WEB_APP_PROXY_CHUNK_SIZE       1024
+#define WEB_APP_STREAM_BUFFER_SIZE     1024
 
 // WiFi / Setup AP
 #define SETUP_AP_SSID                    "OpenCurtainLab"
@@ -40,7 +38,6 @@
 #define PIN_BTN_UP        26
 #define PIN_BTN_DOWN      27
 
-#define PIN_LAMP_SENSE    14
 
 // Display / I2C
 #define I2C_SDA              21
@@ -55,25 +52,21 @@ static constexpr int SENSOR_COUNT = 5;
 static constexpr float SENSOR_DISTANCE_X_MM = 13.17f;
 static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 
-// Sensor Sampling
-#define SENSOR_BASELINE_SAMPLES      5
-#define SENSOR_BASELINE_DURATION_MS  250UL
-#define SENSOR_BASELINE_MIN_RAW      1200
-
-// Runtime sensitivity presets derive ADC hysteresis thresholds for low/medium/high.
-#define SENSOR_ON_DELTA_LOW     3000
-#define SENSOR_OFF_DELTA_LOW    2900
-#define SENSOR_ON_DELTA_MEDIUM  2000
-#define SENSOR_OFF_DELTA_MEDIUM 1900
-#define SENSOR_ON_DELTA_HIGH    1000
-#define SENSOR_OFF_DELTA_HIGH    900
+// Runtime sensitivity presets use absolute ADC hysteresis thresholds.
+// Phototransistors are expected to pull the ADC value downward when light reaches a sensor.
+// Active: raw <= ON threshold. Released: raw >= OFF threshold.
+#define SENSOR_ON_THRESHOLD_LOW      1100
+#define SENSOR_OFF_THRESHOLD_LOW     1250
+#define SENSOR_ON_THRESHOLD_MEDIUM   2100
+#define SENSOR_OFF_THRESHOLD_MEDIUM  2250
+#define SENSOR_ON_THRESHOLD_HIGH     3100
+#define SENSOR_OFF_THRESHOLD_HIGH    3250
 
 // Measurement Timing
 #define MEASUREMENT_TIMEOUT_MS       5000UL
 #define MEASUREMENT_SETTLE_MS        15UL
 #define MEASUREMENT_LATE_SENSOR_SETTLE_MS 120UL
 #define FLASH_TO_SENSOR_TIMEOUT_MS   250UL
-#define LAMP_SENSE_CONFIRM_MS        1000UL
 
 // Buttons
 #define DEBOUNCE_MS       50UL

@@ -4,7 +4,9 @@
    // CONSTANTS
 // ════════════════════════════════════════════
 const ALL_TIMES     = [1,2,4,8,15,30,60,125,250,500,1000,2000];
-const DEFAULT_CUSTOM_TIMES = [1,2,5,10,25,50,100,250,500,1000,2000];
+const DEFAULT_CUSTOM_TIMES = ALL_TIMES.slice();
+const DEFAULT_SENSOR_DISTANCE_X_MM = 13.17;
+const DEFAULT_SENSOR_DISTANCE_Y_MM = 7.67;
 const ID_COLORS = ['#f5b030','#68a8e0','#56c47e','#e86060','#c47aff'];
 const ID_BG     = ['rgba(245,176,48,0.18)','rgba(104,168,224,0.18)',
                        'rgba(86,196,126,0.18)','rgba(232,96,96,0.18)','rgba(196,122,255,0.18)'];
@@ -35,6 +37,17 @@ const DEFAULT_DEVICE_SETTINGS = {
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
 const DEFAULT_UI_SETTINGS = { interpolateCharts: false };
+
+
+// Console-only developer helpers are disabled unless explicitly enabled through ?dev=1 or localStorage.ocl_dev_tools=1.
+function isDevToolsEnabled() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    return params.get('dev') === '1' || safeLocalStorageGet('ocl_dev_tools') === '1';
+  } catch (e) {
+    return false;
+  }
+}
 
 
 // ════════════════════════════════════════════
@@ -70,7 +83,7 @@ let S = {
   settingsDirty: false,
   settingsSaving: false,
   deviceSettings: Object.assign({}, DEFAULT_DEVICE_SETTINGS),
-  targetTimes: ALL_TIMES.filter(t => t <= 1000),
+  targetTimes: ALL_TIMES.slice(),
   uiSettings: Object.assign({}, DEFAULT_UI_SETTINGS),
 };
 
@@ -137,9 +150,7 @@ function projectById(id) {
 // Normalize a measurement mode key to one of the supported current geometries.
 function normalizeMeasurementMode(mode) {
   const key = String(mode || '').toLowerCase();
-  if (key === 'vertical') return 'vertical';
-  if (key === 'central') return 'central';
-  return 'horizontal';
+  return key === 'vertical' ? 'vertical' : key === 'central' ? 'central' : 'horizontal';
 }
 
 // Check whether a project accepts a measurement packet based on mode and target series.
@@ -198,7 +209,35 @@ function readJsonStorage(key, fallback) {
 
 // Write JSON to localStorage without breaking restricted browser modes.
 function writeJsonStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    if (typeof console !== 'undefined' && console.warn) console.warn('OpenCurtainLab localStorage write failed', key, e);
+    return false;
+  }
+}
+
+// Remove a localStorage key without breaking restricted browser modes.
+function removeStorageKey(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (e) {
+    if (typeof console !== 'undefined' && console.warn) console.warn('OpenCurtainLab localStorage remove failed', key, e);
+    return false;
+  }
+}
+
+function isSafeInternalId(value) {
+  return /^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(String(value || ''));
+}
+
+function makeSafeInternalId(prefix) {
+  const cleanPrefix = /^[A-Za-z][A-Za-z0-9_-]{0,12}$/.test(prefix) ? prefix : 'id';
+  const cryptoObj = (typeof globalThis !== 'undefined' && globalThis.crypto) ? globalThis.crypto : null;
+  if (cryptoObj && typeof cryptoObj.randomUUID === 'function') return cleanPrefix + '_' + cryptoObj.randomUUID().replace(/-/g, '');
+  return cleanPrefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
 // Persist the measurement history.
@@ -224,8 +263,7 @@ function saveDeviceConfigLocal() {
   writeJsonStorage(LS_DEVICE_KEY, {
     deviceBase: S.deviceBase || '',
     deviceConfig: S.deviceConfig || null,
-    deviceSettings: S.deviceSettings || null,
-    targetTimes: S.targetTimes
+    deviceSettings: S.deviceSettings || null
   });
 }
 
@@ -260,7 +298,12 @@ function load() {
   const uiStore = readJsonStorage(LS_UI_KEY, {});
 
   S.projects = Array.isArray(projectsStore.projects) ? projectsStore.projects : [];
+  const loadedProjectIdMap = new Map();
   S.projects.forEach(p => {
+    const oldId = String(p.id || '');
+    if (p.isDefault || oldId === DEFAULT_PROJECT_ID) p.id = DEFAULT_PROJECT_ID;
+    else if (!isSafeInternalId(p.id)) p.id = makeSafeInternalId('p');
+    loadedProjectIdMap.set(oldId, p.id);
     if (!Array.isArray(p.times) || !p.times.length) p.times = ALL_TIMES.slice();
     p.times = p.times.map(Number).filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b);
     p.targetSeries = p.targetSeries === 'custom' ? 'custom' : 'standard';
@@ -269,7 +312,17 @@ function load() {
       : [];
   });
   S.history = Array.isArray(historyStore.history) ? historyStore.history : [];
-  S.selectedProjId = projectsStore.selectedProjId || null;
+  S.history.forEach(h => {
+    if (!isSafeInternalId(h.id)) h.id = makeSafeInternalId('m');
+    const oldProjId = String(h.projId || '');
+    if (loadedProjectIdMap.has(oldProjId)) h.projId = loadedProjectIdMap.get(oldProjId);
+    else if (!isSafeInternalId(h.projId)) h.projId = DEFAULT_PROJECT_ID;
+    const x = Number(h.sensorDistanceXmm);
+    const y = Number(h.sensorDistanceYmm);
+    h.sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : DEFAULT_SENSOR_DISTANCE_X_MM;
+    h.sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : DEFAULT_SENSOR_DISTANCE_Y_MM;
+  });
+  S.selectedProjId = loadedProjectIdMap.get(String(projectsStore.selectedProjId || '')) || projectsStore.selectedProjId || null;
   if (S.selectedProjId && !S.projects.some(p => p.id === S.selectedProjId)) S.selectedProjId = null;
   S.lastMeasId = historyStore.lastMeasId || (S.history.length ? S.history[0].id : null);
 
@@ -278,7 +331,13 @@ function load() {
   S.deviceConfig = deviceStore.deviceConfig || null;
   S.deviceSettings = sanitizeDeviceSettings(deviceStore.deviceSettings || {});
   S.uiSettings = sanitizeUiSettings(uiStore);
-  if (Array.isArray(deviceStore.targetTimes)) S.targetTimes = deviceStore.targetTimes.map(Number);
+  if (S.deviceConfig) {
+    const cfg = S.deviceConfig;
+    const arr = cfg.settings && cfg.settings.targetSeries === 'custom'
+      ? (cfg.targetTimesCustom || cfg.settings.customTargetTimes)
+      : cfg.targetTimesStandard;
+    if (Array.isArray(arr)) S.targetTimes = arr.map(Number).filter(v => Number.isFinite(v) && v > 0);
+  }
   ensureDefaultProject();
   sanitizeMeasurementAssignments();
   saveAppData();

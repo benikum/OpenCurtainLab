@@ -1,226 +1,165 @@
-# OpenCurtainLab Firmware
+# OpenCurtainLab
 
-OpenCurtainLab is an ESP32-based shutter tester for cameras. It uses five phototransistors plus a flash-sync input to capture shutter travel and exposure timing. The firmware provides a local OLED interface, a setup access point for WiFi provisioning, and a JSON API for an external WebUI.
+OpenCurtainLab is an ESP32-based shutter speed tester for focal-plane shutters. It reads five phototransistors and an optional flash-sync contact, exposes raw measurement data through a local HTTP API, and provides a standalone WebUI for analysis, projects, charts, import, and export.
 
-## Hardware overview
+## Current architecture
 
-The firmware is designed for one fixed sensor layout:
+- **Firmware:** Arduino/ESP32 sketch with separated managers for sensors, measurement state, OLED display, buttons, WiFi provisioning, runtime settings, and HTTP API.
+- **Sensor model:** Absolute ADC thresholds. A dark sensor is expected to read approximately `4095`; incoming light pulls the raw value downward. There is no calibration or stored baseline.
+- **WebUI delivery:** The full WebUI is not embedded in firmware. In station mode, `GET /` resolves the compatible compiled WebUI through `web/manifest.json`, streams it through the ESP32 as `opencurtainlab.html`, without buffering it in firmware.
+- **Setup portal:** The small WiFi setup portal is embedded as gzip-compressed PROGMEM HTML.
+- **Runtime settings:** Stored in ESP32 Preferences and editable through local buttons or the WebUI.
 
-- ESP32 development board
-- 5 phototransistors for shutter measurement
-- 1 flash-sync input
-- SSD1306 OLED display, 128 x 64 px
-- 3 buttons: listen/menu, up, down
-- LED/lamp output for the sensor light source
-- Lamp-jack sense input that prevents enabling the lamp output when the lamp connector is shorted or plugged into the flash contact
+## Hardware assumptions
 
-Pin assignments, geometry, timing limits, and firmware URLs are defined in `src/Config.h`.
+The default pinout is defined in `src/Config.h`:
 
-## User flow
+| Function | Pin |
+|---|---:|
+| Sensor 0 | 36 |
+| Sensor 1 | 39 |
+| Sensor 2 | 34 |
+| Sensor 3 | 35 |
+| Sensor 4 | 32 |
+| Flash sync | 33 |
+| Listen button | 25 |
+| Up button | 26 |
+| Down button | 27 |
+| I2C SDA | 21 |
+| I2C SCL | 22 |
 
-The device has four user-visible states:
+The phototransistor circuit is expected to produce high ADC readings in darkness and lower ADC readings under light. Sensor detection uses hysteresis:
 
-- `READY`: sensors are armed and the device waits for a shutter event
-- `MEASURING`: a shutter event is being captured with high polling priority
-- `RESULTS`: the latest measurement is shown on the OLED and exposed through the API
-- `MENU`: local OLED settings menu
+| Sensitivity | Active when raw is at or below | Released when raw is at or above |
+|---|---:|---:|
+| Low | 1100 | 1250 |
+| Medium | 2100 | 2250 |
+| High | 3100 | 3250 |
 
-During `MEASURING`, the firmware intentionally avoids web, display, and button work so sensor polling stays as fast and stable as possible.
+## Measurement flow
 
-## Local controls
-
-| Button | READY | RESULTS | MENU |
-|---|---|---|---|
-| Listen short | Open menu | Return to ready | Change selected setting |
-| Listen long | - | - | Save and leave menu |
-| Up short | Faster target time | Next result page / leave | Move up |
-| Down short | Slower target time | Previous result page / leave | Move down |
-| Up long | Change measurement direction | - | - |
-
-The menu currently contains:
-
-- sensor sensitivity
-- target time series
-- result display duration
-- OLED sleep timeout
-- reset network
-
-## Measurement modes
-
-The firmware supports these shutter travel modes:
-
-- `vertical`
-- `horizontal`
-- `central`
-
-The WebUI receives raw timestamps, sensor values, and the sensor geometry with each measurement. It performs its own timing, deviation, and curtain-speed calculations.
-
-## Device status model
-
-The firmware separates diagnostics into three categories:
-
-- **Device errors**: device-level errors or degraded hardware status reported by `/status.deviceStatus`
-- **Network hints**: non-blocking network diagnostics reported by `/status.network` and `/wifi/status`
-- **Measurement hints**: diagnostics for the latest measurement reported by `/data.hint`
-
-This keeps camera/shutter problems separate from device hardware or network problems.
-
-## WiFi provisioning
-
-On first boot, or if no valid station credentials are stored, the ESP32 starts the setup access point:
-
-```text
-SSID: OpenCurtainLab
-Password: empty
-Setup URL: http://192.168.4.1/
-```
-
-After successful provisioning the AP closes and the device is reachable through its station IP and, when mDNS is available, through:
-
-```text
-http://opencurtainlab.local/
-```
-
-In station mode, the root page tries to proxy the versioned single-file WebUI from `WEB_APP_URL` and returns it as `text/html` from the ESP32 origin. The proxied client-facing filename remains `opencurtainlab.html`. If the proxy request fails, the firmware falls back to a normal redirect to `WEB_APP_URL`. Captive portal probe paths serve the setup portal in AP mode.
+1. The device starts in `READY` and keeps the measurement engine armed unless a blocking device error exists.
+2. Before arming, the engine scans sensors once. If any sensor is already active, arming is rejected with `sensor_already_active_at_start`.
+3. The first sensor edge starts the critical capture window.
+4. While capturing, the firmware prioritizes sensor polling and postpones normal WebUI/OLED work.
+5. Open/close timestamps are stored per sensor in microseconds.
+6. The result is exposed through `/data`; the WebUI calculates exposure values, deviations, curtain travel, and charts.
 
 ## API
 
-The firmware exposes a small JSON API used by the WebUI:
+See [`API.md`](API.md) for the current response format.
 
-- `GET /status`
-- `GET /config`
-- `POST /config`
-- `GET /data`
-- `GET /sensors`
-- `POST /calibrate`
-- `GET /wifi/status`
-- `GET /wifi/scan`
-- `POST /wifi`
+Important endpoints:
 
-See [API.md](API.md) for request and response examples.
+| Endpoint | Purpose |
+|---|---|
+| `GET /` | Setup portal in AP mode; WebUI download through manifest proxy in station mode |
+| `GET /status` | Device and network diagnostics |
+| `GET /config` | Firmware capabilities and runtime settings |
+| `POST /config` | Change runtime settings |
+| `GET /data` | Latest raw measurement |
+| `GET /sensors` | Live sensor diagnostics |
+| `GET /version` | Manifest-selected compatible WebUI version |
+| `GET /wifi/status` | Setup portal WiFi state |
+| `GET /wifi/scan` | Setup portal network scan |
+| `POST /wifi` | Store WiFi credentials only while setup AP is active |
 
-## Setup portal generation
+Removed endpoint:
 
-The readable setup portal source lives in:
+| Endpoint | Status |
+|---|---|
+| `POST /calibrate` | Removed. Sensor diagnostics are available through `GET /sensors`. |
+
+## WebUI manifest
+
+The manifest is the canonical release metadata file and the WebUI compatibility database:
 
 ```text
-src/setup_portal.html
+web/manifest.json
 ```
 
-The generated firmware header is:
+Example:
+
+```json
+{
+  "schema": "opencurtainlab-web-manifest-v1",
+  "projectVersion": "0.1.0",
+  "entries": [
+    {
+      "match": "0.1.x",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.0.html"
+    }
+  ]
+}
+```
+
+Rules:
+
+- `projectVersion` is the canonical version used by `tools/release.py`.
+- `match` describes compatible firmware versions. `0.1.x` means any firmware with major `0` and API version `1`.
+- The middle number is the API version and must match between firmware and WebUI.
+- `version` is the actual WebUI version delivered to the browser.
+- If multiple entries match, the firmware selects the highest bugfix version.
+
+## Dependencies
+
+See [`DEPENDENCIES.md`](DEPENDENCIES.md) for firmware libraries, development tools, WebUI runtime requirements, and hardware expectations.
+
+## Build and release
+
+Run:
+
+```bash
+python3 tools/release.py
+```
+
+The release helper:
+
+1. reads `projectVersion` from `web/manifest.json`,
+2. updates `FIRMWARE_VERSION` in `src/Config.h`,
+3. updates `APP_VERSION` in `web/js/state-storage.js`,
+4. rebuilds the embedded setup portal,
+5. rebuilds the compiled standalone WebUI,
+6. verifies that `web/manifest.json` contains a complete entry for the built WebUI.
+
+The manifest itself is hand-maintained because it is the compatibility database.
+
+## Generated files
+
+These files are generated and should not be edited manually:
 
 ```text
 src/SetupPortalHtml.h
+web/compiled/compiled-v*.html
 ```
 
-Rebuild the compressed header after editing the HTML:
+## Development checks
+
+Useful checks before committing:
 
 ```bash
-python3 tools/build_setup_portal.py
+python3 tools/release.py
+node --check web/app.js
+node --check web/js/*.js
+python3 -m json.tool web/manifest.json >/dev/null
+python3 -m json.tool web/i18n/de.json >/dev/null
+python3 -m json.tool web/i18n/en.json >/dev/null
 ```
 
-The tool resolves paths from the repository root, so it can be started from any working directory. If a file is not found, run it with debug output:
+A real firmware compile still requires the Arduino/ESP32 toolchain and the configured hardware libraries.
 
-```bash
-python3 tools/build_setup_portal.py --debug
-```
+## Known weaknesses and items for future work
 
-The tool minifies the HTML, compresses it with gzip, and writes a `PROGMEM` byte array. The firmware serves it with `Content-Encoding: gzip`.
-
-
-## WebUI source and single-file build
-
-The WebUI is kept split during development and compiled into one self-contained HTML file for releases or local offline use.
-
-Source layout:
-
-```text
-web/index.html              WebUI HTML shell
-web/app.css                 Main UI and tutorial styling
-web/app.js                  WebUI bootstrapping and event binding
-web/js/i18n.js              Language loading and translations
-web/js/utils.js             Shared formatting and file helpers
-web/js/state-storage.js     App state, defaults, and localStorage
-web/js/device-settings.js   ESP32 API, firmware settings, sensor tools
-web/js/navigation.js        Main view switching, tutorial, language panel
-web/js/measurements-projects.js Measurement ingestion and project lists
-web/js/project-analysis.js  Project statistics and summary views
-web/js/charts.js            Canvas timeline and curtain charts
-web/js/backup-export.js      Backup/import, CSV export, notes, mock data
-web/i18n/de.json            German UI strings
-web/i18n/en.json            English UI strings
-web/tutorial/de.html        German tutorial HTML fragment
-web/tutorial/en.html        English tutorial HTML fragment
-web/compiled/               Generated release HTML output
-```
-
-JavaScript source comments use simple `//` comments. The build script strips source comments from the compiled release file, but leaves the source files readable for development.
-
-Tutorial files are HTML fragments only. They must not include `<!doctype>`, `<html>`, `<head>`, `<body>`, or local `<style>` blocks. Tutorial styling belongs in `web/app.css` so the guide reuses the same visual system as the WebUI.
-
-Build the single-file WebUI with:
-
-```bash
-python3 tools/build_webui.py
-```
-
-The tool resolves all source paths from the repository root, so it can be started from any working directory. For path diagnostics:
-
-```bash
-python3 tools/build_webui.py --debug
-```
-
-You can also enable the same diagnostics with:
-
-```bash
-OCL_DEBUG=1 python3 tools/build_webui.py
-```
-
-The default output is:
-
-```text
-web/compiled/compiled-v0.1.0.html
-```
-
-The compiled file embeds CSS, JavaScript, i18n JSON, and both tutorial fragments. It has no external asset dependencies and can be opened locally through `file://`. Firmware fetches the versioned file matching `FIRMWARE_VERSION`; the ESP32 proxy still presents it to the browser as `opencurtainlab.html`.
-
-For source-mode development, serve the `web` directory through the helper script so browser `fetch()` can load the JSON and tutorial fragment files:
-
-```bash
-python3 tools/serve_webui.py
-```
-
-For path diagnostics:
-
-```bash
-python3 tools/serve_webui.py --debug
-```
-
-Open `http://127.0.0.1:8000/`.
-
-The WebUI exposes this developer console command for live sensor diagnostics:
-
-```js
-oclSensors()
-```
-
-It fetches `GET /sensors`, prints the five phototransistor readings as a table, and returns the diagnostics JSON.
-
-## Build notes
-
-The firmware is an Arduino-style ESP32 sketch. Required libraries include:
-
-- ESP32 Arduino core
-- ArduinoJson
-- Adafruit GFX Library
-- Adafruit SSD1306
-
-Keep the sketch folder name aligned with `OpenCurtainLab.ino` when using the Arduino IDE.
-
-## Development transparency
-
-OpenCurtainLab is a hardware-tested project developed and maintained by the author.
-
-AI tools were used during development as an assistant for code review, refactoring, documentation, and exploring implementation options. The project is not generated and published without review: hardware behavior, firmware changes, API behavior, and measurement results are checked manually before release.
-
-All design decisions, project direction, and release responsibility remain with the maintainer.
+- The local WebUI API intentionally has no authentication. Anyone on the same local network can read diagnostics and change runtime settings through `/config`.
+- The setup AP is open by default and WiFi credentials are submitted over HTTP. This is simple, but should only be used in a trusted local environment.
+- `POST /wifi` is locked in station mode, but while setup AP mode is active anyone connected to the AP can submit credentials.
+- `GET /` and `/version` fetch `web/manifest.json` with ESP32 TLS certificate validation disabled, then download the selected HTML without an additional integrity check.
+- The manifest is hand-maintained. Wrong URLs or accidentally broad compatibility patterns can deliver the wrong WebUI.
+- Sensor detection uses fixed ADC thresholds. This is simpler than calibration, but hardware variation, resistor values, ambient light leaks, ADC noise, and sensor placement can still require threshold tuning.
+- ADC reads are sequential. At very fast shutter speeds, channel-to-channel read latency and loop jitter can affect timing accuracy.
+- The ESP32 ADC is not a precision instrument. Results should be validated against a known timing reference before relying on absolute accuracy.
+- The WebUI still contains inline event handlers in the HTML. Import IDs are hardened, but replacing inline handlers with delegated listeners would reduce long-term XSS and maintenance risk.
+- The firmware still uses ArduinoJson v6-style APIs. A future migration to ArduinoJson 7 style would reduce deprecation warnings.
+- The WebUI download depends on GitHub Raw availability unless the user already has a downloaded standalone HTML file.
+- The firmware does not verify the integrity of the streamed WebUI. Use trusted release URLs and review `web/manifest.json` carefully.

@@ -27,11 +27,27 @@ struct DeviceStatusView {
   NetworkHint networkHint = NetworkHint::None;
 };
 
+struct WifiStatusView {
+  bool ok = true;
+  bool connected = false;
+  bool apMode = false;
+  bool mdnsStarted = false;
+  bool hasSaved = false;
+  String ip;
+  String apIp;
+  String hostname = MDNS_NAME;
+  String savedSsid;
+  String currentSsid;
+  String lastError;
+  NetworkHint hint = NetworkHint::None;
+  const char* error = nullptr;
+};
+
 class JsonBuilder {
 public:
   // Builds the /status JSON response.
   static String status(const DeviceStatusView& view) {
-    StaticJsonDocument<1152> doc;
+    StaticJsonDocument<1024> doc;
     const String mdnsName = view.mdns.length() ? view.mdns : String(MDNS_NAME ".local");
     const int rssi = view.connected ? WiFi.RSSI() : 0;
 
@@ -39,15 +55,6 @@ public:
     doc["version"] = FIRMWARE_VERSION;
     doc["uptime"] = millis() / 1000;
     doc["measCount"] = view.measurementId;
-
-    // Legacy top-level fields are kept so existing WebUIs continue to work.
-    doc["wifi"] = view.connected;
-    doc["apMode"] = view.apMode;
-    doc["ip"] = view.ip;
-    doc["mdns"] = mdnsName;
-    doc["rssi"] = rssi;
-    doc["deviceError"] = deviceErrorKey(view.deviceStatus.error);
-    doc["deviceErrorText"] = deviceErrorText(view.deviceStatus.error);
 
     JsonObject deviceStatus = doc.createNestedObject("deviceStatus");
     deviceStatus["error"] = deviceErrorKey(view.deviceStatus.error);
@@ -83,8 +90,14 @@ public:
     doc["displayRotation"] = DISPLAY_ROTATION;
     doc["sensorCount"] = SENSOR_COUNT;
     doc["maxTargetTime"] = DEVICE_MAX_TARGET_TIME;
-    doc["baselineSamples"] = SENSOR_BASELINE_SAMPLES;
-    doc["baselineDurationMs"] = SENSOR_BASELINE_DURATION_MS;
+    doc["sensorReadModel"] = "absolute_adc_threshold";
+    JsonObject thresholds = doc.createNestedObject("sensorThresholds");
+    thresholds["lowOnRaw"] = SENSOR_ON_THRESHOLD_LOW;
+    thresholds["lowOffRaw"] = SENSOR_OFF_THRESHOLD_LOW;
+    thresholds["mediumOnRaw"] = SENSOR_ON_THRESHOLD_MEDIUM;
+    thresholds["mediumOffRaw"] = SENSOR_OFF_THRESHOLD_MEDIUM;
+    thresholds["highOnRaw"] = SENSOR_ON_THRESHOLD_HIGH;
+    thresholds["highOffRaw"] = SENSOR_OFF_THRESHOLD_HIGH;
 
     // Capability arrays tell the WebUI which options this firmware supports.
     JsonArray seriesOptions = doc.createNestedArray("targetSeriesOptions");
@@ -97,12 +110,6 @@ public:
     JsonArray custom = doc.createNestedArray("targetTimesCustom");
     for (int i = 0; i < settings.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(settings.customTargetTimes[i]);
 
-    // targetTimes mirrors the currently active series for simple clients.
-    JsonArray targetTimes = doc.createNestedArray("targetTimes");
-    const int* activeTimes = targetTimesForSeries(settings.targetSeries);
-    const int activeCount = targetTimesCountForSeries(settings.targetSeries);
-    for (int i = 0; i < activeCount; i++) targetTimes.add(activeTimes[i]);
-
     JsonArray modes = doc.createNestedArray("modes");
     modes.add("vertical");
     modes.add("horizontal");
@@ -112,7 +119,46 @@ public:
     appendSettings(settingsObj, settings);
 
     doc["githubProjectUrl"] = GITHUB_PROJECT_URL;
-    doc["webAppUrl"] = WEB_APP_URL;
+    doc["webManifestUrl"] = WEB_MANIFEST_URL;
+    doc["webAppDelivery"] = "manifest_proxy";
+    return serialize(doc);
+  }
+
+  // Builds a compact error object shared by API handlers.
+  static String error(const char* message, bool ok = false) {
+    StaticJsonDocument<160> doc;
+    doc["ok"] = ok;
+    doc["error"] = message ? message : "error";
+    return serialize(doc);
+  }
+
+  // Builds the POST /config response after settings have been sanitized.
+  static String settingsResponse(const RuntimeSettings& settings, bool changed) {
+    StaticJsonDocument<1024> doc;
+    doc["ok"] = true;
+    doc["changed"] = changed;
+    JsonObject obj = doc.createNestedObject("settings");
+    appendSettings(obj, settings);
+    return serialize(doc);
+  }
+
+  // Builds the WiFi status JSON used by GET /wifi/status and POST /wifi.
+  static String wifiStatus(const WifiStatusView& view) {
+    StaticJsonDocument<768> doc;
+    doc["ok"] = view.ok;
+    doc["connected"] = view.connected;
+    doc["apMode"] = view.apMode;
+    doc["ip"] = view.ip;
+    doc["apIp"] = view.apIp;
+    doc["hostname"] = view.hostname.length() ? view.hostname : String(MDNS_NAME);
+    doc["mdnsStarted"] = view.mdnsStarted;
+    doc["hasSaved"] = view.hasSaved;
+    doc["savedSsid"] = view.savedSsid;
+    doc["currentSsid"] = view.currentSsid;
+    doc["hint"] = networkHintKey(view.hint);
+    doc["hintText"] = networkHintText(view.hint);
+    doc["lastError"] = view.lastError;
+    if (view.error && view.error[0]) doc["error"] = view.error;
     return serialize(doc);
   }
 
@@ -129,6 +175,8 @@ public:
     // No measurement id means the device has not produced any result since boot.
     if (!measurementIdString || measurementIdString[0] == '\0') {
       doc["valid"] = false;
+      doc["hint"] = measurementHintKey(MeasurementHint::None);
+      doc["hintText"] = measurementHintText(MeasurementHint::None);
       return serialize(doc);
     }
 
@@ -144,7 +192,6 @@ public:
       o["id"] = i;
       o["activated"] = s.wasActivated;
       o["raw"] = s.rawValue;
-      o["baseline"] = s.baselineValue;
       o["openUs"] = s.openTimestamp;
       o["closeUs"] = s.closeTimestamp;
     }
@@ -163,12 +210,12 @@ public:
 
   // Builds a live non-mutating sensor diagnostics snapshot for /sensors.
   static String sensors(const SensorManager& manager) {
-    StaticJsonDocument<1536> doc;
+    StaticJsonDocument<2304> doc;
     doc["ok"] = true;
     doc["timeUs"] = esp_timer_get_time();
     doc["sensorCount"] = SENSOR_COUNT;
-    doc["onDelta"] = manager.sensorOnDelta();
-    doc["offDelta"] = manager.sensorOffDelta();
+    doc["onThresholdRaw"] = manager.sensorOnThreshold();
+    doc["offThresholdRaw"] = manager.sensorOffThreshold();
 
     JsonArray sensors = doc.createNestedArray("sensors");
     for (int i = 0; i < SENSOR_COUNT; i++) {
@@ -178,7 +225,8 @@ public:
       o["id"] = i;
       o["pin"] = tracked.pin;
       o["raw"] = raw;
-      o["baseline"] = tracked.baselineValue;
+      o["onThresholdRaw"] = manager.sensorOnThreshold();
+      o["offThresholdRaw"] = manager.sensorOffThreshold();
       o["active"] = manager.isDiagnosticSensorActive(i, raw);
       o["trackedActive"] = tracked.isActive;
       o["wasActivated"] = tracked.wasActivated;
@@ -213,10 +261,17 @@ public:
   }
 
 private:
+  // Serializes a JSON document into an Arduino String and reports fixed-buffer overflows.
   template <typename TDoc>
-  // Serializes a JSON document into an Arduino String.
   static String serialize(TDoc& doc) {
     String out;
+    if (doc.overflowed()) {
+      StaticJsonDocument<96> errorDoc;
+      errorDoc["ok"] = false;
+      errorDoc["error"] = "json_overflow";
+      serializeJson(errorDoc, out);
+      return out;
+    }
     serializeJson(doc, out);
     return out;
   }

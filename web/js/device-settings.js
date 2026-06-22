@@ -5,7 +5,17 @@
 // ════════════════════════════════════════════
 
 function classifyFetchError(err) {
-  return 'connecting';
+  if (err && (err.name === 'TimeoutError' || err.name === 'AbortError')) return 'timeout';
+  if (err && Number.isFinite(Number(err.status))) return 'http_' + Number(err.status);
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'browser_offline';
+  if (location.protocol === 'https:' && S.deviceBase && S.deviceBase.startsWith('http://')) return 'mixed_content';
+  return 'network_or_cors';
+}
+
+function httpStatusError(response) {
+  const err = new Error('HTTP ' + (response ? response.status : 'error'));
+  err.status = response ? response.status : 0;
+  return err;
 }
 
 // Run one background polling cycle for measurement data. /status is rate-limited by STATUS_POLL_MS.
@@ -16,7 +26,7 @@ async function poll() {
 
   try {
     const r = await fetch(api('/data'), { signal: AbortSignal.timeout(1500), mode: 'cors' });
-    if (!r.ok) throw 0;
+    if (!r.ok) throw httpStatusError(r);
     const d = await r.json();
 
     S.connectionProblem = null;
@@ -119,12 +129,7 @@ function setCustomTargetTimesError(message = '') {
   if (input) input.classList.toggle('invalid', !!message);
 }
 
-// Build helper text for the custom target-time editor.
-function customTargetTimesHelpText() {
-  return '';
-}
-
-// Custom target times are always visible; this hook is kept for older compiled markup.
+// Keeps the optional custom target-time help element empty when older templates still contain it.
 function renderCustomTargetTimesHelp() {
   const el = document.getElementById('custom-target-times-help');
   if (el) el.textContent = '';
@@ -326,16 +331,13 @@ function applyDeviceConfig(d) {
   if (!d) return;
 
   // /config is the authority for target lists and runtime settings. Measurement geometry is stored per measurement packet.
-  if (Array.isArray(d.targetTimes)) {
-    const maxT = Number(d.maxTargetTime || Math.max(...d.targetTimes));
-    S.targetTimes = d.targetTimes.map(Number).filter(t => t > 0 && t <= maxT);
-  }
-
   if (d.settings && d.settings.targetSeries) {
     const arr = d.settings.targetSeries === 'custom'
       ? (d.targetTimesCustom || d.settings.customTargetTimes)
       : d.targetTimesStandard;
     if (Array.isArray(arr)) S.targetTimes = arr.map(Number).filter(t => t > 0);
+  } else if (Array.isArray(d.targetTimesStandard)) {
+    S.targetTimes = d.targetTimesStandard.map(Number).filter(t => t > 0);
   }
 
   if (d.settings) S.deviceSettings = sanitizeDeviceSettings(d.settings);
@@ -430,7 +432,7 @@ function renderDeviceConfigSummary() {
 }
 
 // Render all settings controls from local state and device capabilities.
-function renderSettingsControls(preserveSelections = false) {
+function renderSettingsControls() {
   const st = Object.assign({}, DEFAULT_DEVICE_SETTINGS, S.deviceSettings || {});
   const seriesSel = document.getElementById('set-target-series');
   const sensSel = document.getElementById('set-sensitivity');
@@ -604,7 +606,6 @@ function applyConfigPostResponse(response) {
   if (response.maxTargetTime) merged.maxTargetTime = response.maxTargetTime;
   if (response.targetTimesStandard) merged.targetTimesStandard = response.targetTimesStandard;
   if (response.targetTimesCustom) merged.targetTimesCustom = response.targetTimesCustom;
-  if (response.targetTimes) merged.targetTimes = response.targetTimes;
   applyDeviceConfig(merged);
 }
 
@@ -618,7 +619,7 @@ async function connectToDeviceAddress() {
 
   try {
     const r = await fetch(base + '/config', { signal: AbortSignal.timeout(2200), mode: 'cors' });
-    if (!r.ok) throw 0;
+    if (!r.ok) throw httpStatusError(r);
     const cfg = await r.json();
     S.deviceBase = base;
     S.deviceHost = base.replace(/^https?:\/\//, '');
@@ -639,27 +640,6 @@ async function connectToDeviceAddress() {
   }
 }
 
-// Recalibrate sensor baselines through the firmware API.
-async function calibrateSensors() {
-  if (!(await ensureDeviceConnection(true))) return;
-  const btn = document.getElementById('calibrate-sensors-btn');
-  try {
-    if (btn) btn.disabled = true;
-    toast(tx('toast.calibratingSensors', 'Calibrating sensors...'), 'info');
-    const r = await fetch(api('/calibrate'), {
-      method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
-      body: '{}', signal: AbortSignal.timeout(5000)
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false || d.calibrated === false) throw new Error(d.error || 'calibration failed');
-    await fetchDeviceStatus(true);
-    toast(tx('toast.sensorsCalibrated', 'Sensors calibrated'), 'success');
-  } catch(e) {
-    toast(tx('toast.sensorCalibrationFailed', 'Sensor calibration failed'), 'error');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
 
 // Send changed settings to the firmware and update local state.
 async function saveDeviceSettings() {
@@ -678,7 +658,12 @@ async function saveDeviceSettings() {
   const customTargetTimes = customResult.times;
   if (customInput) customInput.value = customTargetTimes.join(',');
 
+  const storedSettings = Object.assign({}, DEFAULT_DEVICE_SETTINGS, S.deviceSettings || {});
   const body = {
+    defaultMeasurementMode: normalizeMeasurementMode(storedSettings.defaultMeasurementMode),
+    defaultTargetTime: Number.isFinite(Number(storedSettings.defaultTargetTime))
+      ? Number(storedSettings.defaultTargetTime)
+      : DEFAULT_DEVICE_SETTINGS.defaultTargetTime,
     targetSeries,
     customTargetTimes,
     sensorSensitivity: SENSOR_SENSITIVITIES.includes(document.getElementById('set-sensitivity').value)
@@ -694,7 +679,7 @@ async function saveDeviceSettings() {
       method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body), signal: AbortSignal.timeout(2200)
     });
-    if (!r.ok) throw 0;
+    if (!r.ok) throw httpStatusError(r);
     const d = await r.json();
     applyConfigPostResponse(d);
     saveDeviceConfigLocal();
@@ -728,7 +713,8 @@ async function fetchSensorDiagnostics() {
       id: sensor.id,
       pin: sensor.pin,
       raw: sensor.raw,
-      baseline: sensor.baseline,
+      onThresholdRaw: sensor.onThresholdRaw,
+      offThresholdRaw: sensor.offThresholdRaw,
       active: sensor.active,
       trackedActive: sensor.trackedActive,
       wasActivated: sensor.wasActivated

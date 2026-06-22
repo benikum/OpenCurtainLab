@@ -21,45 +21,45 @@ struct RuntimeSettings {
   int customTargetTimesCount = TARGET_TIMES_CUSTOM_DEFAULT_COUNT;
   int oledSleepMinutes = DEFAULT_OLED_SLEEP_MINUTES;
 
-  // Returns the ADC activation threshold for the selected sensitivity.
-  int sensorOnDelta() const {
-    if (sensorSensitivity == "low") return SENSOR_ON_DELTA_LOW;
-    if (sensorSensitivity == "high") return SENSOR_ON_DELTA_HIGH;
-    return SENSOR_ON_DELTA_MEDIUM;
+  // Returns the absolute ADC activation threshold for the selected sensitivity.
+  int sensorOnThreshold() const {
+    return sensorSensitivity == "low" ? SENSOR_ON_THRESHOLD_LOW
+         : sensorSensitivity == "high" ? SENSOR_ON_THRESHOLD_HIGH
+         : SENSOR_ON_THRESHOLD_MEDIUM;
   }
 
-  // Returns the ADC release threshold for the selected sensitivity.
-  int sensorOffDelta() const {
-    if (sensorSensitivity == "low") return SENSOR_OFF_DELTA_LOW;
-    if (sensorSensitivity == "high") return SENSOR_OFF_DELTA_HIGH;
-    return SENSOR_OFF_DELTA_MEDIUM;
+  // Returns the absolute ADC release threshold for the selected sensitivity.
+  int sensorOffThreshold() const {
+    return sensorSensitivity == "low" ? SENSOR_OFF_THRESHOLD_LOW
+         : sensorSensitivity == "high" ? SENSOR_OFF_THRESHOLD_HIGH
+         : SENSOR_OFF_THRESHOLD_MEDIUM;
   }
 };
 
 // Maps the result display mode to a timeout in milliseconds.
 static inline unsigned long resultDisplayDurationMs(const String& mode) {
-  if (mode == "2s") return 2000UL;
-  if (mode == "5s") return 5000UL;
-  if (mode == "10s") return 10000UL;
-  return 0UL;
+  return mode == "2s" ? 2000UL
+       : mode == "5s" ? 5000UL
+       : mode == "10s" ? 10000UL
+       : 0UL;
 }
 
 // Maps the result display mode to a short menu label.
 static inline const char* resultDisplayLabel(const String& mode) {
-  if (mode == "2s") return "2 s";
-  if (mode == "5s") return "5 s";
-  if (mode == "10s") return "10 s";
-  if (mode == "none") return "Off";
-  return "Button";
+  return mode == "2s" ? "2 s"
+       : mode == "5s" ? "5 s"
+       : mode == "10s" ? "10 s"
+       : mode == "none" ? "Off"
+       : "Button";
 }
 
 // Cycles to the next result display mode used by the local menu.
 static inline String nextResultDisplayMode(const String& mode) {
-  if (mode == "until_button") return "2s";
-  if (mode == "2s") return "5s";
-  if (mode == "5s") return "10s";
-  if (mode == "10s") return "none";
-  return "until_button";
+  return mode == "until_button" ? "2s"
+       : mode == "2s" ? "5s"
+       : mode == "5s" ? "10s"
+       : mode == "10s" ? "none"
+       : "until_button";
 }
 
 class RuntimeSettingsStore {
@@ -158,49 +158,6 @@ public:
     return changed;
   }
 
-  // Serializes the current settings as a compact JSON object.
-  String settingsJson() const {
-    StaticJsonDocument<1024> doc;
-    doc["defaultMeasurementMode"] = measurementModeKey(_s.defaultMode);
-    doc["defaultTargetTime"] = _s.defaultTargetTime;
-    doc["sensorSensitivity"] = _s.sensorSensitivity;
-    doc["resultDisplay"] = _s.resultDisplayMode;
-    doc["targetSeries"] = targetSeriesKey(_s.targetSeries);
-    JsonArray custom = doc.createNestedArray("customTargetTimes");
-    for (int i = 0; i < _s.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(_s.customTargetTimes[i]);
-    doc["oledSleepMinutes"] = _s.oledSleepMinutes;
-
-    String out;
-    serializeJson(doc, out);
-    return out;
-  }
-
-  // Extracts a string value from a JSON object helper payload.
-  static String extractJsonString(const String& json, const char* key) {
-    StaticJsonDocument<1024> doc;
-    if (deserializeJson(doc, json)) return "";
-    if (!doc.containsKey(key)) return "";
-    return String(doc[key] | "");
-  }
-
-  // Extracts an integer value from a JSON object helper payload.
-  static bool extractJsonInt(const String& json, const char* key, int& out) {
-    StaticJsonDocument<1024> doc;
-    if (deserializeJson(doc, json)) return false;
-    if (!doc.containsKey(key)) return false;
-    out = doc[key].as<int>();
-    return true;
-  }
-
-  // Extracts a boolean value from a JSON object helper payload.
-  static bool extractJsonBool(const String& json, const char* key, bool& out) {
-    StaticJsonDocument<1024> doc;
-    if (deserializeJson(doc, json)) return false;
-    if (!doc.containsKey(key)) return false;
-    out = doc[key].as<bool>();
-    return true;
-  }
-
 private:
   RuntimeSettings _s;
 
@@ -215,8 +172,8 @@ private:
     const int count = targetTimesCountForSeries(_s.targetSeries);
     if (count <= 0) return;
 
-    if (_s.defaultTargetTime < times[0]) _s.defaultTargetTime = times[0];
-    if (_s.defaultTargetTime > times[count - 1]) _s.defaultTargetTime = times[count - 1];
+    _s.defaultTargetTime = targetTimeAt(targetIndexForTime(_s.defaultTargetTime, _s.targetSeries), _s.targetSeries);
+
     if (_s.sensorSensitivity != "low" &&
         _s.sensorSensitivity != "medium" && _s.sensorSensitivity != "high") {
       _s.sensorSensitivity = DEFAULT_SENSOR_SENSITIVITY;

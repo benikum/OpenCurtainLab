@@ -36,6 +36,7 @@ MeasurementMode measureMode = MeasurementMode::HORIZONTAL;
 String resultDisplayMode = DEFAULT_RESULT_DISPLAY;
 int oledSleepMinutes = DEFAULT_OLED_SLEEP_MINUTES;
 
+bool displayAvailable = false;
 bool oledSleeping = false;
 bool suppressButtonsUntilReleased = false;
 unsigned long lastUserActivity = 0;
@@ -44,13 +45,28 @@ bool displayDirty = true;
 unsigned long lastDisplayUpdate = 0;
 const unsigned long DISPLAY_REFRESH_MS = 100;
 
+const unsigned long OLED_NOTICE_MS = 2800UL;
+const uint8_t OLED_NOTICE_QUEUE_SIZE = 4;
+struct OledNotice {
+  char title[18];
+  char message[72];
+};
+OledNotice activeOledNotice = {{0}, {0}};
+OledNotice oledNoticeQueue[OLED_NOTICE_QUEUE_SIZE];
+uint8_t oledNoticeHead = 0;
+uint8_t oledNoticeCount = 0;
+unsigned long oledNoticeStartedMs = 0;
+unsigned long oledNoticeDurationMs = 0;
+DeviceError lastOledDeviceError = DeviceError::None;
+NetworkHint lastOledNetworkHint = NetworkHint::None;
+
 uint8_t resultPage = 1;
-unsigned long resultUntil = 0;
+unsigned long resultStartedMs = 0;
+unsigned long resultDurationMs = 0;
 unsigned long lastReadyArmAttempt = 0;
 const unsigned long READY_ARM_RETRY_MS = 250;
 MeasurementResult displayedResult;
 DisplayResultSummary displayedSummary;
-int displayedTargetFraction = DEFAULT_TARGET_TIME;
 MeasurementMode displayedMode = MeasurementMode::HORIZONTAL;
 
 uint8_t menuIndex = 0;
@@ -64,19 +80,21 @@ void runCriticalMeasurementLoop();
 void refreshDisplay();
 void setAppState(AppState next);
 bool hasBlockingDeviceError();
-bool isDeviceErrorVisibleOnOled();
-bool checkLampConnectorBeforeLightOn();
 void cycleMeasureMode();
 void applyRuntimeSettings(bool resetSelection);
 void applyUiSettings(const RuntimeSettings& cfg);
 void applyTargetSettings(const RuntimeSettings& cfg, bool resetSelection);
 void applySensorSettings(const RuntimeSettings& cfg);
-bool recalibrateSensors(const char* reason);
-bool calibrateSensorsFromApi();
 void setDeviceError(DeviceError error, DeviceSubsystem subsystem);
 void clearDeviceError(DeviceSubsystem subsystem = DeviceSubsystem::None);
 bool hasDeviceError();
 DeviceError currentDeviceError();
+NetworkHint currentNetworkHint();
+void monitorOledDiagnostics();
+void enqueueOledNotice(const char* title, const char* message);
+void startNextOledNotice();
+bool isOledNoticeActive();
+void updateOledNoticeTimer();
 void handleWifiEvents();
 void noteUserActivity();
 void updateOledSleep();
@@ -95,7 +113,7 @@ void updateResultsTimeout();
 void processNewResult();
 String menuDraftJson();
 
-// Initializes hardware, networking, settings, calibration, and the first ready capture.
+// Initializes hardware, networking, settings, and the first ready capture.
 void setup() {
   Serial.begin(115200);
   delay(300);
@@ -103,9 +121,9 @@ void setup() {
   Serial.println(F("     OpenCurtainLab ESP32"));
   Serial.println(F("=============================="));
 
-  pinMode(PIN_LAMP_SENSE, INPUT_PULLUP);
 
   const bool displayOk = displayManager.begin();
+  displayAvailable = displayOk;
   if (!displayOk) {
     webServer.setDeviceError(DeviceError::DisplayInitFailed, DeviceSubsystem::Display);
   }
@@ -113,7 +131,6 @@ void setup() {
   sensorManager.begin();
   engine.setMode(measureMode);
   webServer.attachSensorManager(sensorManager);
-  webServer.setCalibrationCallback(calibrateSensorsFromApi);
 
   webServer.begin(WIFI_CONNECT_TIMEOUT_MS);
   applyRuntimeSettings(true);
@@ -123,6 +140,7 @@ void setup() {
   Serial.printf("[Main] Mode: %s\n", measurementModeKey(measureMode));
   lastUserActivity = millis();
   enterReady();
+  monitorOledDiagnostics();
 
   // Draw the first steady screen immediately so the splash is not left visible
   // until the next scheduler tick.
@@ -141,7 +159,7 @@ void loop() {
     return;
   }
 
-  // Settings can change from the WebUI; reapply them centrally and recalibrate sensors immediately.
+  // Settings can change from the WebUI; reapply them centrally.
   if (webServer.consumeSettingsChanged()) {
     applyRuntimeSettings(false);
     noteUserActivity();
@@ -182,7 +200,9 @@ void loop() {
   if (appState != AppState::MEASURING) {
     webServer.update();
     handleWifiEvents();
+    monitorOledDiagnostics();
   }
+  updateOledNoticeTimer();
   updateOledSleep();
 }
 
@@ -281,7 +301,8 @@ void openMenu() {
   menuDraft = webServer.getSettings();
   menuDirty = false;
   menuIndex = 0;
-  resultUntil = 0;
+  resultStartedMs = 0;
+  resultDurationMs = 0;
   displayDirty = true;
 }
 
@@ -406,7 +427,6 @@ void processNewResult() {
   // Copy the finished result before marking it handled so display and API state stay stable.
   displayedResult = engine.getResult();
   displayedSummary = engine.getSummary();
-  displayedTargetFraction = targetFraction;
   displayedMode = measureMode;
   resultPage = 1;
   engine.markResultHandled();
@@ -418,7 +438,8 @@ void processNewResult() {
 
   setAppState(AppState::RESULTS);
   const unsigned long durationMs = resultDisplayDurationMs(resultDisplayMode);
-  resultUntil = durationMs > 0 ? millis() + durationMs : 0;
+  resultStartedMs = millis();
+  resultDurationMs = durationMs;
   displayDirty = true;
 }
 
@@ -436,8 +457,6 @@ void applyRuntimeSettings(bool resetSelection) {
                 measurementModeKey(cfg.defaultMode), DEVICE_MAX_TARGET_TIME, cfg.defaultTargetTime,
                 targetSeriesKey(cfg.targetSeries), cfg.sensorSensitivity.c_str(), cfg.resultDisplayMode.c_str());
 
-  // Threshold or input-mode changes affect baselines, so every settings application recalibrates sensors.
-  recalibrateSensors(resetSelection ? "startup/settings" : "settings");
   displayDirty = true;
 }
 
@@ -459,9 +478,9 @@ void applyTargetSettings(const RuntimeSettings& cfg, bool resetSelection) {
   targetFraction = targetTimeAt(targetIndex, targetSeries);
 }
 
-// Applies the configured sensor read mode and ADC thresholds.
+// Applies the configured ADC thresholds.
 void applySensorSettings(const RuntimeSettings& cfg) {
-  sensorManager.setSensorThresholds(cfg.sensorOnDelta(), cfg.sensorOffDelta());
+  sensorManager.setSensorThresholds(cfg.sensorOnThreshold(), cfg.sensorOffThreshold());
 }
 
 
@@ -475,63 +494,20 @@ void setAppState(AppState next) {
 // Returns true only for device errors that should block measurement capture before a new start attempt.
 bool hasBlockingDeviceError() {
   const DeviceError err = currentDeviceError();
-  return err != DeviceError::None
-      && err != DeviceError::LampConnectorMiswired;
-}
-
-// Returns true when the current device error can be shown on the OLED ready screen.
-bool isDeviceErrorVisibleOnOled() {
-  const DeviceError err = currentDeviceError();
   return err != DeviceError::None && err != DeviceError::DisplayInitFailed;
 }
 
-// Checks the lamp jack sense line immediately before enabling the lamp output.
-bool checkLampConnectorBeforeLightOn() {
-  if (digitalRead(PIN_LAMP_SENSE) == LOW) {
-    if (currentDeviceError() != DeviceError::LampConnectorMiswired) {
-      setDeviceError(DeviceError::LampConnectorMiswired, DeviceSubsystem::Lamp);
-      Serial.println(F("[Lamp] Device error: lamp connector sense line is low. Lamp output remains off."));
-    } else {
-      displayDirty = true;
-    }
-    return false;
-  }
 
-  clearDeviceError(DeviceSubsystem::Lamp);
-  return true;
-}
-
-// Recalibrates all sensor baselines and updates the device error state.
-bool recalibrateSensors(const char* reason) {
-  Serial.printf("[Sensors] Calibrating baselines after %s...\n", reason ? reason : "settings");
-  if (!sensorManager.calibrateBaseline()) {
-    setDeviceError(DeviceError::SensorBaselineTooLow, DeviceSubsystem::Sensor);
-    Serial.println(F("[Sensors] Device error: sensor baseline too low."));
-    return false;
-  }
-
-  clearDeviceError(DeviceSubsystem::Sensor);
-  Serial.println(F("[Sensors] Baseline calibration OK."));
-  return true;
-}
-
-// Runs sensor calibration from the HTTP API and returns the device to ready capture.
-bool calibrateSensorsFromApi() {
-  Serial.println(F("[Sensors] Calibration requested through API."));
-  engine.cancel();
-  const bool ok = recalibrateSensors("api");
-  noteUserActivity();
-  enterReady();
-  return ok;
-}
-
-// Sets a capture-blocking device error and makes sure no capture continues.
+// Sets a device error and makes sure no capture continues when an error is active.
 void setDeviceError(DeviceError error, DeviceSubsystem subsystem) {
   webServer.setDeviceError(error, subsystem);
   if (error != DeviceError::None) {
+    lastOledDeviceError = error;
+    enqueueOledNotice("DEVICE ERROR", deviceErrorText(error));
     engine.cancel();
     setAppState(AppState::READY);
-    resultUntil = 0;
+    resultStartedMs = 0;
+  resultDurationMs = 0;
   }
   displayDirty = true;
 }
@@ -554,9 +530,85 @@ DeviceError currentDeviceError() {
   return webServer.getDeviceError();
 }
 
+// Returns the current network diagnostic hint from the WiFi manager.
+NetworkHint currentNetworkHint() {
+  return webServer.getNetworkHint();
+}
+
+// Queues short OLED notices whenever device or network diagnostics change.
+void monitorOledDiagnostics() {
+  const DeviceError dev = currentDeviceError();
+  if (dev != lastOledDeviceError) {
+    lastOledDeviceError = dev;
+    if (dev != DeviceError::None) enqueueOledNotice("DEVICE ERROR", deviceErrorText(dev));
+  }
+
+  const NetworkHint net = currentNetworkHint();
+  if (net != lastOledNetworkHint) {
+    lastOledNetworkHint = net;
+    if (net != NetworkHint::None) enqueueOledNotice("NETWORK", networkHintText(net));
+  }
+}
+
+// Adds a short diagnostic message to the OLED notice queue.
+void enqueueOledNotice(const char* title, const char* message) {
+  if (!message || !message[0]) return;
+
+  if (oledNoticeCount >= OLED_NOTICE_QUEUE_SIZE) {
+    oledNoticeHead = (oledNoticeHead + 1) % OLED_NOTICE_QUEUE_SIZE;
+    oledNoticeCount--;
+  }
+
+  const uint8_t idx = (oledNoticeHead + oledNoticeCount) % OLED_NOTICE_QUEUE_SIZE;
+  strncpy(oledNoticeQueue[idx].title, title && title[0] ? title : "NOTICE", sizeof(oledNoticeQueue[idx].title) - 1);
+  oledNoticeQueue[idx].title[sizeof(oledNoticeQueue[idx].title) - 1] = '\0';
+  strncpy(oledNoticeQueue[idx].message, message, sizeof(oledNoticeQueue[idx].message) - 1);
+  oledNoticeQueue[idx].message[sizeof(oledNoticeQueue[idx].message) - 1] = '\0';
+  oledNoticeCount++;
+
+  if (oledNoticeDurationMs == 0) startNextOledNotice();
+}
+
+// Starts the next queued OLED notice, waking the panel if necessary.
+void startNextOledNotice() {
+  if (oledNoticeCount == 0) {
+    oledNoticeStartedMs = 0;
+    oledNoticeDurationMs = 0;
+    activeOledNotice.title[0] = '\0';
+    activeOledNotice.message[0] = '\0';
+    displayDirty = true;
+    return;
+  }
+
+  activeOledNotice = oledNoticeQueue[oledNoticeHead];
+  oledNoticeHead = (oledNoticeHead + 1) % OLED_NOTICE_QUEUE_SIZE;
+  oledNoticeCount--;
+  oledNoticeStartedMs = millis();
+  oledNoticeDurationMs = OLED_NOTICE_MS;
+  lastUserActivity = oledNoticeStartedMs;
+  if (displayAvailable && oledSleeping) {
+    displayManager.wake();
+    oledSleeping = false;
+  }
+  displayDirty = true;
+}
+
+// Returns whether a transient OLED diagnostic notice is currently active.
+bool isOledNoticeActive() {
+  return oledNoticeDurationMs != 0 && (millis() - oledNoticeStartedMs) < oledNoticeDurationMs;
+}
+
+// Advances the OLED notice queue after the current message has expired.
+void updateOledNoticeTimer() {
+  if (oledNoticeDurationMs == 0) return;
+  if (isOledNoticeActive()) return;
+  startNextOledNotice();
+}
+
 // Returns the app to ready mode and tries to arm the capture engine.
 bool enterReady() {
-  resultUntil = 0;
+  resultStartedMs = 0;
+  resultDurationMs = 0;
   resultPage = 1;
   setAppState(AppState::READY);
 
@@ -573,10 +625,6 @@ bool enterReady() {
 bool startMeasurementFromCurrentSettings(bool noteActivity) {
   if (noteActivity) noteUserActivity();
   lastReadyArmAttempt = millis();
-  if (!checkLampConnectorBeforeLightOn()) {
-    displayDirty = true;
-    return false;
-  }
   if (!engine.startListening(measureMode)) {
     displayDirty = true;
     return false;
@@ -600,8 +648,8 @@ void closeResultsAndReady() {
 
 // Closes the result screen when the selected display timeout has elapsed.
 void updateResultsTimeout() {
-  if (appState != AppState::RESULTS || resultUntil == 0) return;
-  if (millis() >= resultUntil) closeResultsAndReady();
+  if (appState != AppState::RESULTS || resultDurationMs == 0) return;
+  if ((millis() - resultStartedMs) >= resultDurationMs) closeResultsAndReady();
 }
 
 // Marks the display dirty when WiFi state changes need to be reflected.
@@ -613,7 +661,7 @@ void handleWifiEvents() {
 // Records user activity and wakes the OLED if it was sleeping.
 void noteUserActivity() {
   lastUserActivity = millis();
-  if (oledSleeping) {
+  if (displayAvailable && oledSleeping) {
     displayManager.wake();
     oledSleeping = false;
     Serial.println(F("[Display] OLED wake"));
@@ -630,7 +678,7 @@ bool areButtonsReleased() {
 
 // Turns off the OLED after the configured inactivity timeout.
 void updateOledSleep() {
-  if (oledSleepMinutes <= 0 || oledSleeping) return;
+  if (!displayAvailable || oledSleepMinutes <= 0 || oledSleeping || oledNoticeDurationMs != 0) return;
   const unsigned long sleepMs = (unsigned long)oledSleepMinutes * 60000UL;
   if (sleepMs > 0 && millis() - lastUserActivity >= sleepMs) {
     displayManager.sleep();
@@ -676,14 +724,18 @@ String menuDraftJson() {
 
 // Redraws the OLED for the current app state.
 void refreshDisplay() {
-  if (oledSleeping) return;
+  if (!displayAvailable || oledSleeping) return;
+
+  if (isOledNoticeActive()) {
+    displayManager.showNotice(activeOledNotice.title, activeOledNotice.message);
+    return;
+  }
 
   // Only the four user-visible app states draw screens
   switch (appState) {
     case AppState::READY: {
       const String net = webServer.getNetworkLine();
-      const DeviceError displayError = isDeviceErrorVisibleOnOled() ? currentDeviceError() : DeviceError::None;
-      displayManager.showReady(targetFraction, measureMode, net, displayError, engine.getReadyHint());
+      displayManager.showReady(targetFraction, measureMode, net, currentDeviceError(), engine.getReadyHint());
       break;
     }
 
@@ -691,7 +743,7 @@ void refreshDisplay() {
       return;
 
     case AppState::RESULTS:
-      displayManager.showResult(displayedResult, displayedSummary, displayedTargetFraction, displayedMode, resultPage);
+      displayManager.showResult(displayedResult, displayedSummary, displayedMode, resultPage);
       break;
 
     case AppState::MENU: {

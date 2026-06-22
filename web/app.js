@@ -44,9 +44,13 @@ function init() {
     const anchor = currentHashAnchor();
     if (anchor) scrollContentToAnchor(anchor, false);
   });
-  console.log('%cOpenCurtainLab', 'font-size:18px;color:#f5b030;font-weight:bold');
-  console.log('Dev commands: injectMock()  injectMock(500)  injectMock(500, "ok", "horizontal")  injectMock(125, "bad", "vertical")  injectMock(30, "none", "central")  injectMock(undefined, "random", "horizontal")');
-  console.log('Sensor diagnostics: oclSensors()');
+  if (isDevToolsEnabled()) {
+    registerDevTools();
+    window.oclSensors = fetchSensorDiagnostics;
+    console.log('%cOpenCurtainLab', 'font-size:18px;color:#f5b030;font-weight:bold');
+    console.log('Dev commands: injectMock()  injectMock(500)  injectMock(500, "ok", "horizontal")  injectMock(125, "bad", "vertical")  injectMock(30, "none", "central")  injectMock(undefined, "random", "horizontal")');
+    console.log('Sensor diagnostics: oclSensors()');
+  }
 }
 
 // Start the WebUI after translation bundles are available.

@@ -27,19 +27,22 @@ function initNoteFields() {
 // ════════════════════════════════════════════
 function currentMeasurementGeometry() {
   const cfg = S.deviceConfig || {};
-  const geometry = {};
   const x = Number(cfg.sensorDistanceXmm);
   const y = Number(cfg.sensorDistanceYmm);
-  if (Number.isFinite(x) && x > 0) geometry.sensorDistanceXmm = x;
-  if (Number.isFinite(y) && y > 0) geometry.sensorDistanceYmm = y;
-  return geometry;
+  return {
+    sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : DEFAULT_SENSOR_DISTANCE_X_MM,
+    sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : DEFAULT_SENSOR_DISTANCE_Y_MM,
+  };
 }
 
 function distanceForMode(mode, entry = null) {
   const normalizedMode = normalizeMeasurementMode(mode);
   if (normalizedMode === 'central') return 0;
+  const geometry = currentMeasurementGeometry();
   const source = entry || {};
-  const rawDistance = normalizedMode === 'vertical' ? source.sensorDistanceYmm : source.sensorDistanceXmm;
+  const rawDistance = normalizedMode === 'vertical'
+    ? (source.sensorDistanceYmm ?? geometry.sensorDistanceYmm)
+    : (source.sensorDistanceXmm ?? geometry.sensorDistanceXmm);
   const distance = Number(rawDistance);
   return Number.isFinite(distance) && distance > 0 ? distance : null;
 }
@@ -102,18 +105,148 @@ function exportBackupJSON() {
   toast(tx('toast.backupExported', 'JSON backup exported'), 'success');
 }
 
+function normalizeImportedBackup(data) {
+  const sourceProjects = Array.isArray(data.projects) ? data.projects : null;
+  const sourceHistory = Array.isArray(data.history) ? data.history : null;
+  if (!sourceProjects || !sourceHistory) throw new Error(tx('errors.invalidBackup', 'Invalid backup'));
+
+  const finiteNumber = (value, fallback = 0) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const positiveNumber = value => {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  const cleanTimeList = (value, fallback) => {
+    const list = Array.isArray(value) ? value : fallback;
+    const seen = new Set();
+    return list.map(Number)
+      .filter(v => Number.isInteger(v) && v > 0 && !seen.has(v) && seen.add(v))
+      .sort((a, b) => a - b);
+  };
+
+  function normalizeImportedSensor(raw, idx, baseUs, targetSec) {
+    const sensor = raw && typeof raw === 'object' ? raw : {};
+    const openUs = finiteNumber(sensor.openUs, 0);
+    const closeUs = finiteNumber(sensor.closeUs, 0);
+    const fromUs = openUs > 0 && closeUs > openUs ? (closeUs - openUs) / 1e6 : 0;
+    const fromSeconds = positiveNumber(sensor.seconds);
+    const seconds = fromUs || fromSeconds;
+    const activated = sensor.activated !== false && seconds > 0;
+    const openMs = activated
+      ? (baseUs && openUs ? (openUs - baseUs) / 1000 : finiteNumber(sensor.openMs, 0))
+      : 0;
+    const closeMs = activated
+      ? (baseUs && closeUs ? (closeUs - baseUs) / 1000 : finiteNumber(sensor.closeMs, 0))
+      : 0;
+
+    return {
+      id: Number.isInteger(Number(sensor.id)) ? Number(sensor.id) : idx,
+      pin: Number.isInteger(Number(sensor.pin)) ? Number(sensor.pin) : undefined,
+      activated,
+      raw: Number.isFinite(Number(sensor.raw)) ? Number(sensor.raw) : 0,
+      openUs: activated ? openUs : 0,
+      closeUs: activated ? closeUs : 0,
+      openMs,
+      closeMs,
+      seconds: activated ? seconds : 0,
+      fraction: activated && seconds > 0 ? Math.round(1 / seconds) : 0,
+      deviation: activated && seconds > 0 && targetSec > 0 ? Math.log2(seconds / targetSec) : 0,
+    };
+  }
+
+  function normalizeImportedFlash(raw, baseUs) {
+    if (!raw || typeof raw !== 'object') return null;
+    const triggerUs = finiteNumber(raw.triggerUs, 0);
+    const detected = !!raw.detected && triggerUs > 0;
+    return {
+      enabled: !!raw.enabled,
+      detected,
+      pin: Number.isInteger(Number(raw.pin)) ? Number(raw.pin) : undefined,
+      raw: Number.isFinite(Number(raw.raw)) ? Number(raw.raw) : 0,
+      triggerUs: detected ? triggerUs : 0,
+      triggerMs: detected && baseUs ? (triggerUs - baseUs) / 1000 : null,
+    };
+  }
+
+  const projectIdMap = new Map();
+  const projects = [];
+  for (const raw of sourceProjects) {
+    if (!raw || typeof raw !== 'object') continue;
+    const oldId = String(raw.id || '');
+    const isDefault = raw.isDefault === true || oldId === DEFAULT_PROJECT_ID;
+    const id = isDefault ? DEFAULT_PROJECT_ID : makeSafeInternalId('p');
+    projectIdMap.set(oldId, id);
+    const p = Object.assign({}, raw, { id, isDefault });
+    p.name = String(raw.name || (isDefault ? defaultProjectName() : 'Project')).slice(0, 80);
+    p.mode = normalizeMeasurementMode(raw.mode);
+    p.targetSeries = raw.targetSeries === 'custom' ? 'custom' : 'standard';
+    p.times = cleanTimeList(raw.times, ALL_TIMES);
+    p.customTargetTimes = cleanTimeList(raw.customTargetTimes, []);
+    if (!p.times.length) p.times = ALL_TIMES.slice();
+    projects.push(p);
+  }
+
+  const history = [];
+  for (const raw of sourceHistory) {
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sensors)) continue;
+    const target = positiveNumber(raw.targetFrac || raw.target);
+    if (!target) continue;
+    const targetSec = 1 / target;
+    const baseUs = finiteNumber(raw.baseUs || (raw.raw && raw.raw.baseUs), 0);
+    const sensors = raw.sensors.slice(0, 5).map((sensor, idx) => normalizeImportedSensor(sensor, idx, baseUs, targetSec));
+    const active = sensors.filter(sensor => sensor.activated && sensor.seconds > 0);
+    if (!active.length) continue;
+
+    const durations = active.map(sensor => sensor.seconds);
+    const avgSec = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    const minSec = Math.min(...durations);
+    const maxSec = Math.max(...durations);
+    const hint = normalizeHint(raw);
+    const geometry = currentMeasurementGeometry();
+    const x = Number(raw.sensorDistanceXmm);
+    const y = Number(raw.sensorDistanceYmm);
+
+    const entry = Object.assign({}, raw, {
+      id: makeSafeInternalId('m'),
+      projId: projectIdMap.get(String(raw.projId || '')) || DEFAULT_PROJECT_ID,
+      mode: normalizeMeasurementMode(raw.mode),
+      targetFrac: target,
+      ts: Number.isFinite(Number(raw.ts)) ? Number(raw.ts) : Date.now(),
+      valid: raw.valid !== false,
+      sensors,
+      flash: normalizeImportedFlash(raw.flash, baseUs),
+      avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
+      avgSec,
+      avgDev: avgSec > 0 ? Math.log2(avgSec / targetSec) : 0,
+      spread: durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0,
+      count: active.length,
+      sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
+      sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,
+      hint: hint.hint,
+      hintText: hint.hintText,
+      warning: hint.hasHint ? hint.hintText : '',
+    });
+    entry.flashSyncOk = isFlashSyncOk(entry);
+    history.push(entry);
+  }
+
+  const selectedProjId = projectIdMap.get(String(data.selectedProjId || '')) || DEFAULT_PROJECT_ID;
+  return { projects, history, selectedProjId };
+}
+
 // Import a previously exported WebUI backup JSON file.
 async function importBackupJSON(file) {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    const projects = Array.isArray(data.projects) ? data.projects : null;
-    const history = Array.isArray(data.history) ? data.history : null;
-    if (!projects || !history) throw new Error(tx('errors.invalidBackup', 'Invalid backup'));
+    const normalized = normalizeImportedBackup(data);
+    if (!normalized.projects.length && !normalized.history.length) throw new Error(tx('errors.invalidBackup', 'Invalid backup'));
     if (!confirm(tx('confirm.importBackup', 'Import JSON backup? Current projects and history will be replaced.'))) return;
-    S.projects = projects;
-    S.history = history;
-    S.selectedProjId = data.selectedProjId && projects.some(p => p.id === data.selectedProjId) ? data.selectedProjId : null;
+    S.projects = normalized.projects;
+    S.history = normalized.history;
+    S.selectedProjId = normalized.selectedProjId;
     ensureDefaultProject();
     sanitizeMeasurementAssignments();
     S.uiSettings = sanitizeUiSettings(data.uiSettings || S.uiSettings || {});
@@ -133,10 +266,10 @@ async function importBackupJSON(file) {
 // Clear all local WebUI data after user confirmation.
 function resetLocalWebUiData() {
   if (!confirm(tx('confirm.resetLocalData', 'Reset all local WebUI data? This removes projects, measurements and cached device settings.'))) return;
-  localStorage.removeItem(LS_HISTORY_KEY);
-  localStorage.removeItem(LS_PROJECTS_KEY);
-  localStorage.removeItem(LS_DEVICE_KEY);
-  localStorage.removeItem(LS_UI_KEY);
+  removeStorageKey(LS_HISTORY_KEY);
+  removeStorageKey(LS_PROJECTS_KEY);
+  removeStorageKey(LS_DEVICE_KEY);
+  removeStorageKey(LS_UI_KEY);
   S.projects = [];
   S.history = [];
   S.selId = null;
@@ -190,23 +323,32 @@ async function loadProjectCustomTimes(projId) {
 // ════════════════════════════════════════════
 
 
+function csvCell(value) {
+  const text = String(value ?? '');
+  return '"' + text.replace(/"/g, '""') + '"';
+}
+
+function csvLine(values) {
+  return values.map(csvCell).join(';');
+}
+
 function exportProjCSV(projId) {
   const p = S.projects.find(x => x.id === projId);
   if (!p) return;
   // Header: note first, then aggregated table
   const lines = [];
-  if (p.note) lines.push('# ' + tx('csv.note', 'Note') + ': ' + p.note.replace(/\n/g,' | '));
-  lines.push('# ' + tx('csv.project', 'Project') + ': ' + p.name);
-  lines.push('# ' + tx('csv.exported', 'Exported') + ': ' + new Date().toLocaleString(uiLocale()));
+  if (p.note) lines.push(csvLine(['# ' + tx('csv.note', 'Note'), p.note.replace(/\n/g,' | ')]));
+  lines.push(csvLine(['# ' + tx('csv.project', 'Project'), p.name]));
+  lines.push(csvLine(['# ' + tx('csv.exported', 'Exported'), new Date().toLocaleString(uiLocale())]));
   lines.push('');
   const hdr = ['Target_1x','Target_s','Avg_Fraction','Avg_ms','Deviation_EV','Spread_EV',
                'OpeningSpeed_m_s','ClosingSpeed_m_s','Flash_OK','Flash_NOK','Flash_Detected','Count'];
-  lines.push(hdr.join(';'));
+  lines.push(csvLine(hdr));
   p.times.forEach(tgt => {
     const agg = aggregateForTarget(projId, tgt);
-    if (!agg) { lines.push([tgt,(1/tgt).toFixed(6),'','','','','','','','','','0'].join(';')); return; }
+    if (!agg) { lines.push(csvLine([tgt,(1/tgt).toFixed(6),'','','','','','','','','','0'])); return; }
     const dev = Math.log2(agg.avgSec * tgt);
-    lines.push([
+    lines.push(csvLine([
       tgt, (1/tgt).toFixed(6),
       agg.avgFrac, (agg.avgSec*1000).toFixed(4),
       dev.toFixed(4), agg.avgSpread.toFixed(4),
@@ -214,7 +356,7 @@ function exportProjCSV(projId) {
       agg.avgV2!=null?agg.avgV2.toFixed(4):'',
       agg.flashOk, agg.flashBad, agg.flashDetected,
       agg.n,
-    ].join(';'));
+    ]));
   });
   const dateStr = timestampForFilename();
   const safeName = (p.name||'export').replace(/[^a-zA-Z0-9_\-]/g,'_');
@@ -260,7 +402,7 @@ function esc(s) {
 // ════════════════════════════════════════════
    // MOCK DATA (dev)
 // ════════════════════════════════════════════
-function injectMock(targetFrac, flash = 'ok', modeInput = 'horizontal') {
+const createMockMeasurement = function(targetFrac, flash = 'ok', modeInput = 'horizontal') {
   const availableTimes = (S.targetTimes && S.targetTimes.length ? S.targetTimes : ALL_TIMES);
   const tf = Number(targetFrac) || availableTimes[Math.floor(Math.random() * availableTimes.length)];
 
@@ -305,7 +447,6 @@ function injectMock(targetFrac, flash = 'ok', modeInput = 'horizontal') {
     pin: 34 + id,
     activated: true,
     raw: 750 + Math.round(Math.random() * 180),
-    baseline: 3000 + Math.round(Math.random() * 300),
     openUs: 0,
     closeUs: 0
   }));
@@ -363,8 +504,11 @@ function injectMock(targetFrac, flash = 'ok', modeInput = 'horizontal') {
       detected,
       pin: 39,
       raw: detected ? 700 : 3100,
-      baseline: 3200,
       triggerUs: detected ? triggerUs : 0
     }
   }, currentMeasurementGeometry()));
+};
+function registerDevTools() {
+  if (!isDevToolsEnabled()) return;
+  window.injectMock = createMockMeasurement;
 }

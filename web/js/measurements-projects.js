@@ -4,29 +4,19 @@
 function applyDeviceStatus(status) {
   if (!status) return;
 
-  // Current firmware exposes structured status data while keeping older top-level fields for compatibility.
-  if (status.deviceStatus) {
-    S.deviceStatus = Object.assign({ error: 'none', errorText: '', subsystem: 'none' }, status.deviceStatus);
-  } else {
-    S.deviceStatus = {
-      error: status.deviceError || 'none',
-      errorText: status.deviceErrorText || '',
-      subsystem: 'none'
-    };
-  }
+  S.deviceStatus = Object.assign({ error: 'none', errorText: '', subsystem: 'none' }, status.deviceStatus || {});
 
-  const network = status.network || {};
   S.networkStatus = Object.assign({
-    connected: !!status.wifi,
-    apMode: !!status.apMode,
-    ip: status.ip || '',
-    apIp: status.apIp || '',
-    hostname: status.hostname || '',
-    mdns: status.mdns || '',
+    connected: false,
+    apMode: false,
+    ip: '',
+    apIp: '',
+    hostname: '',
+    mdns: '',
     mdnsStarted: false,
     hint: 'none',
     hintText: ''
-  }, network);
+  }, status.network || {});
 
   S.deviceRuntime = Object.assign({}, S.deviceRuntime || {}, {
     uptime: Number.isFinite(Number(status.uptime)) ? Number(status.uptime) : null,
@@ -72,7 +62,7 @@ function connectionLabelForState(state) {
   return tx('connection.connecting', 'CONNECTING...');
 }
 
-// Check the remote project version through the device proxy to avoid browser CORS issues.
+// Check the manifest-selected compatible WebUI version through the device proxy.
 async function checkAppVersion() {
   try {
     const base = S.deviceBase || '';
@@ -124,10 +114,18 @@ function notifyMeasurementHint(entry) {
    // INGEST MEASUREMENT
 // ════════════════════════════════════════════
 function ingestMeasurement(d) {
+  if (!d || !d.id) return false;
+
+  const h = normalizeHint(d);
+  if (h.hasHint) notifyMeasurementHint({ id: d.id, hint: h.hint, hintText: h.hintText });
+
+  // Store only valid measurements. Measurement hints remain part of valid
+  // measurements, but invalid diagnostic packets are not added to history.
+  if (d.valid === false) return false;
+
   const previouslyActive = activeProject();
   const entry = buildEntryFromPacket(d);
-  if (entry && entry.hint && entry.hint !== 'none' && entry.hintText) notifyMeasurementHint(entry);
-  if (!entry) return;
+  if (!entry) return false;
 
   const movedToDefault = previouslyActive &&
     !isDefaultProject(previouslyActive) &&
@@ -150,36 +148,13 @@ function ingestMeasurement(d) {
     const el = document.getElementById('he-' + entry.id);
     if (el) el.classList.add('new-flash');
   });
+  return true;
 }
 
 // Convert raw firmware measurement data into a WebUI history entry.
 function buildEntryFromPacket(d) {
   if (!d || !d.id) return null;
-  if (!d.valid) {
-    const h = normalizeHint(d);
-    return {
-      id: d.id,
-      ts: Date.now(),
-      valid: false,
-      isError: true,
-      error: h.hintText || d.error || d.reason || tx('errors.unknown', 'Unknown error'),
-      hint: h.hint,
-      hintText: h.hintText,
-      warning: h.hintText || d.warning || '',
-      targetFrac: d.target || null,
-      avgFrac: 0,
-      avgSec: 0,
-      avgDev: 0,
-      spread: 0,
-      count: 0,
-      sensors: [],
-      flash: d.flash || null,
-      sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
-      sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
-      projId: activeProjectIdForMeasurement(d.target || null, normalizeMeasurementMode(d.mode)),
-      raw: d,
-    };
-  }
+  if (d.valid === false) return null;
 
   // Current firmware interface: baseUs plus per-sensor openUs/closeUs timestamps.
   if (d.baseUs != null && Array.isArray(d.sensors)) {
@@ -197,7 +172,6 @@ function buildEntryFromPacket(d) {
         pin: s.pin,
         activated,
         raw: s.raw,
-        baseline: s.baseline,
         openUs,
         closeUs,
         openMs: activated && baseUs ? (openUs - baseUs) / 1000 : 0,
@@ -223,13 +197,15 @@ function buildEntryFromPacket(d) {
         detected,
         pin: d.flash.pin,
         raw: d.flash.raw,
-        baseline: d.flash.baseline,
         triggerUs,
         triggerMs: detected && baseUs ? (triggerUs - baseUs) / 1000 : null,
       };
     }
 
     const h = normalizeHint(d);
+    const geometry = currentMeasurementGeometry();
+    const x = Number(d.sensorDistanceXmm);
+    const y = Number(d.sensorDistanceYmm);
     const entry = {
       id: d.id,
       valid: true,
@@ -243,8 +219,8 @@ function buildEntryFromPacket(d) {
       count: act.length,
       sensors,
       flash,
-      sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
-      sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
+      sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
+      sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
@@ -255,30 +231,7 @@ function buildEntryFromPacket(d) {
     return entry;
   }
 
-  // Legacy packet fallback for old exports or pre-raw-data firmware builds.
-  const entry = {
-    id:          d.id,
-    valid:       true,
-    ts:          Date.now(),
-    targetFrac:  d.target,
-    avgFrac:     d.avgFraction,
-    avgSec:      d.avgSeconds,
-    avgDev:      d.avgDeviationStops,
-    spread:      d.spreadStops,
-    count:       d.activatedCount,
-    sensors:     d.sensors,
-    flash:       d.flash || null,
-    sensorDistanceXmm: Number.isFinite(Number(d.sensorDistanceXmm)) ? Number(d.sensorDistanceXmm) : null,
-    sensorDistanceYmm: Number.isFinite(Number(d.sensorDistanceYmm)) ? Number(d.sensorDistanceYmm) : null,
-    hint:        d.hint || 'none',
-    hintText:    d.hintText || '',
-    warning:     d.hintText || d.warning || d.error || '',
-    mode:        normalizeMeasurementMode(d.mode),
-    projId:      activeProjectIdForMeasurement(d.target, normalizeMeasurementMode(d.mode)),
-    raw:         d,
-  };
-  entry.flashSyncOk = isFlashSyncOk(entry);
-  return entry;
+  return null;
 }
 
 // ════════════════════════════════════════════
@@ -291,11 +244,6 @@ function toggleSidebar() {
   back.classList.toggle('mob-open');
 }
 
-// Create a stable project id for an automatic target-speed project.
-function autoProjectIdForTarget(targetFrac, mode) {
-  return activeProjectIdForMeasurement(targetFrac, mode);
-}
-
 // Return a localized label for a measurement mode.
 function modeLabel(mode) {
   const normalizedMode = normalizeMeasurementMode(mode);
@@ -304,21 +252,32 @@ function modeLabel(mode) {
 }
 
 // Return the automatically detected travel direction for a measurement entry.
-function detectedTravelDirectionLabel(entry) {
+function detectedTravelDirectionInfo(entry) {
   const mode = normalizeMeasurementMode(entry && entry.mode);
-  if (!entry || mode === 'central') return '';
+  if (!entry || mode === 'central') return null;
   const sensors = (entry.sensors || [])
     .map((sensor, index) => ({ ...sensor, index: Number.isFinite(Number(sensor.id)) ? Number(sensor.id) : index }))
     .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs))
     .sort((a, b) => a.openMs - b.openMs);
-  if (sensors.length < 2) return '';
+  if (sensors.length < 2) return null;
   const first = sensors[0].index;
   const last = sensors[sensors.length - 1].index;
-  if (first === last) return '';
+  if (first === last) return null;
+
   if (mode === 'vertical') {
-    return first < last ? tx('directions.topDown', 'top → bottom') : tx('directions.bottomTop', 'bottom → top');
+    return first < last
+      ? { key: 'topDown', label: tx('directions.topDown', 'top → bottom'), rotation: 90 }
+      : { key: 'bottomTop', label: tx('directions.bottomTop', 'bottom → top'), rotation: -90 };
   }
-  return first < last ? tx('directions.leftRight', 'left → right') : tx('directions.rightLeft', 'right → left');
+
+  return first < last
+    ? { key: 'leftRight', label: tx('directions.leftRight', 'left → right'), rotation: 0 }
+    : { key: 'rightLeft', label: tx('directions.rightLeft', 'right → left'), rotation: 180 };
+}
+
+function detectedTravelDirectionLabel(entry) {
+  const direction = detectedTravelDirectionInfo(entry);
+  return direction ? direction.label : '';
 }
 
 // Return a measurement-mode label with detected direction when available.
@@ -326,6 +285,21 @@ function measurementModeSummary(entry) {
   const base = modeLabel(entry && entry.mode);
   const direction = detectedTravelDirectionLabel(entry);
   return direction ? `${base} · ${direction}` : base;
+}
+
+function historyDirectionArrowHtml(entry) {
+  const direction = detectedTravelDirectionInfo(entry);
+  return direction ? `<span class="h-dir-icon" title="${esc(direction.label)}" style="--dir-rot:${direction.rotation}deg"><svg aria-hidden="true" focusable="false" viewBox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M402.23-480 218.85-664 261-706.15 487.15-480 261-253.85 218.85-296l183.38-184Zm254 0L472.85-664 515-706.15 741.15-480 515-253.85 472.85-296l183.38-184Z"></path></svg></span>` : '';
+}
+
+function historyCentralIconHtml() {
+  return `<span class="h-dir-icon h-dir-icon-central" aria-hidden="true"><svg class="empty-icon-svg" focusable="false" viewBox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg"><path d="M480-360q-50 0-85-35t-35-85q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35ZM324-111.5Q251-143 197-197t-85.5-127Q80-397 80-480t31.5-156Q143-709 197-763t127-85.5Q397-880 480-880t156 31.5Q709-817 763-763t85.5 127Q880-563 880-480t-31.5 156Q817-251 763-197t-127 85.5Q563-80 480-80t-156-31.5ZM480-160q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm0-320Zm141.5 141.5Q680-397 680-480t-58.5-141.5Q563-680 480-680t-141.5 58.5Q280-563 280-480t58.5 141.5Q397-280 480-280t141.5-58.5Z"></path></svg></span>`;
+}
+
+function historyModeHtml(entry) {
+  const mode = normalizeMeasurementMode(entry && entry.mode);
+  const icon = mode === 'central' ? historyCentralIconHtml() : historyDirectionArrowHtml(entry);
+  return `<div class="h-mode"><span>${esc(modeLabel(mode))}</span>${icon}</div>`;
 }
 
 // Return a localized label for a target-time series.
@@ -344,8 +318,7 @@ function normalizeProjectName(name) {
 
 // Return the target-time series configured for a project.
 function projectTargetSeries(p) {
-  if (p && (p.targetSeries === 'custom' || p.targetSeries === 'standard')) return p.targetSeries;
-  return 'standard';
+  return p && (p.targetSeries === 'custom' || p.targetSeries === 'standard') ? p.targetSeries : 'standard';
 }
 
 // Return the target times associated with a project series.
@@ -391,7 +364,7 @@ function createProj() {
   const seriesEl = document.getElementById('proj-series');
   const targetSeries = seriesEl && seriesEl.value === 'custom' ? 'custom' : 'standard';
   const p = {
-    id:'p_'+Date.now(),
+    id: makeSafeInternalId('p'),
     name,
     mode,
     targetSeries,
@@ -430,6 +403,7 @@ function deleteProj(id) {
 // Render the project list in the sidebar.
 function renderProjList() {
   const el = document.getElementById('proj-list');
+  if (!el) return;
   if (!S.projects.length) {
     el.innerHTML = '<div class="empty" style="padding:16px 0;"><div class="empty-sub">' + esc(tx('empty.noProjectYet', 'No project yet')) + '</div></div>';
     return;
@@ -439,10 +413,10 @@ function renderProjList() {
     const active = p.id === S.selectedProjId ? ' active' : '';
     const meta = (p.id === DEFAULT_PROJECT_ID || p.isDefault)
       ? `${cnt} ${tx('labels.measurements', 'measurements')}`
-      : `${modeLabel(p.mode)} · ${targetSeriesLabel(projectTargetSeries(p))} · ${p.times.length} ${tx('labels.speeds', 'speeds')} · ${cnt} ${tx('labels.measurements', 'measurements')}`;
+      : `${modeLabel(p.mode)} · ${p.times.length} ${tx('labels.speeds', 'speeds')} · ${cnt} ${tx('labels.measurements', 'measurements')}`;
     return `<div class="proj-card${active}" onclick="showProject('${p.id}')">
       <div class="proj-card-name">${esc(p.name)}</div>
-      <div class="proj-card-meta">${meta}</div>
+      <div class="proj-card-meta">${esc(meta)}</div>
     </div>`;
   }).join('');
 }
@@ -475,7 +449,8 @@ function renderHistList() {
       return `<div class="h-entry err" id="he-${e.id}">
         <div class="h-time" style="color:var(--red);">ERROR</div>
         <div class="h-dev pos">!</div>
-        <div class="h-meta">${ts} · ${esc(e.error || 'Unknown error')}</div>
+        <div class="h-meta"><span class="h-meta-line">${ts}</span><span class="h-meta-line">${esc(e.error || 'Unknown error')}</span></div>
+        <div class="h-mode h-mode-empty">—</div>
       </div>`;
     }
 
@@ -486,8 +461,9 @@ function renderHistList() {
 
     return `<div class="h-entry ${sel}" id="he-${e.id}" onclick="selectEntry('${e.id}')">
       <div class="h-time">1/${e.avgFrac}</div>
-      <div class="h-dev ${dc}">${ds}<br><span style="font-size:9px;opacity:0.6">EV</span></div>
-      <div class="h-meta">${ts} · ${measurementModeSummary(e)} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.${e.warning ? ' · ' + tx('labels.warning', 'Warning') : ''}</div>
+      <div class="h-dev ${dc}"><span>${ds}</span><span class="h-dev-unit">EV</span></div>
+      <div class="h-meta"><span class="h-meta-line">${ts}</span><span class="h-meta-line">${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.${e.warning ? ' · ' + tx('labels.warning', 'Warning') : ''}</span></div>
+      ${historyModeHtml(e)}
     </div>`;
   }).join('');
 }

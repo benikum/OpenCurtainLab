@@ -1,0 +1,11 @@
+{
+  "schema": "opencurtainlab-web-manifest-v1",
+  "projectVersion": "0.1.0",
+  "entries": [
+    {
+      "match": "0.1.x",
+      "version": "0.1.0",
+      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.0.html"
+    }
+  ]
+}

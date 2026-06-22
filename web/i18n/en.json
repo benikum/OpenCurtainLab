@@ -43,13 +43,11 @@
     "measurementMovedToDefault": "Measurement moved to the default project",
     "measurementAssignedToDefaultIncompatible": "Measurement assigned to the default project because it does not match the selected project.",
     "deviceNotConnected": "Device not connected",
-    "calibratingSensors": "Calibrating sensors...",
-    "sensorsCalibrated": "Sensors calibrated",
-    "sensorCalibrationFailed": "Sensor calibration failed",
     "languageUnavailable": "Language resources are not available"
   },
   "frame": {
-    "manualTitle": "OpenCurtainLab Guide"
+    "manualTitle": "OpenCurtainLab Guide",
+    "manualLoadFailed": "The guide could not be loaded."
   },
   "connection": {
     "connected": "CONNECTED",
@@ -229,16 +227,16 @@
       "title": "Incomplete sensor coverage",
       "body": "Not all five sensors were covered during this measurement.",
       "action": "Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."
+    },
+    "flash_already_active_at_start": {
+      "title": "Flash contact already active",
+      "body": "The flash contact was already closed when the device tried to arm the measurement.",
+      "action": "Check the flash sync cable and camera contact. The input must be open before release."
     }
   },
   "deviceErrors": {
     "generic": {
       "action": "Check the device and reconnect when the problem is fixed."
-    },
-    "sensor_baseline_too_low": {
-      "title": "Sensor baseline too low",
-      "body": "The sensors do not receive enough light for reliable measurement.",
-      "action": "Check the light source, sensor wiring, and whether a shutter blade covers the sensors."
     },
     "network_access_point_failed": {
       "title": "Setup access point failed",
@@ -249,17 +247,12 @@
       "title": "Display initialization failed",
       "body": "The OLED display could not be initialized.",
       "action": "Check the I2C wiring, display address, and power supply."
-    },
-    "lamp_connector_miswired": {
-      "title": "Lamp connector error",
-      "body": "The lamp socket reports a wrong or shorted plug.",
-      "action": "Use only the OpenCurtainLab lamp cable. Do not connect flash cables, headphones, audio equipment, or microphones to the lamp socket."
     }
   },
   "firmware": {
     "title": "Version mismatch",
     "warning": "Firmware {actual} and Web UI {expected}.x may not match.",
-    "action": "Use firmware, Web UI files and version.txt from the same release."
+    "action": "Use firmware and a manifest-compatible Web UI release."
   },
   "measurement": {
     "moveToDefault": "Move to default project"
@@ -271,9 +264,9 @@
     "publishedLabel": "published {version}",
     "firmwareWebUiMismatch": "Firmware {firmware} and Web UI {webui} use different API versions.",
     "webUiOutdated": "This Web UI is outdated. Loaded {webui}, published {cdn}.",
-    "cdnMismatch": "The loaded Web UI {webui} and published version marker {cdn} do not match.",
-    "deviceCdnMismatch": "Firmware {firmware} and published project version {cdn} do not match.",
-    "action": "Use firmware, Web UI files and version.txt from the same release.",
+    "cdnMismatch": "The loaded Web UI {webui} and manifest-selected Web UI {cdn} do not match.",
+    "deviceCdnMismatch": "Firmware {firmware} and manifest-selected Web UI {cdn} use different API versions.",
+    "action": "Use firmware and a manifest-compatible Web UI release.",
     "mismatchTitle": "Version mismatch",
     "updateAvailable": "Update available",
     "updateAvailableWithVersion": "Update available {version}",
@@ -326,9 +319,7 @@
     "cancel": "Cancel",
     "create": "Create",
     "resultDisplayOff": "off",
-    "oledSleepOff": "off",
-    "sensorCalibration": "Sensors",
-    "calibrateSensors": "Calibrate"
+    "oledSleepOff": "off"
   },
   "targetSeries": {
     "standard": "Standard",

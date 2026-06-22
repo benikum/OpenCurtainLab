@@ -303,7 +303,6 @@ function setLanguage(lang) {
 }
 
 window.addEventListener('pagehide', persistUiState);
-window.oclSensors = fetchSensorDiagnostics;
 
 
 // Fetch the current device status from the firmware.

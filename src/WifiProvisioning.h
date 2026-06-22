@@ -167,12 +167,11 @@ public:
     }
   }
 
-  // Switches the radio into setup access point mode.
+  // Switches the radio into setup access point mode; WiFi scans may temporarily enable station capability.
   void startAccessPointMode(WifiEvent event = WifiEvent::AccessPointStarted) {
     Serial.println(F("[WiFi] Starting access point mode."));
 
-    // Setup AP is exclusive: stop any station connection first so the
-    // device is either in normal WiFi mode or in setup AP mode, not both.
+    // Stop any active station connection before starting the setup AP.
     if (_connected || WiFi.status() == WL_CONNECTED) {
       Serial.println(F("[WiFi] Disconnecting station before starting setup AP."));
     }
@@ -389,25 +388,6 @@ private:
     stopMdns();
     delay(20);
     startMdns();
-  }
-
-  // Normalizes a text string into a safe mDNS-style hostname.
-  static String sanitizeHostname(String h) {
-    h.trim();
-    h.toLowerCase();
-    String out;
-    out.reserve(32);
-    bool lastDash = false;
-    // mDNS hostnames are kept short and limited to lowercase alphanumeric plus dashes.
-    for (size_t i = 0; i < h.length() && out.length() < 31; i++) {
-      char c = h[i];
-      const bool ok = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
-      if (ok) { out += c; lastDash = false; }
-      else if ((c == '-' || c == '_' || c == ' ') && out.length() && !lastDash) { out += '-'; lastDash = true; }
-    }
-    while (out.endsWith("-")) out.remove(out.length() - 1);
-    if (!out.length()) out = MDNS_NAME;
-    return out;
   }
 
 };

@@ -24,9 +24,9 @@ static inline const char* measurementModeKey(MeasurementMode mode) {
 
 // Parses a stable mode key. Unknown keys fall back to the default horizontal geometry.
 static inline MeasurementMode measurementModeFromKey(const String& key) {
-  if (key == "vertical") return MeasurementMode::VERTICAL;
-  if (key == "central") return MeasurementMode::CENTRAL;
-  return MeasurementMode::HORIZONTAL;
+  return key == "vertical" ? MeasurementMode::VERTICAL
+       : key == "central" ? MeasurementMode::CENTRAL
+       : MeasurementMode::HORIZONTAL;
 }
 
 // Returns the next mode in the local button cycle.
@@ -38,8 +38,7 @@ struct SensorReading {
   uint8_t id = 0;
   uint8_t pin = 0;
 
-  int rawValue = 0;
-  int baselineValue = 0;
+  int rawValue = 4095;
 
   bool isActive = false;
   bool wasActivated = false;
@@ -48,7 +47,7 @@ struct SensorReading {
   int64_t closeTimestamp = 0;
   int64_t lastEdgeTimestamp = 0;
 
-  // Clears per-measurement sensor edge state while keeping pin and baseline data.
+  // Clears per-measurement sensor edge state while keeping pin and latest raw data.
   void resetMeasurement() {
     isActive = false;
     wasActivated = false;
@@ -70,7 +69,6 @@ struct SensorReading {
 struct FlashReading {
   uint8_t pin = PIN_FLASH_SENSOR;
   int rawValue = HIGH;
-  int baselineValue = HIGH;
 
   bool isActive = false;
   bool detected = false;
@@ -78,7 +76,7 @@ struct FlashReading {
 
   int64_t triggerTimestamp = 0;
 
-  // Clears per-measurement flash trigger state while keeping pin and baseline data.
+  // Clears per-measurement flash trigger state while keeping pin and latest raw data.
   void resetMeasurement() {
     detected = false;
     triggeredThisUpdate = false;
@@ -89,7 +87,6 @@ struct FlashReading {
   void reset() {
     pin = PIN_FLASH_SENSOR;
     rawValue = HIGH;
-    baselineValue = HIGH;
     isActive = false;
     resetMeasurement();
   }
@@ -100,8 +97,7 @@ enum class DeviceSubsystem : uint8_t {
   Sensor,
   Network,
   Storage,
-  Display,
-  Lamp
+  Display
 };
 
 // Converts a device subsystem to its API key.
@@ -112,17 +108,14 @@ static inline const char* deviceSubsystemKey(DeviceSubsystem subsystem) {
     case DeviceSubsystem::Network: return "network";
     case DeviceSubsystem::Storage: return "storage";
     case DeviceSubsystem::Display: return "display";
-    case DeviceSubsystem::Lamp: return "lamp";
   }
   return "unknown";
 }
 
 enum class DeviceError : uint8_t {
   None,
-  SensorBaselineTooLow,
   NetworkAccessPointFailed,
-  DisplayInitFailed,
-  LampConnectorMiswired
+  DisplayInitFailed
 };
 
 struct DeviceStatus {
@@ -137,10 +130,8 @@ struct DeviceStatus {
 static inline const char* deviceErrorKey(DeviceError error) {
   switch (error) {
     case DeviceError::None: return "none";
-    case DeviceError::SensorBaselineTooLow: return "sensor_baseline_too_low";
     case DeviceError::NetworkAccessPointFailed: return "network_access_point_failed";
     case DeviceError::DisplayInitFailed: return "display_init_failed";
-    case DeviceError::LampConnectorMiswired: return "lamp_connector_miswired";
   }
   return "unknown";
 }
@@ -149,10 +140,8 @@ static inline const char* deviceErrorKey(DeviceError error) {
 static inline const char* deviceErrorText(DeviceError error) {
   switch (error) {
     case DeviceError::None: return "";
-    case DeviceError::SensorBaselineTooLow: return "Sensor baseline too low";
     case DeviceError::NetworkAccessPointFailed: return "Setup access point failed";
     case DeviceError::DisplayInitFailed: return "Display initialization failed";
-    case DeviceError::LampConnectorMiswired: return "Lamp connector is shorted or plugged into the flash contact";
   }
   return "Unknown device error";
 }
@@ -195,6 +184,7 @@ static inline const char* networkHintText(NetworkHint hint) {
 enum class MeasurementHint : uint8_t {
   None,
   SensorAlreadyActiveAtStart,
+  FlashAlreadyActiveAtStart,
   FlashWithoutSensor,
   TimeoutWithData,
   IncompleteSensorCoverage
@@ -205,6 +195,7 @@ static inline const char* measurementHintKey(MeasurementHint hint) {
   switch (hint) {
     case MeasurementHint::None: return "none";
     case MeasurementHint::SensorAlreadyActiveAtStart: return "sensor_already_active_at_start";
+    case MeasurementHint::FlashAlreadyActiveAtStart: return "flash_already_active_at_start";
     case MeasurementHint::FlashWithoutSensor: return "flash_without_sensor";
     case MeasurementHint::TimeoutWithData: return "timeout_with_data";
     case MeasurementHint::IncompleteSensorCoverage: return "incomplete_sensor_coverage";
@@ -217,6 +208,7 @@ static inline const char* measurementHintText(MeasurementHint hint) {
   switch (hint) {
     case MeasurementHint::None: return "";
     case MeasurementHint::SensorAlreadyActiveAtStart: return "Sensor already active at start";
+    case MeasurementHint::FlashAlreadyActiveAtStart: return "Flash contact already active at start";
     case MeasurementHint::FlashWithoutSensor: return "Flash contact triggered, but no sensor activated";
     case MeasurementHint::TimeoutWithData: return "Timeout: measurement finished with available raw data";
     case MeasurementHint::IncompleteSensorCoverage: return "Incomplete measurement: not all sensors were covered";

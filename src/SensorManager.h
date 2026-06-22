@@ -1,5 +1,5 @@
 /*
- * Reads the five phototransistors and the flash contact, tracks edges, and maintains sensor baselines.
+ * Reads the five phototransistors and the flash contact, tracks edges, and exposes live diagnostics.
  */
 
 #pragma once
@@ -13,7 +13,7 @@
 class SensorManager {
 public:
   // Assigns the five sensor pins and initializes the flash input state.
-  SensorManager() : _sensorOnDelta(SENSOR_ON_DELTA_MEDIUM), _sensorOffDelta(SENSOR_OFF_DELTA_MEDIUM) {
+  SensorManager() : _sensorOnThreshold(SENSOR_ON_THRESHOLD_MEDIUM), _sensorOffThreshold(SENSOR_OFF_THRESHOLD_MEDIUM) {
     const uint8_t pins[] = { PIN_SENSOR_0, PIN_SENSOR_1, PIN_SENSOR_2, PIN_SENSOR_3, PIN_SENSOR_4 };
     for (int i = 0; i < SENSOR_COUNT; i++) {
       _sensors[i].id = i;
@@ -28,52 +28,23 @@ public:
     for (int i = 0; i < SENSOR_COUNT; i++) {
       pinMode(_sensors[i].pin, INPUT);
       analogSetPinAttenuation(_sensors[i].pin, ADC_11db);
+      _sensors[i].rawValue = 4095;
     }
     pinMode(_flash.pin, INPUT_PULLUP);
-    Serial.println(F("[Sensor] Inputs initialized."));
+    Serial.println(F("[Sensor] Inputs initialized. Dark idle raw is expected near 4095."));
   }
 
-  // Stores ADC hysteresis thresholds for light detection.
-  void setSensorThresholds(int onDelta, int offDelta) {
-    _sensorOnDelta = max(1, onDelta);
-    _sensorOffDelta = max(1, offDelta);
-    if (_sensorOffDelta >= _sensorOnDelta) _sensorOffDelta = max(1, _sensorOnDelta / 2);
-    Serial.printf("[Sensor] ADC thresholds: on=%d off=%d\n", _sensorOnDelta, _sensorOffDelta);
-  }
-
-  // Samples each sensor baseline and reports whether all ADC baselines are usable.
-  bool calibrateBaseline() {
-    resetTracking();
-
-    const int samples = max(1, (int)SENSOR_BASELINE_SAMPLES);
-    const unsigned long stepMs = (samples > 1) ? SENSOR_BASELINE_DURATION_MS / (samples - 1) : 0;
-    int32_t sums[SENSOR_COUNT] = {0};
-
-    for (int sample = 0; sample < samples; sample++) {
-      for (int i = 0; i < SENSOR_COUNT; i++) {
-        const int val = readStableAdc(_sensors[i].pin);
-        _sensors[i].rawValue = val;
-        sums[i] += val;
-      }
-      if (sample < samples - 1 && stepMs > 0) delay(stepMs);
+  // Stores absolute ADC hysteresis thresholds for light detection.
+  void setSensorThresholds(int onThreshold, int offThreshold) {
+    _sensorOnThreshold = constrain(onThreshold, 0, 4095);
+    _sensorOffThreshold = constrain(offThreshold, 0, 4095);
+    if (_sensorOffThreshold <= _sensorOnThreshold) {
+      _sensorOffThreshold = min(4095, _sensorOnThreshold + 100);
     }
-
-    bool ok = true;
-    for (int i = 0; i < SENSOR_COUNT; i++) {
-      _sensors[i].baselineValue = (int)roundf((float)sums[i] / samples);
-      _sensors[i].isActive = false;
-      ok &= (_sensors[i].baselineValue >= SENSOR_BASELINE_MIN_RAW);
-      Serial.printf("[Sensor] S%d baseline=%d raw=%d\n", i, _sensors[i].baselineValue, _sensors[i].rawValue);
-    }
-
-    _flash.rawValue = digitalRead(_flash.pin);
-    _flash.baselineValue = _flash.rawValue;
-    _flash.isActive = isFlashActive(_flash.rawValue);
-    Serial.printf("[Sensor] Flash raw=%d active=%d\n", _flash.rawValue, _flash.isActive);
-    return ok;
+    Serial.printf("[Sensor] ADC thresholds: on<=%d off>=%d\n", _sensorOnThreshold, _sensorOffThreshold);
   }
 
-  // Scans all sensors and the flash input once. Each ADC channel receives its own timestamp.
+  // Scans unfinished sensors and the flash input once; each sampled ADC channel receives its own timestamp.
   bool update() {
     bool changed = false;
     for (int i = 0; i < SENSOR_COUNT; i++) changed |= updateSensor(_sensors[i]);
@@ -145,8 +116,7 @@ public:
   bool isDiagnosticSensorActive(int idx, int raw) const {
     if (idx < 0) idx = 0;
     if (idx >= SENSOR_COUNT) idx = SENSOR_COUNT - 1;
-    const int baseline = _sensors[idx].baselineValue;
-    return baseline > 0 && raw <= (baseline - _sensorOnDelta);
+    return raw <= _sensorOnThreshold;
   }
 
   // Reads the flash contact for diagnostics without touching trigger tracking.
@@ -155,19 +125,14 @@ public:
   // Computes whether a diagnostic flash-contact sample is active.
   bool isDiagnosticFlashActive(int raw) const { return isFlashActive(raw); }
 
-  // Returns the current hysteresis thresholds for diagnostics.
-  int sensorOnDelta() const { return _sensorOnDelta; }
-  int sensorOffDelta() const { return _sensorOffDelta; }
+  // Returns the current absolute ADC thresholds for diagnostics.
+  int sensorOnThreshold() const { return _sensorOnThreshold; }
+  int sensorOffThreshold() const { return _sensorOffThreshold; }
+
 
   // Returns true if any sensor is currently active.
   bool isAnySensorActive() const {
     for (int i = 0; i < SENSOR_COUNT; i++) if (_sensors[i].isActive) return true;
-    return false;
-  }
-
-  // Returns true if an inactive-before sensor is currently active during settling.
-  bool isAnyUnusedSensorActive() const {
-    for (int i = 0; i < SENSOR_COUNT; i++) if (!_sensors[i].wasActivated && _sensors[i].isActive) return true;
     return false;
   }
 
@@ -199,8 +164,8 @@ public:
 private:
   SensorReading _sensors[SENSOR_COUNT];
   FlashReading _flash;
-  int _sensorOnDelta;
-  int _sensorOffDelta;
+  int _sensorOnThreshold;
+  int _sensorOffThreshold;
 
   // Updates one phototransistor reading and records open/close edges.
   bool updateSensor(SensorReading& s) {
@@ -209,11 +174,10 @@ private:
     const int val = readFastSensor(s.pin);
     const int64_t timestampUs = esp_timer_get_time();
     s.rawValue = val;
-    if (s.baselineValue <= 0) s.baselineValue = val;
 
     bool nextActive = s.isActive;
-    if (!s.isActive && val <= (s.baselineValue - _sensorOnDelta)) nextActive = true;
-    if (s.isActive && val >= (s.baselineValue - _sensorOffDelta)) nextActive = false;
+    if (!s.isActive && val <= _sensorOnThreshold) nextActive = true;
+    if (s.isActive && val >= _sensorOffThreshold) nextActive = false;
 
     if (nextActive == s.isActive) return false;
 
@@ -237,13 +201,5 @@ private:
   // Reads one phototransistor ADC pin as quickly as practical.
   static int readFastSensor(uint8_t pin) {
     return analogRead(pin);
-  }
-
-  // Reads one ADC pin three times and returns the median value.
-  static int readStableAdc(uint8_t pin) {
-    const int a = analogRead(pin);
-    const int b = analogRead(pin);
-    const int c = analogRead(pin);
-    return max(min(a, b), min(max(a, b), c));
   }
 };

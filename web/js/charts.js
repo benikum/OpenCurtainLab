@@ -433,7 +433,7 @@ function drawTimeline(entry) {
     ctx.fillText('id ' + si, PAD_L - 8, cy + 4);
     ctx.restore();
 
-    // Track baseline (thin)
+    // Track zero reference (thin)
     ctx.save();
     ctx.strokeStyle = '#2a2e2a';
     ctx.lineWidth   = 1;

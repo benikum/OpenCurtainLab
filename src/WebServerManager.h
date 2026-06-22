@@ -85,6 +85,8 @@ public:
   String getIP() const { return _wifi.ip(); }
   // Returns a compact network label for the OLED ready screen.
   String getNetworkLine() const { return _wifi.networkLine(); }
+  // Returns the current user-facing network diagnostic hint.
+  NetworkHint getNetworkHint() const { return _wifi.networkHint(); }
   // Returns and clears the latest WiFi event.
   WifiEvent consumeWifiEvent() { return _wifi.consumeEvent(); }
 
@@ -97,9 +99,6 @@ public:
 
   // Attaches the hardware sensor manager used by /sensors diagnostics.
   void attachSensorManager(SensorManager& sensors) { _sensorManager = &sensors; }
-
-  // Attaches an app-level calibration callback used by POST /calibrate.
-  void setCalibrationCallback(bool (*callback)()) { _calibrationCallback = callback; }
 
 private:
   WebServer _server;
@@ -115,7 +114,6 @@ private:
   char _measIdStr[32] = "";
   DeviceStatus _deviceStatus;
   SensorManager* _sensorManager = nullptr;
-  bool (*_calibrationCallback)() = nullptr;
 
   // Adds CORS and no-cache headers to API responses.
   void cors() {
@@ -132,16 +130,6 @@ private:
     _server.send(code, "application/json", json);
   }
 
-  // Builds a simple JSON error response.
-  String jsonError(const char* error, bool ok = false) const {
-    StaticJsonDocument<160> doc;
-    doc["ok"] = ok;
-    doc["error"] = error ? error : "error";
-    String out;
-    serializeJson(doc, out);
-    return out;
-  }
-
   // Serves the embedded gzip-compressed WiFi setup portal HTML.
   void serveSetupPage() {
     _server.sendHeader("Cache-Control", "no-cache");
@@ -150,16 +138,94 @@ private:
     _server.send_P(200, "text/html", reinterpret_cast<const char*>(SETUP_PORTAL_HTML_GZ), SETUP_PORTAL_HTML_GZ_LEN);
   }
 
-  // Redirects browser requests to the raw single-file WebUI when proxying is unavailable.
-  void redirectToWebApp() {
-    cors();
-    _server.sendHeader("Location", WEB_APP_URL);
-    _server.send(302, "text/plain", "OpenCurtainLab Web UI");
+  struct OclVersionParts {
+    int major = -1;
+    int api = -1;
+    int patch = -1;
+    bool wildcardPatch = false;
+    bool valid = false;
+  };
+
+  struct WebUiRelease {
+    String match;
+    String version;
+    String url;
+    bool valid = false;
+  };
+
+  // Parses either an exact OpenCurtainLab version such as 0.1.3 or a patch wildcard such as 0.1.x.
+  static bool parseOclVersion(const String& value, OclVersionParts& out) {
+    String v = value;
+    v.trim();
+    out = OclVersionParts();
+    if (!v.length()) return false;
+
+    const int firstDot = v.indexOf('.');
+    if (firstDot <= 0) return false;
+    const int secondDot = v.indexOf('.', firstDot + 1);
+    if (secondDot <= firstDot + 1) return false;
+
+    const String majorPart = v.substring(0, firstDot);
+    const String apiPart = v.substring(firstDot + 1, secondDot);
+    String patchPart = v.substring(secondDot + 1);
+    patchPart.trim();
+
+    if (!parseNonNegativeInt(majorPart, out.major)) return false;
+    if (!parseNonNegativeInt(apiPart, out.api)) return false;
+
+    if (patchPart == "x" || patchPart == "X" || patchPart == "*") {
+      out.patch = -1;
+      out.wildcardPatch = true;
+      out.valid = true;
+      return true;
+    }
+
+    int patchEnd = 0;
+    while (patchEnd < static_cast<int>(patchPart.length()) && isDigit(patchPart.charAt(patchEnd))) patchEnd++;
+    if (patchEnd <= 0) return false;
+    if (patchEnd < static_cast<int>(patchPart.length())) {
+      const char suffixMarker = patchPart.charAt(patchEnd);
+      if (suffixMarker != '-' && suffixMarker != '+') return false;
+    }
+
+    String numericPatch = patchPart.substring(0, patchEnd);
+    if (!parseNonNegativeInt(numericPatch, out.patch)) return false;
+    out.valid = true;
+    return true;
   }
 
-  // Streams the remote single-file WebUI through the ESP32.
-  // The page is not persisted on the ESP32; data is copied from the HTTPS response to the HTTP client in small chunks.
-  bool proxyRemoteWebApp() {
+  // Parses only non-negative integer strings so values like "1abc" do not pass as 1.
+  static bool parseNonNegativeInt(const String& value, int& out) {
+    if (!value.length()) return false;
+    long result = 0;
+    for (size_t i = 0; i < value.length(); i++) {
+      const char c = value.charAt(i);
+      if (!isDigit(c)) return false;
+      result = result * 10 + (c - '0');
+      if (result > 32767) return false;
+    }
+    out = static_cast<int>(result);
+    return true;
+  }
+
+  // Returns whether a manifest match pattern is compatible with this firmware version.
+  static bool versionPatternMatches(const OclVersionParts& pattern, const OclVersionParts& firmware) {
+    if (!pattern.valid || !firmware.valid) return false;
+    if (pattern.major != firmware.major) return false;
+    if (pattern.api != firmware.api) return false;
+    if (pattern.wildcardPatch) return true;
+    return pattern.patch == firmware.patch;
+  }
+
+  // Compares exact versions that already share major and API. Returns true when candidate is newer than current.
+  static bool isNewerBugfix(const OclVersionParts& candidate, const OclVersionParts& current) {
+    if (!candidate.valid || !current.valid) return false;
+    return candidate.patch > current.patch;
+  }
+
+  // Fetches web/manifest.json and selects the newest bugfix WebUI compatible with this firmware's API version.
+  bool resolveWebUiRelease(WebUiRelease& selected) {
+    selected = WebUiRelease();
     if (!_wifi.isConnected()) return false;
 
     WiFiClientSecure client;
@@ -167,64 +233,106 @@ private:
 
     HTTPClient http;
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    http.setTimeout(WEB_APP_PROXY_TIMEOUT_MS);
-    http.useHTTP10(false);
+    http.setTimeout(WEB_MANIFEST_TIMEOUT_MS);
 
-    Serial.printf("[Web] Proxying WebUI: %s\n", WEB_APP_URL);
-    if (!http.begin(client, WEB_APP_URL)) {
-      Serial.println(F("[Web] WebUI proxy begin failed."));
+    Serial.printf("[Web] Fetching WebUI manifest: %s\n", WEB_MANIFEST_URL);
+    if (!http.begin(client, WEB_MANIFEST_URL)) {
+      Serial.println(F("[Web] Manifest begin failed."));
       http.end();
       return false;
     }
 
-    http.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+    http.addHeader("Accept", "application/json,text/plain,*/*;q=0.8");
     http.addHeader("User-Agent", "OpenCurtainLab ESP32");
     const int code = http.GET();
     if (code != HTTP_CODE_OK) {
-      Serial.printf("[Web] WebUI proxy GET failed: %d\n", code);
+      Serial.printf("[Web] Manifest GET failed: %d\n", code);
       http.end();
       return false;
     }
 
-    WiFiClient* input = http.getStreamPtr();
-    WiFiClient output = _server.client();
-    uint8_t buffer[WEB_APP_PROXY_CHUNK_SIZE];
+    const String body = http.getString();
+    http.end();
 
-    // Send a plain close-delimited HTTP response. This avoids buffering the full file and avoids chunk framing.
-    output.print(F("HTTP/1.1 200 OK\r\n"));
-    output.print(F("Content-Type: text/html; charset=utf-8\r\n"));
-    output.print(F("Content-Disposition: inline; filename=\"" WEB_APP_DOWNLOAD_FILENAME "\"\r\n"));
-    output.print(F("Cache-Control: no-cache\r\n"));
-    output.print(F("X-OpenCurtainLab-Source: remote-proxy\r\n"));
-    output.print(F("Connection: close\r\n"));
-    output.print(F("\r\n"));
+    DynamicJsonDocument doc(8192);
+    DeserializationError err = deserializeJson(doc, body);
+    if (err) {
+      Serial.printf("[Web] Manifest JSON parse failed: %s\n", err.c_str());
+      return false;
+    }
 
-    unsigned long lastDataMs = millis();
-    while (http.connected() && output.connected()) {
-      const size_t available = input->available();
-      if (available) {
-        const size_t want = available < sizeof(buffer) ? available : sizeof(buffer);
-        const int readLen = input->readBytes(buffer, want);
-        if (readLen > 0) {
-          output.write(buffer, readLen);
-          lastDataMs = millis();
-        }
-      } else {
-        if (millis() - lastDataMs > WEB_APP_PROXY_IDLE_TIMEOUT_MS) break;
-        delay(1);
+    JsonArray entries = doc["entries"].as<JsonArray>();
+    if (entries.isNull()) {
+      Serial.println(F("[Web] Manifest has no entries array."));
+      return false;
+    }
+
+    OclVersionParts firmwareVersion;
+    if (!parseOclVersion(String(FIRMWARE_VERSION), firmwareVersion)) {
+      Serial.println(F("[Web] Firmware version could not be parsed."));
+      return false;
+    }
+
+    WebUiRelease best;
+    OclVersionParts bestVersion;
+
+    for (JsonObject entry : entries) {
+      const char* matchC = entry["match"] | "";
+      if (!matchC || !matchC[0]) matchC = entry["firmware"] | "";
+      const String match = String(matchC ? matchC : "");
+      String actualVersion = String(entry["version"] | "");
+      const String url = String(entry["url"] | "");
+      if (!match.length() || !url.length() || !actualVersion.length()) continue;
+      OclVersionParts matchVersion;
+      OclVersionParts releaseVersion;
+      if (!parseOclVersion(match, matchVersion)) continue;
+      if (!parseOclVersion(actualVersion, releaseVersion)) continue;
+      if (!versionPatternMatches(matchVersion, firmwareVersion)) continue;
+      if (releaseVersion.major != firmwareVersion.major || releaseVersion.api != firmwareVersion.api) continue;
+
+      if (!best.valid || isNewerBugfix(releaseVersion, bestVersion)) {
+        best.match = match;
+        best.version = actualVersion;
+        best.url = url;
+        best.valid = true;
+        bestVersion = releaseVersion;
       }
     }
 
-    output.flush();
-    output.stop();
-    http.end();
+    if (!best.valid) {
+      Serial.println(F("[Web] No compatible WebUI release found in manifest."));
+      return false;
+    }
+
+    selected = best;
+    Serial.printf("[Web] Selected WebUI %s for firmware %s via %s\n", selected.version.c_str(), FIRMWARE_VERSION, selected.match.c_str());
     return true;
   }
 
+  // Returns the selected remote WebUI version as plain text. Used by the WebUI update check.
+  void serveVersion() {
+    WebUiRelease release;
+    if (resolveWebUiRelease(release)) {
+      cors();
+      _server.sendHeader("X-OpenCurtainLab-Version-Source", "manifest");
+      _server.sendHeader("X-OpenCurtainLab-WebUI-Match", release.match);
+      _server.send(200, "text/plain; charset=utf-8", release.version);
+      return;
+    }
 
-  // Fetches the remote plain-text version marker through the ESP32 to avoid browser CORS issues.
-  bool proxyRemoteVersion() {
-    if (!_wifi.isConnected()) return false;
+    cors();
+    _server.sendHeader("X-OpenCurtainLab-Version-Source", "local-fallback");
+    _server.send(200, "text/plain; charset=utf-8", FIRMWARE_VERSION);
+  }
+
+  // Streams the selected compatible WebUI release through the ESP32 as a browser download.
+  void serveWebApp() {
+    WebUiRelease release;
+    if (!resolveWebUiRelease(release)) {
+      cors();
+      _server.send(503, "text/plain; charset=utf-8", "OpenCurtainLab WebUI manifest unavailable or no compatible WebUI release found.");
+      return;
+    }
 
     WiFiClientSecure client;
     client.setInsecure();
@@ -233,44 +341,71 @@ private:
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     http.setTimeout(WEB_APP_PROXY_TIMEOUT_MS);
 
-    Serial.printf("[Web] Proxying version: %s\n", WEB_VERSION_URL);
-    if (!http.begin(client, WEB_VERSION_URL)) {
-      Serial.println(F("[Web] Version proxy begin failed."));
+    Serial.printf("[Web] Downloading WebUI %s: %s\n", release.version.c_str(), release.url.c_str());
+    if (!http.begin(client, release.url)) {
+      Serial.println(F("[Web] WebUI download begin failed."));
       http.end();
-      return false;
+      cors();
+      _server.send(502, "text/plain; charset=utf-8", "OpenCurtainLab WebUI download failed.");
+      return;
     }
 
-    http.addHeader("Accept", "text/plain,*/*;q=0.8");
+    http.addHeader("Accept", "text/html,*/*;q=0.8");
     http.addHeader("User-Agent", "OpenCurtainLab ESP32");
     const int code = http.GET();
     if (code != HTTP_CODE_OK) {
-      Serial.printf("[Web] Version proxy GET failed: %d\n", code);
+      Serial.printf("[Web] WebUI download GET failed: %d\n", code);
       http.end();
-      return false;
+      cors();
+      _server.send(502, "text/plain; charset=utf-8", "OpenCurtainLab WebUI download failed.");
+      return;
     }
 
-    String body = http.getString();
+    const int contentLength = http.getSize();
+    WiFiClient* remote = http.getStreamPtr();
+    WiFiClient browser = _server.client();
+
+    cors();
+    _server.sendHeader("Content-Disposition", "attachment; filename=\"" WEB_APP_DOWNLOAD_FILENAME "\"");
+    _server.sendHeader("X-OpenCurtainLab-WebUI-Version", release.version);
+    _server.sendHeader("X-OpenCurtainLab-WebUI-Match", release.match);
+    _server.sendHeader("Cache-Control", "no-store");
+    if (contentLength > 0) _server.setContentLength(contentLength);
+    else _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    _server.send(200, "text/html; charset=utf-8", "");
+
+    uint8_t buffer[WEB_APP_STREAM_BUFFER_SIZE];
+    int remaining = contentLength;
+    unsigned long lastDataMs = millis();
+    size_t total = 0;
+
+    while (http.connected() && browser.connected() && (remaining > 0 || remaining == -1)) {
+      const size_t available = remote->available();
+      if (available) {
+        const size_t toRead = min(available, sizeof(buffer));
+        const int readLen = remote->readBytes(buffer, toRead);
+        if (readLen <= 0) continue;
+        browser.write(buffer, readLen);
+        total += readLen;
+        if (remaining > 0) remaining -= readLen;
+        lastDataMs = millis();
+        continue;
+      }
+
+      if ((millis() - lastDataMs) > WEB_APP_PROXY_TIMEOUT_MS) {
+        Serial.println(F("[Web] WebUI stream timed out."));
+        break;
+      }
+      delay(1);
+    }
+
     http.end();
-    body.trim();
-    cors();
-    _server.send(200, "text/plain; charset=utf-8", body);
-    return true;
+
+    Serial.printf("[Web] WebUI streamed. version=%s bytes=%u\n", release.version.c_str(), static_cast<unsigned>(total));
+    clearDeviceError(DeviceSubsystem::Network);
   }
 
-  // Serves the remote version marker as plain text.
-  void serveVersion() {
-    if (proxyRemoteVersion()) return;
-    cors();
-    _server.send(502, "text/plain; charset=utf-8", "");
-  }
-
-
-  // Serves the remote WebUI through the ESP32 and falls back to the raw file URL when proxying fails.
-  void serveWebApp() {
-    if (!proxyRemoteWebApp()) redirectToWebApp();
-  }
-
-  // Serves the setup portal in AP mode. In station mode, root serves the proxied WebUI.
+  // Serves the setup portal in AP mode. In station mode, root streams the manifest-selected WebUI release.
   void serveRootLikePage() {
     if (_wifi.isAccessPointMode()) {
       serveSetupPage();
@@ -281,13 +416,13 @@ private:
 
   // Registers API, setup portal, captive portal, and CORS routes.
   void setupRoutes() {
-    // Root opens the setup page in AP mode or serves the proxied WebUI in station mode.
+    // Root opens the setup page in AP mode or streams the manifest-selected WebUI download in station mode.
     _server.on("/", HTTP_GET, [this]() { serveRootLikePage(); });
 
-    // Common captive-portal probe paths are routed to the same setup/redirect behavior as root.
+    // Common captive-portal probe paths are routed to the same setup/download behavior as root.
     const char* captivePaths[] = { "/generate_204", "/hotspot-detect.html", "/fwlink", "/connecttest.txt", "/ncsi.txt" };
     for (const char* path : captivePaths) {
-      // Captive portal probes use the same setup/redirect behavior as root.
+      // Captive portal probes use the same setup/download behavior as root.
       _server.on(path, HTTP_GET, [this]() { serveRootLikePage(); });
     }
 
@@ -297,15 +432,14 @@ private:
     registerOptions("/version");
     registerOptions("/config");
     registerOptions("/sensors");
-    registerOptions("/calibrate");
     registerOptions("/wifi");
     registerOptions("/wifi/scan");
     registerOptions("/wifi/status");
 
-    // Core API routes are read-only except /config and /wifi.
+    // Core API routes are read-only except /config and setup-only /wifi.
     // /status reports device, WiFi, uptime, measurement count, and device-level error.
     _server.on("/status", HTTP_GET, [this]() { sendJson(200, buildStatusJson()); });
-    // /version proxies the remote plain-text version marker for the WebUI.
+    // /version resolves the manifest-selected compatible WebUI version.
     _server.on("/version", HTTP_GET, [this]() { serveVersion(); });
     // GET /config reports firmware capabilities and sanitized runtime settings.
     _server.on("/config", HTTP_GET, [this]() { sendJson(200, JsonBuilder::config(_settings.get())); });
@@ -313,11 +447,9 @@ private:
     _server.on("/data", HTTP_GET, [this]() { sendJson(200, JsonBuilder::data(_result, _measurementId, _measIdStr, _targetFraction, _mode)); });
     // /sensors returns live non-mutating sensor diagnostics for developer tools.
     _server.on("/sensors", HTTP_GET, [this]() { handleSensorsGet(); });
-    // POST /calibrate recalibrates sensor baselines through the app-level callback.
-    _server.on("/calibrate", HTTP_POST, [this]() { handleCalibratePost(); });
     // POST /config accepts partial settings updates.
     _server.on("/config", HTTP_POST, [this]() { handleConfigPost(); });
-    // POST /wifi tests and stores WiFi credentials.
+    // POST /wifi tests and stores WiFi credentials only while setup AP mode is active.
     _server.on("/wifi", HTTP_POST, [this]() { handleWifiPost(); });
     // /wifi/scan returns nearby networks for the setup portal.
     _server.on("/wifi/scan", HTTP_GET, [this]() { sendJson(200, _wifi.scanJson()); });
@@ -327,7 +459,7 @@ private:
     // Unknown paths serve the captive portal in AP mode and a JSON error otherwise.
     _server.onNotFound([this]() {
       if (_wifi.isAccessPointMode()) serveSetupPage();
-      else sendJson(404, jsonError("not found"));
+      else sendJson(404, JsonBuilder::error("not found"));
     });
   }
 
@@ -355,25 +487,26 @@ private:
 
   // Builds the WiFi status JSON response used by the setup page.
   String buildWifiStatusJson(bool ok = true) const {
-    StaticJsonDocument<768> doc;
-    const NetworkHint hint = _wifi.networkHint();
-    doc["ok"] = ok;
-    doc["connected"] = _wifi.isConnected();
-    doc["apMode"] = _wifi.isAccessPointMode();
-    doc["ip"] = _wifi.staIp();
-    doc["apIp"] = _wifi.apIp();
-    doc["hostname"] = _wifi.hostname();
-    doc["mdnsStarted"] = _wifi.isMdnsStarted();
-    doc["hasSaved"] = _wifi.hasStoredCredentials();
-    doc["savedSsid"] = _wifi.savedSsid();
-    doc["currentSsid"] = _wifi.currentSsid();
-    doc["hint"] = networkHintKey(hint);
-    doc["hintText"] = networkHintText(hint);
-    doc["lastError"] = _wifi.lastWifiError();
+    return JsonBuilder::wifiStatus(wifiStatusView(ok));
+  }
 
-    String out;
-    serializeJson(doc, out);
-    return out;
+  // Captures the current WiFi provisioning state in one place to avoid duplicated JSON layouts.
+  WifiStatusView wifiStatusView(bool ok = true, const char* error = nullptr) const {
+    WifiStatusView view;
+    view.ok = ok;
+    view.connected = _wifi.isConnected();
+    view.apMode = _wifi.isAccessPointMode();
+    view.ip = _wifi.staIp();
+    view.apIp = _wifi.apIp();
+    view.hostname = _wifi.hostname();
+    view.mdnsStarted = _wifi.isMdnsStarted();
+    view.hasSaved = _wifi.hasStoredCredentials();
+    view.savedSsid = _wifi.savedSsid();
+    view.currentSsid = _wifi.currentSsid();
+    view.hint = _wifi.networkHint();
+    view.lastError = _wifi.lastWifiError();
+    view.error = error;
+    return view;
   }
 
   // Builds the device status JSON response.
@@ -397,38 +530,16 @@ private:
   // Handles GET /sensors and returns a live sensor diagnostics snapshot.
   void handleSensorsGet() {
     if (!_sensorManager) {
-      sendJson(503, jsonError("sensors unavailable"));
+      sendJson(503, JsonBuilder::error("sensors unavailable"));
       return;
     }
     sendJson(200, JsonBuilder::sensors(*_sensorManager));
   }
 
-  // Handles POST /calibrate and runs the app-level calibration callback.
-  void handleCalibratePost() {
-    if (!_calibrationCallback) {
-      sendJson(503, jsonError("calibration unavailable"));
-      return;
-    }
-
-    const bool ok = _calibrationCallback();
-    StaticJsonDocument<320> doc;
-    doc["ok"] = ok;
-    doc["calibrated"] = ok;
-    if (_sensorManager) {
-      JsonArray baselines = doc.createNestedArray("baselines");
-      for (int i = 0; i < SENSOR_COUNT; i++) baselines.add(_sensorManager->getSensor(i).baselineValue);
-    }
-    if (!ok) doc["error"] = "calibration failed";
-
-    String resp;
-    serializeJson(doc, resp);
-    sendJson(ok ? 200 : 500, resp);
-  }
-
   // Handles POST /config and returns the sanitized settings.
   void handleConfigPost() {
     if (!_server.hasArg("plain") || !_server.arg("plain").length()) {
-      sendJson(400, jsonError("missing_body"));
+      sendJson(400, JsonBuilder::error("missing_body"));
       return;
     }
 
@@ -436,26 +547,23 @@ private:
     StaticJsonDocument<1024> validation;
     DeserializationError err = deserializeJson(validation, body);
     if (err) {
-      sendJson(400, jsonError("invalid_json"));
+      sendJson(400, JsonBuilder::error("invalid_json"));
       return;
     }
 
     const bool changed = _settings.applyJson(body);
     if (changed) _settingsChanged = true;
 
-    StaticJsonDocument<1024> doc;
-    doc["ok"] = true;
-    doc["changed"] = changed;
-    JsonObject settings = doc.createNestedObject("settings");
-    JsonBuilder::appendSettings(settings, _settings.get());
-
-    String resp;
-    serializeJson(doc, resp);
-    sendJson(200, resp);
+    sendJson(200, JsonBuilder::settingsResponse(_settings.get(), changed));
   }
 
   // Handles POST /wifi from JSON or form data and tests the credentials.
   void handleWifiPost() {
+    if (!_wifi.isAccessPointMode()) {
+      sendJson(403, JsonBuilder::error("wifi_setup_locked_in_station_mode"));
+      return;
+    }
+
     String ssid = _server.arg("ssid");
     String pass = _server.arg("password");
 
@@ -469,33 +577,14 @@ private:
     }
 
     if (!ssid.length()) {
-      sendJson(400, jsonError("ssid missing"));
+      sendJson(400, JsonBuilder::error("ssid missing"));
       return;
     }
 
     // Credentials are only saved by WifiProvisioning when the connection test succeeds.
     const bool connected = _wifi.connectWithCredentials(ssid, pass, WIFI_CONNECT_TIMEOUT_MS);
     syncNetworkDeviceStatus();
-    StaticJsonDocument<768> doc;
-    const NetworkHint hint = _wifi.networkHint();
-    doc["ok"] = connected;
-    doc["connected"] = _wifi.isConnected();
-    doc["apMode"] = _wifi.isAccessPointMode();
-    doc["ip"] = _wifi.staIp();
-    doc["apIp"] = _wifi.apIp();
-    doc["hostname"] = _wifi.hostname();
-    doc["mdnsStarted"] = _wifi.isMdnsStarted();
-    doc["hasSaved"] = _wifi.hasStoredCredentials();
-    doc["savedSsid"] = _wifi.savedSsid();
-    doc["currentSsid"] = _wifi.currentSsid();
-    doc["hint"] = networkHintKey(hint);
-    doc["hintText"] = networkHintText(hint);
-    doc["lastError"] = _wifi.lastWifiError();
-    if (!connected) doc["error"] = "connection failed";
-
-    String resp;
-    serializeJson(doc, resp);
-    sendJson(200, resp);
+    sendJson(200, JsonBuilder::wifiStatus(wifiStatusView(connected, connected ? nullptr : "connection failed")));
   }
 
 };

@@ -45,6 +45,20 @@ public:
     _display.display();
   }
 
+
+  // Renders a short full-screen diagnostic notification.
+  void showNotice(const char* title, const char* message) {
+    _display.ssd1306_command(SSD1306_DISPLAYON);
+    _display.clearDisplay();
+    _display.setTextColor(SSD1306_WHITE);
+    _display.setTextSize(1);
+    _display.setCursor(0, 0);
+    _printClipped(title && title[0] ? title : "NOTICE", 21);
+    _display.drawLine(0, 10, SCREEN_WIDTH, 10, SSD1306_WHITE);
+    _printWrapped(message && message[0] ? message : "Check device status", 0, 20, 21, 4);
+    _display.display();
+  }
+
   // Switches the OLED panel off without losing display state.
   void sleep() {
     _display.ssd1306_command(SSD1306_DISPLAYOFF);
@@ -65,21 +79,11 @@ public:
     _display.setTextSize(1);
     _display.setCursor(0, 0);
 
-    if (deviceError != DeviceError::None) {
-      _display.print("DEVICE ERROR");
-      _display.drawLine(0, 10, SCREEN_WIDTH, 10, SSD1306_WHITE);
-      _printWrapped(deviceErrorText(deviceError), 0, 20, 21, 3);
-      _display.setCursor(0, 54);
-      _printClipped(networkLine.length() ? networkLine.c_str() : "offline", 21);
-      _display.display();
-      return;
-    }
-
     _display.print("READY");
     _drawModeIcon(mode, 105, 0);
 
     char buf[16];
-    _formatFraction(buf, sizeof(buf), targetFraction, true);
+    _formatFraction(buf, sizeof(buf), targetFraction);
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
@@ -88,7 +92,8 @@ public:
 
     _display.setTextSize(1);
     _display.setCursor(0, 46);
-    if (readyHint != MeasurementHint::None) _printClipped(measurementHintText(readyHint), 21);
+    if (deviceError != DeviceError::None) _printClipped(deviceErrorText(deviceError), 21);
+    else if (readyHint != MeasurementHint::None) _printClipped(measurementHintText(readyHint), 21);
 
     _display.setCursor(0, 54);
     _printClipped(networkLine.length() ? networkLine.c_str() : "offline", 21);
@@ -96,9 +101,8 @@ public:
   }
 
   // Renders the result summary page or the per-sensor result page.
-  void showResult(const MeasurementResult& result, const DisplayResultSummary& summary, int targetFraction, MeasurementMode mode, uint8_t page = 1) {
+  void showResult(const MeasurementResult& result, const DisplayResultSummary& summary, MeasurementMode mode, uint8_t page = 1) {
     _display.ssd1306_command(SSD1306_DISPLAYON);
-    (void)targetFraction;
     _display.clearDisplay();
     _display.setTextColor(SSD1306_WHITE);
     _display.setTextSize(1);
@@ -134,7 +138,7 @@ public:
 
     // Page 1 focuses on the average OLED summary, while raw values remain available through /data.
     char avgBuf[16];
-    _formatFraction(avgBuf, sizeof(avgBuf), summary.avgFraction, true);
+    _formatFraction(avgBuf, sizeof(avgBuf), summary.avgFraction);
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(avgBuf, 0, 0, &x1, &y1, &w, &h);
@@ -162,7 +166,7 @@ public:
     _display.display();
   }
 
-  // Renders the scrollable local settings menu.
+  // Renders the local settings menu in a windowed layout.
   void showMenu(uint8_t selected, const char* const* labels, const char* const* values, uint8_t count) {
     _display.ssd1306_command(SSD1306_DISPLAYON);
     _display.clearDisplay();
@@ -209,10 +213,14 @@ private:
   Adafruit_SSD1306 _display;
 
   // Formats an exposure denominator for OLED display.
-  static void _formatFraction(char* out, size_t len, int fraction, bool includeOne = false) {
-    if (fraction <= 0) snprintf(out, len, "--");
-    else if (fraction == 1) snprintf(out, len, includeOne ? "1s" : "1s");
-    else snprintf(out, len, includeOne ? "1/%d" : "/%d", fraction);
+  static void _formatFraction(char* out, size_t len, int fraction) {
+    if (fraction <= 0) {
+      snprintf(out, len, "--");
+    } else if (fraction == 1) {
+      snprintf(out, len, "1s");
+    } else {
+      snprintf(out, len, "1/%d", fraction);
+    }
   }
 
 
@@ -224,7 +232,7 @@ private:
     _display.print(idx);
     _display.print(" ");
     char frac[12];
-    if (s.wasActivated && summary.measuredFraction > 0) _formatFraction(frac, sizeof(frac), summary.measuredFraction, true);
+    if (s.wasActivated && summary.measuredFraction > 0) _formatFraction(frac, sizeof(frac), summary.measuredFraction);
     else snprintf(frac, sizeof(frac), "---");
     _display.print(frac);
   }

@@ -52,13 +52,17 @@ public:
     _readyHint = MeasurementHint::None;
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
-    _flashNoSensorDeadlineMs = 0;
+    _flashSeenMs = 0;
 
     // A fresh scan detects blocked sensors before the engine is allowed to arm.
     _sm.resetTracking();
     _sm.update();
     if (_sm.isAnySensorActive()) {
       abortStart(MeasurementHint::SensorAlreadyActiveAtStart);
+      return false;
+    }
+    if (_sm.getFlash().isActive) {
+      abortStart(MeasurementHint::FlashAlreadyActiveAtStart);
       return false;
     }
 
@@ -154,7 +158,7 @@ public:
     _sm.resetTracking();
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
-    _flashNoSensorDeadlineMs = 0;
+    _flashSeenMs = 0;
     enterState(CaptureState::IDLE);
     Serial.println(F("[Engine] Capture cancelled."));
   }
@@ -171,7 +175,7 @@ private:
   unsigned long _stateStartedMs = 0;
   unsigned long _finishCandidateMs = 0;
   unsigned long _lastCaptureActivityMs = 0;
-  unsigned long _flashNoSensorDeadlineMs = 0;
+  unsigned long _flashSeenMs = 0;
 
   // Changes the internal capture state and records when it started.
   void enterState(CaptureState next) {
@@ -223,21 +227,21 @@ private:
   // Handles the armed state while waiting for the first sensor activation.
   void handleArmed() {
     // Flash can arrive slightly before the first shutter sensor edge, so wait briefly before declaring flash-only.
-    if (_sm.getFlash().triggeredThisUpdate && _sm.countActivated() == 0 && _flashNoSensorDeadlineMs == 0) {
-      _flashNoSensorDeadlineMs = millis() + FLASH_TO_SENSOR_TIMEOUT_MS;
+    if (_sm.getFlash().triggeredThisUpdate && _sm.countActivated() == 0 && _flashSeenMs == 0) {
+      _flashSeenMs = millis();
       Serial.println(F("[Engine] Flash contact detected - waiting briefly for first shutter sensor..."));
     }
 
     if (_sm.countActivated() > 0) {
       enterState(CaptureState::CAPTURING);
       _lastCaptureActivityMs = millis();
-      _flashNoSensorDeadlineMs = 0;
+      _flashSeenMs = 0;
       _readyHint = MeasurementHint::None;
       Serial.println(F("[Engine] First sensor activation detected."));
       return;
     }
 
-    if (_flashNoSensorDeadlineMs > 0 && millis() >= _flashNoSensorDeadlineMs) finishWithoutSensors();
+    if (_flashSeenMs > 0 && (millis() - _flashSeenMs) >= FLASH_TO_SENSOR_TIMEOUT_MS) finishWithoutSensors();
   }
 
   // Handles the capture state until sensors close, the input stays quiet, or the capture times out.
@@ -247,13 +251,8 @@ private:
       return;
     }
 
-    // End only after all activated sensors closed and no unused sensor is currently opening late.
+    // End only after all activated sensors closed and the input has stayed quiet long enough.
     if (_sm.countActivated() > 0 && _sm.wereAllActivatedSensorsClosed()) {
-      if (_sm.isAnyUnusedSensorActive()) {
-        _finishCandidateMs = 0;
-        return;
-      }
-
       const unsigned long nowMs = millis();
       if (_finishCandidateMs == 0) _finishCandidateMs = nowMs;
 
@@ -281,7 +280,7 @@ private:
 
     _finishCandidateMs = 0;
     _lastCaptureActivityMs = 0;
-    _flashNoSensorDeadlineMs = 0;
+    _flashSeenMs = 0;
     _hasNewResult = true;
     enterState(CaptureState::FINISHED);
   }

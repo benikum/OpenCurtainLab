@@ -134,6 +134,20 @@ private:
     _server.send(code, "application/json", json);
   }
 
+  // Sends a plain-text response with the same CORS headers as the JSON API.
+  void sendText(int code, const String& text) {
+    cors();
+    _server.send(code, "text/plain; charset=utf-8", text);
+  }
+
+  // Sends /version with CORS plus version-source metadata.
+  void sendVersionText(const char* source, const String& version, const String& match = String()) {
+    cors();
+    _server.sendHeader("X-OpenCurtainLab-Version-Source", source);
+    if (match.length()) _server.sendHeader("X-OpenCurtainLab-WebUI-Match", match);
+    _server.send(200, "text/plain; charset=utf-8", version);
+  }
+
   // Serves the embedded gzip-compressed WiFi setup portal HTML.
   void serveSetupPage() {
     _server.sendHeader("Cache-Control", "no-cache");
@@ -314,27 +328,22 @@ private:
   }
 
   // Returns the selected remote WebUI version as plain text. Used by the WebUI update check.
+  // This endpoint is called by standalone WebUIs, so it must include CORS headers like the JSON API.
   void serveVersion() {
     WebUiRelease release;
     if (resolveWebUiRelease(release)) {
-      cors();
-      _server.sendHeader("X-OpenCurtainLab-Version-Source", "manifest");
-      _server.sendHeader("X-OpenCurtainLab-WebUI-Match", release.match);
-      _server.send(200, "text/plain; charset=utf-8", release.version);
+      sendVersionText("manifest", release.version, release.match);
       return;
     }
 
-    cors();
-    _server.sendHeader("X-OpenCurtainLab-Version-Source", "local-fallback");
-    _server.send(200, "text/plain; charset=utf-8", FIRMWARE_VERSION);
+    sendVersionText("local-fallback", FIRMWARE_VERSION);
   }
 
   // Streams the selected compatible WebUI release through the ESP32 as a browser download.
   void serveWebApp() {
     WebUiRelease release;
     if (!resolveWebUiRelease(release)) {
-      cors();
-      _server.send(503, "text/plain; charset=utf-8", "OpenCurtainLab WebUI manifest unavailable or no compatible WebUI release found.");
+      sendText(503, "OpenCurtainLab WebUI manifest unavailable or no compatible WebUI release found.");
       return;
     }
 
@@ -349,8 +358,7 @@ private:
     if (!http.begin(client, release.url)) {
       Serial.println(F("[Web] WebUI download begin failed."));
       http.end();
-      cors();
-      _server.send(502, "text/plain; charset=utf-8", "OpenCurtainLab WebUI download failed.");
+      sendText(502, "OpenCurtainLab WebUI download failed.");
       return;
     }
 
@@ -360,8 +368,7 @@ private:
     if (code != HTTP_CODE_OK) {
       Serial.printf("[Web] WebUI download GET failed: %d\n", code);
       http.end();
-      cors();
-      _server.send(502, "text/plain; charset=utf-8", "OpenCurtainLab WebUI download failed.");
+      sendText(502, "OpenCurtainLab WebUI download failed.");
       return;
     }
 
@@ -528,7 +535,7 @@ private:
     view.measurementId = _measurementId;
     view.deviceStatus = _deviceStatus;
     view.networkHint = _wifi.networkHint();
-    view.batteryVoltage = (BATTERY_MONITOR_ENABLED && _batteryMonitor) ? _batteryMonitor->voltage() : 0.0f;
+    view.batteryVoltage = (BATTERY_MONITOR_ENABLED && _batteryMonitor) ? _batteryMonitor->batteryVoltage() : 0.0f;
     return JsonBuilder::status(view);
   }
 

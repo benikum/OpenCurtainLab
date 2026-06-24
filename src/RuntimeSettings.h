@@ -20,8 +20,6 @@ struct RuntimeSettings {
   int customTargetTimes[TARGET_TIMES_MAX_COUNT] = { 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2000 };
   int customTargetTimesCount = TARGET_TIMES_CUSTOM_DEFAULT_COUNT;
   int oledSleepMinutes = DEFAULT_OLED_SLEEP_MINUTES;
-  bool batteryWarningEnabled = DEFAULT_BATTERY_WARNING_ENABLED;
-  float batteryWarningVoltage = DEFAULT_BATTERY_WARNING_VOLTAGE;
 
   // Returns the absolute ADC activation threshold for the selected sensitivity.
   int sensorOnThreshold() const {
@@ -91,8 +89,6 @@ public:
       _s.customTargetTimes[i] = p.getInt(key, i < TARGET_TIMES_CUSTOM_DEFAULT_COUNT ? TARGET_TIMES_CUSTOM_DEFAULT[i] : 0);
     }
     _s.oledSleepMinutes = p.getInt("oledSleep", DEFAULT_OLED_SLEEP_MINUTES);
-    _s.batteryWarningEnabled = p.getBool("batWarn", DEFAULT_BATTERY_WARNING_ENABLED);
-    _s.batteryWarningVoltage = p.getFloat("batWarnV", DEFAULT_BATTERY_WARNING_VOLTAGE);
     p.end();
     sanitize();
   }
@@ -113,8 +109,6 @@ public:
       p.putInt(key, _s.customTargetTimes[i]);
     }
     p.putInt("oledSleep", _s.oledSleepMinutes);
-    p.putBool("batWarn", _s.batteryWarningEnabled);
-    p.putFloat("batWarnV", _s.batteryWarningVoltage);
     p.end();
   }
 
@@ -155,15 +149,6 @@ public:
 
     if (doc.containsKey("oledSleepMinutes")) { _s.oledSleepMinutes = doc["oledSleepMinutes"].as<int>(); changed = true; }
 
-    if (doc.containsKey("batteryWarningEnabled")) {
-      _s.batteryWarningEnabled = doc["batteryWarningEnabled"].as<bool>();
-      changed = true;
-    }
-
-    if (doc.containsKey("batteryWarningVoltage")) {
-      _s.batteryWarningVoltage = doc["batteryWarningVoltage"].as<float>();
-      changed = true;
-    }
 
     if (doc.containsKey("sensorSensitivity")) {
       _s.sensorSensitivity = String(doc["sensorSensitivity"] | "");
@@ -206,10 +191,5 @@ private:
     for (int i = 0; i < 5; i++) if (_s.oledSleepMinutes == allowedSleep[i]) sleepOk = true;
     if (!sleepOk) _s.oledSleepMinutes = DEFAULT_OLED_SLEEP_MINUTES;
 
-    if (!(_s.batteryWarningVoltage >= BATTERY_EMPTY_VOLTAGE) || !(_s.batteryWarningVoltage <= BATTERY_FULL_VOLTAGE)) {
-      _s.batteryWarningVoltage = DEFAULT_BATTERY_WARNING_VOLTAGE;
-    }
-    if (_s.batteryWarningVoltage < BATTERY_EMPTY_VOLTAGE) _s.batteryWarningVoltage = BATTERY_EMPTY_VOLTAGE;
-    if (_s.batteryWarningVoltage > BATTERY_FULL_VOLTAGE) _s.batteryWarningVoltage = BATTERY_FULL_VOLTAGE;
   }
 };

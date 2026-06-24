@@ -40,9 +40,7 @@ function notifyDeviceStatusChanges() {
   const dev = S.deviceStatus || {};
   const net = S.networkStatus || {};
   const rt = S.deviceRuntime || {};
-  const settings = Object.assign({}, DEFAULT_DEVICE_SETTINGS, S.deviceSettings || {});
 
-  // Device and network diagnostics are shown as popups, not in the connection pill.
   const devKey = dev.error && dev.error !== 'none' ? dev.error : '';
   if (devKey !== S.lastDeviceErrorNotice) {
     S.lastDeviceErrorNotice = devKey;
@@ -59,22 +57,20 @@ function notifyDeviceStatusChanges() {
   }
 
   if (!isBatteryVoltageEnabled()) {
-    S.lastBatteryWarningNotice = '';
+    S.lastBatteryLowNotice = '';
     return;
   }
 
   const voltage = Number(rt.batteryVoltage);
-  const warnAt = Number(settings.batteryWarningVoltage);
-  const lowBattery = settings.batteryWarningEnabled !== false &&
-    Number.isFinite(voltage) && Number.isFinite(warnAt) && voltage > 0 && voltage <= warnAt;
+  const pct = batteryPercentage(voltage);
+  const lowBattery = Number.isFinite(voltage) && voltage > 0 && pct !== null && pct <= BATTERY_LOW_NOTICE_PERCENT;
   const batteryKey = lowBattery ? 'low' : '';
-  if (batteryKey !== S.lastBatteryWarningNotice) {
-    S.lastBatteryWarningNotice = batteryKey;
+  if (batteryKey !== S.lastBatteryLowNotice) {
+    S.lastBatteryLowNotice = batteryKey;
     if (lowBattery) {
-      const pct = batteryPercentage(voltage);
       toast(tf('toast.batteryLow', 'Battery low: {voltage} V ({percent}%).', {
         voltage: voltage.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
-        percent: pct == null ? 0 : pct
+        percent: pct
       }), 'warning');
     }
   }
@@ -90,7 +86,7 @@ function connectionLabelForState(state) {
 async function checkAppVersion() {
   try {
     const base = S.deviceBase || '';
-    const url = base ? api(VERSION_PATH) : VERSION_PATH;
+    const url = base ? api('/version') : '/version';
     const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store', mode:'cors', signal: AbortSignal.timeout(2200) });
     if (!r.ok) return;
     S.cdnVersion = cleanVersion(await r.text());

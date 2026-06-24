@@ -18,7 +18,7 @@ const LS_DEVICE_KEY = 'ocl_device_config_v1';
 const LS_UI_KEY = 'ocl_ui_settings_v1';
 const DEFAULT_PROJECT_ID = 'p_default';
 const APP_VERSION = '0.1.0';
-const VERSION_PATH = '/version';
+const BATTERY_LOW_NOTICE_PERCENT = 20;
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
 const MODES = [
@@ -33,9 +33,7 @@ const DEFAULT_DEVICE_SETTINGS = {
   resultDisplay: 'until_button',
   targetSeries: 'standard',
   customTargetTimes: DEFAULT_CUSTOM_TIMES.slice(),
-  oledSleepMinutes: 5,
-  batteryWarningEnabled: true,
-  batteryWarningVoltage: 6.8
+  oledSleepMinutes: 5
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
 const DEFAULT_UI_SETTINGS = { interpolateCharts: false };
@@ -75,7 +73,7 @@ let S = {
   lastDeviceErrorNotice: '',
   lastNetworkHintNotice: '',
   lastMeasurementHintNotice: '',
-  lastBatteryWarningNotice: '',
+  lastBatteryLowNotice: '',
   connectionProblem: null,
   versionWarning: '',
   versionMismatch: '',

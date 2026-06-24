@@ -57,7 +57,9 @@ public:
     doc["uptime"] = millis() / 1000;
     doc["measCount"] = view.measurementId;
     const uint32_t centivolts = (uint32_t)((view.batteryVoltage * 100.0f) + 0.5f);
-    doc["batteryVoltage"] = (float)centivolts / 100.0f;
+    const float roundedBatteryVoltage = (float)centivolts / 100.0f;
+    doc["batteryVoltage"] = roundedBatteryVoltage;
+    doc["batteryLow"] = BATTERY_MONITOR_ENABLED && roundedBatteryVoltage > 0.0f && roundedBatteryVoltage <= BATTERY_EMPTY_VOLTAGE;
 
     JsonObject deviceStatus = doc.createNestedObject("deviceStatus");
     deviceStatus["error"] = deviceErrorKey(view.deviceStatus.error);
@@ -264,8 +266,6 @@ public:
     JsonArray custom = obj.createNestedArray("customTargetTimes");
     for (int i = 0; i < s.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(s.customTargetTimes[i]);
     obj["oledSleepMinutes"] = s.oledSleepMinutes;
-    obj["batteryWarningEnabled"] = s.batteryWarningEnabled;
-    obj["batteryWarningVoltage"] = s.batteryWarningVoltage;
   }
 
 private:

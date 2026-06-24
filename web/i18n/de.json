@@ -44,8 +44,7 @@
     "measurementAssignedToDefaultIncompatible": "Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.",
     "deviceNotConnected": "Gerät nicht verbunden",
     "languageUnavailable": "Sprachdateien sind nicht verfügbar",
-    "batteryLow": "Batterie niedrig: {voltage} V ({percent}%).",
-    "batteryWarningVoltageInvalid": "Die Batterieschwelle muss zwischen {min} V und {max} V liegen."
+    "batteryLow": "Batterie niedrig: {voltage} V ({percent}%)."
   },
   "frame": {
     "manualTitle": "OpenCurtainLab Anleitung",
@@ -321,9 +320,7 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus",
-    "batteryWarning": "Batterie-Hinweis",
-    "batteryWarningVoltage": "Hinweis unter"
+    "oledSleepOff": "aus"
   },
   "targetSeries": {
     "standard": "Standard",

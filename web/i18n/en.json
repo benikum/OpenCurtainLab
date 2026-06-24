@@ -44,8 +44,7 @@
     "measurementAssignedToDefaultIncompatible": "Measurement assigned to the default project because it does not match the selected project.",
     "deviceNotConnected": "Device not connected",
     "languageUnavailable": "Language resources are not available",
-    "batteryLow": "Battery low: {voltage} V ({percent}%).",
-    "batteryWarningVoltageInvalid": "Battery warning threshold must be between {min} V and {max} V."
+    "batteryLow": "Battery low: {voltage} V ({percent}%)."
   },
   "frame": {
     "manualTitle": "OpenCurtainLab Guide",
@@ -321,9 +320,7 @@
     "cancel": "Cancel",
     "create": "Create",
     "resultDisplayOff": "off",
-    "oledSleepOff": "off",
-    "batteryWarning": "Low-battery notice",
-    "batteryWarningVoltage": "Warn below"
+    "oledSleepOff": "off"
   },
   "targetSeries": {
     "standard": "Standard",

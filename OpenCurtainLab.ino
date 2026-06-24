@@ -12,12 +12,14 @@
 #include "src/MeasurementEngine.h"
 #include "src/DisplayManager.h"
 #include "src/ButtonManager.h"
+#include "src/BatteryMonitor.h"
 #include "src/WebServerManager.h"
 
 SensorManager     sensorManager;
 MeasurementEngine engine(sensorManager);
 DisplayManager    displayManager;
 ButtonManager     buttonManager;
+BatteryMonitor    batteryMonitor;
 WebServerManager  webServer;
 
 enum class AppState : uint8_t {
@@ -129,8 +131,10 @@ void setup() {
   }
   buttonManager.begin();
   sensorManager.begin();
+  batteryMonitor.begin();
   engine.setMode(measureMode);
   webServer.attachSensorManager(sensorManager);
+  webServer.attachBatteryMonitor(batteryMonitor);
 
   webServer.begin(WIFI_CONNECT_TIMEOUT_MS);
   applyRuntimeSettings(true);
@@ -198,6 +202,7 @@ void loop() {
   }
 
   if (appState != AppState::MEASURING) {
+    batteryMonitor.update();
     webServer.update();
     handleWifiEvents();
     monitorOledDiagnostics();

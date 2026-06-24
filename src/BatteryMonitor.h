@@ -1,5 +1,6 @@
 /*
- * Reads the divided battery voltage on an ADC1 pin and exposes the calculated voltage for /status.
+ * Reads the divided battery voltage on an ADC1 pin and exposes the calculated
+ * battery voltage before the voltage divider for /status.
  */
 
 #pragma once
@@ -13,15 +14,22 @@ public:
     _lastUpdateMs = millis();
 
     if (!BATTERY_MONITOR_ENABLED) {
-      _voltage = 0.0f;
+      _batteryVoltage = 0.0f;
+      _adcPinVoltage = 0.0f;
       Serial.println(F("[Battery] Monitor disabled in Config.h"));
       return;
     }
 
     pinMode(PIN_BATTERY_ADC, INPUT);
     analogSetPinAttenuation(PIN_BATTERY_ADC, ADC_11db);
-    _voltage = readVoltageNow();
-    Serial.printf("[Battery] Monitor initialized on GPIO %u: %.2f V\n", (unsigned int)PIN_BATTERY_ADC, _voltage);
+    readVoltagesNow(_adcPinVoltage, _batteryVoltage);
+    Serial.printf(
+      "[Battery] Monitor initialized on GPIO %u: ADC %.2f V -> Battery %.2f V (divider %.3fx)\n",
+      (unsigned int)PIN_BATTERY_ADC,
+      _adcPinVoltage,
+      _batteryVoltage,
+      dividerRatio()
+    );
   }
 
   void update() {
@@ -31,18 +39,31 @@ public:
     if (!_initialized || (now - _lastUpdateMs) < BATTERY_UPDATE_INTERVAL_MS) return;
     _lastUpdateMs = now;
 
-    const float next = readVoltageNow();
-    if (_voltage <= 0.0f) {
-      _voltage = next;
+    float nextAdcPinVoltage = 0.0f;
+    float nextBatteryVoltage = 0.0f;
+    readVoltagesNow(nextAdcPinVoltage, nextBatteryVoltage);
+
+    if (_batteryVoltage <= 0.0f) {
+      _adcPinVoltage = nextAdcPinVoltage;
+      _batteryVoltage = nextBatteryVoltage;
     } else {
-      _voltage = (_voltage * 0.75f) + (next * 0.25f);
+      _adcPinVoltage = (_adcPinVoltage * 0.75f) + (nextAdcPinVoltage * 0.25f);
+      _batteryVoltage = (_batteryVoltage * 0.75f) + (nextBatteryVoltage * 0.25f);
     }
   }
 
-  float voltage() const { return BATTERY_MONITOR_ENABLED ? _voltage : 0.0f; }
+  // Voltage at the battery before the divider. This is the value reported via /status.
+  float batteryVoltage() const { return BATTERY_MONITOR_ENABLED ? _batteryVoltage : 0.0f; }
+
+  // Voltage actually present on the ESP32 ADC pin after the divider, useful for debugging only.
+  float adcPinVoltage() const { return BATTERY_MONITOR_ENABLED ? _adcPinVoltage : 0.0f; }
+
+  // Backward-compatible alias. Keep returning the calculated battery voltage, not the ADC pin voltage.
+  float voltage() const { return batteryVoltage(); }
 
 private:
-  float _voltage = 0.0f;
+  float _batteryVoltage = 0.0f;
+  float _adcPinVoltage = 0.0f;
   unsigned long _lastUpdateMs = 0;
   bool _initialized = false;
 
@@ -50,19 +71,18 @@ private:
     return (BATTERY_DIVIDER_HIGH_OHMS + BATTERY_DIVIDER_LOW_OHMS) / BATTERY_DIVIDER_LOW_OHMS;
   }
 
-  static float readVoltageNow() {
-    // Discard one sample after the ADC channel switch, then average a few reads for a steadier value.
+  static void readVoltagesNow(float& adcPinVoltage, float& batteryVoltage) {
+    // Discard one sample after the ADC channel switch, then average a few calibrated millivolt reads.
     (void)analogRead(PIN_BATTERY_ADC);
     delayMicroseconds(50);
 
-    uint32_t sum = 0;
+    uint32_t sumMv = 0;
     for (int i = 0; i < BATTERY_ADC_SAMPLES; i++) {
-      sum += (uint32_t)analogRead(PIN_BATTERY_ADC);
+      sumMv += (uint32_t)analogReadMilliVolts(PIN_BATTERY_ADC);
       delayMicroseconds(50);
     }
 
-    const float raw = (float)sum / (float)BATTERY_ADC_SAMPLES;
-    const float adcVoltage = (raw * 3.3f) / 4095.0f;
-    return adcVoltage * dividerRatio();
+    adcPinVoltage = ((float)sumMv / (float)BATTERY_ADC_SAMPLES) / 1000.0f;
+    batteryVoltage = adcPinVoltage * dividerRatio();
   }
 };

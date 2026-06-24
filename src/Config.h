@@ -32,12 +32,24 @@
 #define PIN_SENSOR_2      34
 #define PIN_SENSOR_3      35
 #define PIN_SENSOR_4      32
-#define PIN_FLASH_SENSOR  33
+#define PIN_BATTERY_ADC   33
+#define PIN_FLASH_SENSOR  14
 
-#define PIN_BTN_LISTEN    25
-#define PIN_BTN_UP        26
-#define PIN_BTN_DOWN      27
+// Button Pins
+#define PIN_BTN_UP        25
+#define PIN_BTN_DOWN      26
+#define PIN_BTN_LISTEN    27
 
+// Optional battery voltage monitor. Set this to false when the voltage divider is not installed.
+static constexpr bool BATTERY_MONITOR_ENABLED = true;
+#define BATTERY_DIVIDER_HIGH_OHMS  324400.0f
+#define BATTERY_DIVIDER_LOW_OHMS   99100.0f
+#define BATTERY_EMPTY_VOLTAGE      5.0f
+#define BATTERY_FULL_VOLTAGE       9.5f
+#define DEFAULT_BATTERY_WARNING_ENABLED true
+#define DEFAULT_BATTERY_WARNING_VOLTAGE 6.8f
+#define BATTERY_ADC_SAMPLES        8
+#define BATTERY_UPDATE_INTERVAL_MS 1000UL
 
 // Display / I2C
 #define I2C_SDA              21

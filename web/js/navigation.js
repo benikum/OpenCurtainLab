@@ -174,15 +174,16 @@ function showTutorialHtml(html, title) {
   if (anchor) requestAnimationFrame(() => scrollContentToAnchor(anchor, false));
 }
 
-// Read a tutorial fragment embedded in the compiled single-file build.
+// Read a tutorial fragment embedded as a <template> in the compiled single-file build.
 function getEmbeddedTutorialHtml() {
   const lang = getUiLanguage();
   const el = document.getElementById('ocl-tutorial-' + lang)
     || document.getElementById('ocl-tutorial-en')
     || document.getElementById('ocl-manual-' + lang)
     || document.getElementById('ocl-manual-en');
-  return el ? (el.textContent || '') : '';
+  return el ? (el.innerHTML || el.textContent || '') : '';
 }
+
 
 // Build the development-mode URL for a tutorial fragment.
 function getTutorialUrl() {

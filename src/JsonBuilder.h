@@ -25,6 +25,7 @@ struct DeviceStatusView {
   uint32_t measurementId = 0;
   DeviceStatus deviceStatus;
   NetworkHint networkHint = NetworkHint::None;
+  float batteryVoltage = 0.0f;
 };
 
 struct WifiStatusView {
@@ -55,6 +56,8 @@ public:
     doc["version"] = FIRMWARE_VERSION;
     doc["uptime"] = millis() / 1000;
     doc["measCount"] = view.measurementId;
+    const uint32_t centivolts = (uint32_t)((view.batteryVoltage * 100.0f) + 0.5f);
+    doc["batteryVoltage"] = (float)centivolts / 100.0f;
 
     JsonObject deviceStatus = doc.createNestedObject("deviceStatus");
     deviceStatus["error"] = deviceErrorKey(view.deviceStatus.error);
@@ -80,7 +83,7 @@ public:
 
   // Builds the /config JSON response with capabilities and current settings.
   static String config(const RuntimeSettings& settings) {
-    StaticJsonDocument<2560> doc;
+    StaticJsonDocument<3072> doc;
     doc["device"] = DEVICE_NAME;
     doc["version"] = FIRMWARE_VERSION;
     doc["ip"] = WiFi.isConnected() ? WiFi.localIP().toString() : WiFi.softAPIP().toString();
@@ -90,6 +93,9 @@ public:
     doc["displayRotation"] = DISPLAY_ROTATION;
     doc["sensorCount"] = SENSOR_COUNT;
     doc["maxTargetTime"] = DEVICE_MAX_TARGET_TIME;
+    doc["batteryVoltageEnabled"] = BATTERY_MONITOR_ENABLED;
+    doc["batteryEmptyVoltage"] = BATTERY_EMPTY_VOLTAGE;
+    doc["batteryFullVoltage"] = BATTERY_FULL_VOLTAGE;
     doc["sensorReadModel"] = "absolute_adc_threshold";
     JsonObject thresholds = doc.createNestedObject("sensorThresholds");
     thresholds["lowOnRaw"] = SENSOR_ON_THRESHOLD_LOW;
@@ -134,7 +140,7 @@ public:
 
   // Builds the POST /config response after settings have been sanitized.
   static String settingsResponse(const RuntimeSettings& settings, bool changed) {
-    StaticJsonDocument<1024> doc;
+    StaticJsonDocument<1280> doc;
     doc["ok"] = true;
     doc["changed"] = changed;
     JsonObject obj = doc.createNestedObject("settings");
@@ -258,6 +264,8 @@ public:
     JsonArray custom = obj.createNestedArray("customTargetTimes");
     for (int i = 0; i < s.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(s.customTargetTimes[i]);
     obj["oledSleepMinutes"] = s.oledSleepMinutes;
+    obj["batteryWarningEnabled"] = s.batteryWarningEnabled;
+    obj["batteryWarningVoltage"] = s.batteryWarningVoltage;
   }
 
 private:

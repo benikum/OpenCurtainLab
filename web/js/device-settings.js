@@ -102,6 +102,8 @@ function sanitizeDeviceSettings(input) {
   if (typeof raw.targetSeries === 'string') settings.targetSeries = raw.targetSeries;
   if (Array.isArray(raw.customTargetTimes)) settings.customTargetTimes = raw.customTargetTimes.map(Number).filter(v => Number.isFinite(v) && v > 0);
   if (Number.isFinite(Number(raw.oledSleepMinutes))) settings.oledSleepMinutes = Number(raw.oledSleepMinutes);
+  if (typeof raw.batteryWarningEnabled === 'boolean') settings.batteryWarningEnabled = raw.batteryWarningEnabled;
+  if (Number.isFinite(Number(raw.batteryWarningVoltage))) settings.batteryWarningVoltage = clampBatteryWarningVoltage(Number(raw.batteryWarningVoltage));
   return settings;
 }
 
@@ -111,6 +113,49 @@ function deviceMaxTargetTime() {
   if (Number.isFinite(cfgMax) && cfgMax > 0) return cfgMax;
   const times = Array.isArray(S.targetTimes) && S.targetTimes.length ? S.targetTimes : ALL_TIMES;
   return Math.max(...times.map(Number).filter(v => Number.isFinite(v) && v > 0), ...ALL_TIMES);
+}
+
+
+// Return whether the connected firmware has the optional battery voltage monitor enabled.
+function isBatteryVoltageEnabled() {
+  const cfg = S.deviceConfig || {};
+  if (typeof cfg.batteryVoltageEnabled === 'boolean') return cfg.batteryVoltageEnabled;
+  const voltage = Number(S.deviceRuntime && S.deviceRuntime.batteryVoltage);
+  return Number.isFinite(voltage) && voltage > 0;
+}
+
+// Return the voltage range used for battery percentage and warning limits.
+function batteryVoltageRange() {
+  const cfg = S.deviceConfig || {};
+  const empty = Number(cfg.batteryEmptyVoltage);
+  const full = Number(cfg.batteryFullVoltage);
+  return {
+    empty: Number.isFinite(empty) ? empty : 6.0,
+    full: Number.isFinite(full) ? full : 9.5
+  };
+}
+
+// Clamp a configured low-battery warning threshold to the supported voltage range.
+function clampBatteryWarningVoltage(value) {
+  const n = Number(value);
+  const range = batteryVoltageRange();
+  if (!Number.isFinite(n)) return DEFAULT_DEVICE_SETTINGS.batteryWarningVoltage;
+  return Math.max(range.empty, Math.min(range.full, n));
+}
+
+// Parse a voltage input; both decimal comma and decimal point are accepted.
+function parseVoltageInput(value) {
+  const normalized = String(value || '').trim().replace(',', '.');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+// Convert battery voltage to the configured 0-100 percentage range.
+function batteryPercentage(voltage) {
+  const n = Number(voltage);
+  const range = batteryVoltageRange();
+  if (!Number.isFinite(n) || range.full <= range.empty) return null;
+  return Math.max(0, Math.min(100, Math.round(((n - range.empty) * 100) / (range.full - range.empty))));
 }
 
 // Return the firmware-supported standard target time list.
@@ -384,6 +429,15 @@ function renderVersionSummary() {
   el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
 }
 
+// Format the battery voltage from /status as voltage and percentage.
+function formatBatteryVoltageStatus(voltage) {
+  const n = Number(voltage);
+  if (!Number.isFinite(n) || n <= 0) return tx('settingsInfo.unavailable', '—');
+  const pct = batteryPercentage(n);
+  const label = n.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return `${label}V - ${pct ?? 0}%`;
+}
+
 // Format seconds from /status as a compact uptime string.
 function formatSettingsUptime(seconds) {
   const n = Number(seconds);
@@ -413,9 +467,12 @@ function renderSettingsDeviceInfo() {
   const rows = [
     { label: tx('settingsInfo.status', 'Status'), value: statusValue, cls: !connected ? 'warn' : (statusOk ? 'ok' : 'err') },
     { label: tx('settingsInfo.ip', 'IP'), value: net.ip || cfg.ip || dash },
-    { label: tx('settingsInfo.uptime', 'Uptime'), value: formatSettingsUptime(rt.uptime) },
-    { label: tx('settingsInfo.measurementId', 'Measurement ID'), value: Number.isFinite(Number(rt.measCount)) ? String(rt.measCount) : dash }
+    { label: tx('settingsInfo.uptime', 'Uptime'), value: formatSettingsUptime(rt.uptime) }
   ];
+  if (isBatteryVoltageEnabled()) {
+    rows.push({ label: tx('settingsInfo.battery', 'Battery'), value: formatBatteryVoltageStatus(rt.batteryVoltage) });
+  }
+  rows.push({ label: tx('settingsInfo.measurementId', 'Measurement ID'), value: Number.isFinite(Number(rt.measCount)) ? String(rt.measCount) : dash });
 
   el.innerHTML = rows.map(row => `<div class="settings-info-row"><span class="settings-info-label">${esc(row.label)}</span><span class="settings-info-value ${row.cls || ''}">${esc(row.value)}</span></div>`).join('');
 }
@@ -438,6 +495,11 @@ function renderSettingsControls() {
   const sensSel = document.getElementById('set-sensitivity');
   const resultSel = document.getElementById('set-result-display');
   const sleepSel = document.getElementById('set-oled-sleep');
+  const batteryWarnEl = document.getElementById('set-battery-warning-enabled');
+  const batteryWarnVoltageEl = document.getElementById('set-battery-warning-voltage');
+  const batteryWarningEnabledRow = document.getElementById('battery-warning-enabled-row');
+  const batteryWarningVoltageRow = document.getElementById('battery-warning-voltage-row');
+  const batteryVoltageEnabled = isBatteryVoltageEnabled();
   const customEl = document.getElementById('set-custom-target-times');
   const addrEl = document.getElementById('device-address-input');
   const interpEl = document.getElementById('ui-interpolate-charts');
@@ -445,6 +507,10 @@ function renderSettingsControls() {
   if (sensSel) sensSel.value = SENSOR_SENSITIVITIES.includes(st.sensorSensitivity) ? st.sensorSensitivity : DEFAULT_DEVICE_SETTINGS.sensorSensitivity;
   if (resultSel) resultSel.value = st.resultDisplay || 'until_button';
   if (sleepSel) sleepSel.value = String(st.oledSleepMinutes ?? 5);
+  if (batteryWarningEnabledRow) batteryWarningEnabledRow.style.display = batteryVoltageEnabled ? '' : 'none';
+  if (batteryWarningVoltageRow) batteryWarningVoltageRow.style.display = batteryVoltageEnabled ? '' : 'none';
+  if (batteryWarnEl) batteryWarnEl.checked = batteryVoltageEnabled && st.batteryWarningEnabled !== false;
+  if (batteryWarnVoltageEl) batteryWarnVoltageEl.value = clampBatteryWarningVoltage(st.batteryWarningVoltage).toFixed(1);
   if (customEl) customEl.value = Array.isArray(st.customTargetTimes) ? st.customTargetTimes.join(',') : standardTargetTimes().join(',');
   if (addrEl) addrEl.value = S.deviceHost || DEFAULT_DEVICE_HOST;
   if (interpEl) interpEl.checked = !!(S.uiSettings && S.uiSettings.interpolateCharts);
@@ -466,12 +532,17 @@ function snapshotSettingsForm() {
   const sensSel = document.getElementById('set-sensitivity');
   const resultSel = document.getElementById('set-result-display');
   const sleepSel = document.getElementById('set-oled-sleep');
+  const batteryWarnEl = document.getElementById('set-battery-warning-enabled');
+  const batteryWarnVoltageEl = document.getElementById('set-battery-warning-voltage');
+  const batteryVoltageEnabled = isBatteryVoltageEnabled();
   return JSON.stringify({
     targetSeries: seriesSel ? seriesSel.value : 'standard',
     customTargetTimes: customEl ? String(customEl.value || '').trim() : '',
     sensorSensitivity: sensSel && SENSOR_SENSITIVITIES.includes(sensSel.value) ? sensSel.value : DEFAULT_DEVICE_SETTINGS.sensorSensitivity,
     resultDisplay: resultSel ? resultSel.value : 'until_button',
-    oledSleepMinutes: sleepSel ? String(sleepSel.value) : '5'
+    oledSleepMinutes: sleepSel ? String(sleepSel.value) : '5',
+    batteryWarningEnabled: batteryVoltageEnabled && batteryWarnEl ? !!batteryWarnEl.checked : false,
+    batteryWarningVoltage: batteryVoltageEnabled && batteryWarnVoltageEl ? String(batteryWarnVoltageEl.value || '').trim() : ''
   });
 }
 
@@ -511,7 +582,7 @@ function setChartInterpolation(enabled) {
 
 // Attach event handlers for settings controls once.
 function bindSettingsChangeHandlers() {
-  const ids = ['set-target-series', 'set-custom-target-times', 'set-sensitivity', 'set-result-display', 'set-oled-sleep'];
+  const ids = ['set-target-series', 'set-custom-target-times', 'set-sensitivity', 'set-result-display', 'set-oled-sleep', 'set-battery-warning-enabled', 'set-battery-warning-voltage'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el || el.dataset.oclDirtyBound) return;
@@ -658,6 +729,20 @@ async function saveDeviceSettings() {
   const customTargetTimes = customResult.times;
   if (customInput) customInput.value = customTargetTimes.join(',');
 
+  const batteryVoltageEnabled = isBatteryVoltageEnabled();
+  const batteryWarningVoltageInput = document.getElementById('set-battery-warning-voltage');
+  const batteryWarningVoltage = batteryVoltageEnabled
+    ? parseVoltageInput(batteryWarningVoltageInput && batteryWarningVoltageInput.value)
+    : DEFAULT_DEVICE_SETTINGS.batteryWarningVoltage;
+  const range = batteryVoltageRange();
+  if (batteryVoltageEnabled && (!Number.isFinite(batteryWarningVoltage) || batteryWarningVoltage < range.empty || batteryWarningVoltage > range.full)) {
+    toast(tf('toast.batteryWarningVoltageInvalid', 'Battery warning threshold must be between {min} V and {max} V.', {
+      min: range.empty.toLocaleString(uiLocale(), { maximumFractionDigits: 1 }),
+      max: range.full.toLocaleString(uiLocale(), { maximumFractionDigits: 1 })
+    }), 'warning');
+    return;
+  }
+
   const storedSettings = Object.assign({}, DEFAULT_DEVICE_SETTINGS, S.deviceSettings || {});
   const body = {
     defaultMeasurementMode: normalizeMeasurementMode(storedSettings.defaultMeasurementMode),
@@ -672,6 +757,10 @@ async function saveDeviceSettings() {
     resultDisplay: document.getElementById('set-result-display').value,
     oledSleepMinutes: Number(document.getElementById('set-oled-sleep').value)
   };
+  if (batteryVoltageEnabled) {
+    body.batteryWarningEnabled = !!(document.getElementById('set-battery-warning-enabled') && document.getElementById('set-battery-warning-enabled').checked);
+    body.batteryWarningVoltage = Math.round(batteryWarningVoltage * 10) / 10;
+  }
   try {
     S.settingsSaving = true;
     updateSettingsSaveState();

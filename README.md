@@ -21,7 +21,8 @@ The default pinout is defined in `src/Config.h`:
 | Sensor 2 | 34 |
 | Sensor 3 | 35 |
 | Sensor 4 | 32 |
-| Flash sync | 33 |
+| Flash sync | 23 |
+| Battery voltage ADC | 33 |
 | Listen button | 25 |
 | Up button | 26 |
 | Down button | 27 |
@@ -35,6 +36,41 @@ The phototransistor circuit is expected to produce high ADC readings in darkness
 | Low | 1100 | 1250 |
 | Medium | 2100 | 2250 |
 | High | 3100 | 3250 |
+
+## Battery voltage measurement
+
+Battery voltage measurement is optional and can be disabled in `src/Config.h` without changing any other code:
+
+```cpp
+static constexpr bool BATTERY_MONITOR_ENABLED = true;
+```
+
+Set this to `false` when the divider is not installed. The firmware then still runs normally, `/status` returns `batteryVoltage: 0`, `/config` returns `batteryVoltageEnabled: false`, and the WebUI hides battery status and low-battery notices.
+
+When enabled, battery voltage is measured on `PIN_BATTERY_ADC` (`GPIO33`, ADC1). The flash-sync contact has been moved to `GPIO23` so the battery monitor can use an ADC1 pin that still works while WiFi is active.
+
+Use a voltage divider from the battery positive terminal to `GPIO33`:
+
+```text
+Battery +
+   |
+  220 kΩ
+   |
+   +---- GPIO33 / PIN_BATTERY_ADC
+   |
+  100 kΩ
+   |
+GND
+```
+
+The firmware assumes this divider:
+
+```text
+Vadc = Vbat × 100k / (220k + 100k)
+Vbat = Vadc × 3.2
+```
+
+Add a `100 nF` capacitor from `GPIO33` to `GND` close to the ESP32 to stabilize ADC readings. The displayed battery percentage is mapped linearly: `6.0 V = 0%`, `9.5 V = 100%`. The WebUI can show a low-battery message only when `BATTERY_MONITOR_ENABLED` is `true`; this is enabled by default and uses `6.8 V` as the default warning threshold. The threshold and the message toggle are available in the device settings and are stored through `/config`.
 
 ## Measurement flow
 
@@ -74,28 +110,6 @@ Removed endpoint:
 
 The manifest is the canonical release metadata file and the WebUI compatibility database:
 
-```text
-web/manifest.json
-```
-
-Example:
-
-```json
-{
-  "schema": "opencurtainlab-web-manifest-v1",
-  "projectVersion": "0.1.0",
-  "entries": [
-    {
-      "match": "0.1.x",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.0.html"
-    }
-  ]
-}
-```
-
-Rules:
-
 - `projectVersion` is the canonical version used by `tools/release.py`.
 - `match` describes compatible firmware versions. `0.1.x` means any firmware with major `0` and API version `1`.
 - The middle number is the API version and must match between firmware and WebUI.
@@ -108,9 +122,10 @@ See [`DEPENDENCIES.md`](DEPENDENCIES.md) for firmware libraries, development too
 
 ## Build and release
 
-Run:
+Install the Python minifier once, then run the release helper:
 
 ```bash
+python3 -m pip install minify-html
 python3 tools/release.py
 ```
 
@@ -119,9 +134,11 @@ The release helper:
 1. reads `projectVersion` from `web/manifest.json`,
 2. updates `FIRMWARE_VERSION` in `src/Config.h`,
 3. updates `APP_VERSION` in `web/js/state-storage.js`,
-4. rebuilds the embedded setup portal,
-5. rebuilds the compiled standalone WebUI,
-6. verifies that `web/manifest.json` contains a complete entry for the built WebUI.
+4. minifies the setup portal with `minify-html`, gzip-compresses it, and writes `src/SetupPortalHtml.h`,
+5. minifies embedded HTML fragments before they are inserted into the WebUI,
+6. removes standalone JavaScript comment lines from the generated inline script,
+7. rebuilds and minifies the compiled standalone WebUI with `minify-html`,
+8. verifies that `web/manifest.json` contains a complete entry for the built WebUI.
 
 The manifest itself is hand-maintained because it is the compatibility database.
 
@@ -163,3 +180,11 @@ A real firmware compile still requires the Arduino/ESP32 toolchain and the confi
 - The firmware still uses ArduinoJson v6-style APIs. A future migration to ArduinoJson 7 style would reduce deprecation warnings.
 - The WebUI download depends on GitHub Raw availability unless the user already has a downloaded standalone HTML file.
 - The firmware does not verify the integrity of the streamed WebUI. Use trusted release URLs and review `web/manifest.json` carefully.
+
+## Development transparency
+
+OpenCurtainLab is a hardware-tested project developed and maintained by the author.
+
+AI tools were used during development as an assistant for code review, refactoring, documentation, and exploring implementation options. The project is not generated and published without review: hardware behavior, firmware changes, API behavior, and measurement results are checked manually before release.
+
+All design decisions, project direction, and release responsibility remain with the maintainer.

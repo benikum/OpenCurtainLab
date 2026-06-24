@@ -83,7 +83,7 @@ public:
     _drawModeIcon(mode, 105, 0);
 
     char buf[16];
-    _formatFraction(buf, sizeof(buf), targetFraction);
+    _formatFraction(buf, sizeof(buf), targetFraction, true);
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
@@ -138,7 +138,7 @@ public:
 
     // Page 1 focuses on the average OLED summary, while raw values remain available through /data.
     char avgBuf[16];
-    _formatFraction(avgBuf, sizeof(avgBuf), summary.avgFraction);
+    _formatFraction(avgBuf, sizeof(avgBuf), summary.avgFraction, true);
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(avgBuf, 0, 0, &x1, &y1, &w, &h);
@@ -213,13 +213,13 @@ private:
   Adafruit_SSD1306 _display;
 
   // Formats an exposure denominator for OLED display.
-  static void _formatFraction(char* out, size_t len, int fraction) {
+  static void _formatFraction(char* out, size_t len, int fraction, bool includeOne = false) {
     if (fraction <= 0) {
       snprintf(out, len, "--");
     } else if (fraction == 1) {
       snprintf(out, len, "1s");
     } else {
-      snprintf(out, len, "1/%d", fraction);
+      snprintf(out, len, includeOne ? "1/%d" : "/%d", fraction);
     }
   }
 
@@ -232,7 +232,7 @@ private:
     _display.print(idx);
     _display.print(" ");
     char frac[12];
-    if (s.wasActivated && summary.measuredFraction > 0) _formatFraction(frac, sizeof(frac), summary.measuredFraction);
+    if (s.wasActivated && summary.measuredFraction > 0) _formatFraction(frac, sizeof(frac), summary.measuredFraction, true);
     else snprintf(frac, sizeof(frac), "---");
     _display.print(frac);
   }

@@ -19,8 +19,6 @@ from pathlib import Path
 VERSION_RE = re.compile(r'^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9_.-]+)?$')
 APP_VERSION_RE = re.compile(r"const\s+APP_VERSION\s*=\s*['\"]([^'\"]+)['\"]")
 FIRMWARE_VERSION_RE = re.compile(r'#define\s+FIRMWARE_VERSION\s+"([^"]+)"')
-SETUP_IDENT_CHARS = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$')
-SETUP_PUNCTUATION = set('{}[]();,:?=+-*/%<>!&|^~')
 DEFAULT_LANG = 'en'
 LANGS = ('de', 'en')
 
@@ -154,117 +152,80 @@ def validate_manifest(manifest: dict, version: str) -> None:
     )
 
 
+# HTML minification ---------------------------------------------------------
+
+def require_minify_html():
+    try:
+        import minify_html
+    except ImportError as exc:
+        raise RuntimeError(
+            "Missing Python dependency 'minify-html'. Install it with: "
+            "python3 -m pip install minify-html"
+        ) from exc
+    return minify_html
+
+
+def minify_html_source(source: str) -> str:
+    """Minify HTML documents or fragments, including inline CSS and JavaScript."""
+    minify_html = require_minify_html()
+    return minify_html.minify(
+        source,
+        minify_css=True,
+        minify_js=True,
+        keep_comments=False,
+    )
+
+
+def strip_js_comment_lines(source: str) -> str:
+    """Remove standalone JavaScript comment lines without touching executable code lines."""
+    out: list[str] = []
+    in_block_comment = False
+
+    for line in source.splitlines():
+        stripped = line.strip()
+
+        if not stripped:
+            out.append(line)
+            continue
+
+        if in_block_comment:
+            if '*/' in stripped:
+                in_block_comment = False
+            continue
+
+        if stripped.startswith('//'):
+            continue
+
+        if stripped.startswith(('/*', '/*!')):
+            if '*/' not in stripped:
+                in_block_comment = True
+            continue
+
+        if stripped.startswith(('*', '*/')):
+            continue
+
+        out.append(line)
+
+    return '\n'.join(out)
+
+
+def strip_js_comment_lines_from_html(markup: str) -> str:
+    """Apply JS comment-line stripping to executable inline scripts in generated HTML."""
+    script_re = re.compile(r'(<script\b(?P<attrs>[^>]*)>)(?P<body>.*?)(</script>)', re.I | re.S)
+
+    def replace(match: re.Match[str]) -> str:
+        attrs = match.group('attrs') or ''
+        type_match = re.search(r'\btype=["\']?([^"\'\s>]+)', attrs, re.I)
+        script_type = (type_match.group(1).lower() if type_match else 'text/javascript')
+        if script_type not in {'text/javascript', 'application/javascript', 'module'}:
+            return match.group(0)
+        body = match.group('body')
+        return match.group(1) + strip_js_comment_lines(body) + match.group(4)
+
+    return script_re.sub(replace, markup)
+
+
 # Setup portal build ---------------------------------------------------------
-
-def setup_strip_js_comments(source: str) -> str:
-    out: list[str] = []
-    i = 0
-    state = 'code'
-    quote = ''
-    escape = False
-
-    while i < len(source):
-        ch = source[i]
-        nxt = source[i + 1] if i + 1 < len(source) else ''
-
-        if state == 'code':
-            if ch in ("'", '"', '`'):
-                state = 'string'
-                quote = ch
-                out.append(ch)
-            elif ch == '/' and nxt == '/':
-                state = 'line_comment'
-                i += 1
-            elif ch == '/' and nxt == '*':
-                state = 'block_comment'
-                i += 1
-            else:
-                out.append(ch)
-        elif state == 'string':
-            out.append(ch)
-            if escape:
-                escape = False
-            elif ch == '\\':
-                escape = True
-            elif ch == quote:
-                state = 'code'
-        elif state == 'line_comment':
-            if ch in '\r\n':
-                out.append('\n')
-                state = 'code'
-        elif state == 'block_comment':
-            if ch == '*' and nxt == '/':
-                state = 'code'
-                i += 1
-        i += 1
-
-    return ''.join(out)
-
-
-def setup_collapse_js_whitespace(source: str) -> str:
-    out: list[str] = []
-    i = 0
-    state = 'code'
-    quote = ''
-    escape = False
-    pending_space = False
-
-    def last_code_char() -> str:
-        return out[-1] if out else ''
-
-    while i < len(source):
-        ch = source[i]
-        if state == 'code':
-            if ch.isspace():
-                pending_space = True
-            elif ch in ("'", '"', '`'):
-                if pending_space and last_code_char() in SETUP_IDENT_CHARS:
-                    out.append(' ')
-                pending_space = False
-                state = 'string'
-                quote = ch
-                out.append(ch)
-            else:
-                prev = last_code_char()
-                if pending_space and prev in SETUP_IDENT_CHARS and ch in SETUP_IDENT_CHARS:
-                    out.append(' ')
-                if ch in SETUP_PUNCTUATION and out and out[-1] == ' ':
-                    out.pop()
-                out.append(ch)
-                pending_space = False
-        else:
-            out.append(ch)
-            if escape:
-                escape = False
-            elif ch == '\\':
-                escape = True
-            elif ch == quote:
-                state = 'code'
-        i += 1
-
-    return ''.join(out).strip()
-
-
-def setup_minify_js(source: str) -> str:
-    return setup_collapse_js_whitespace(setup_strip_js_comments(source))
-
-
-def minify_css(source: str) -> str:
-    source = re.sub(r'/\*.*?\*/', '', source, flags=re.S)
-    source = re.sub(r'\s+', ' ', source)
-    source = re.sub(r'\s*([{}:;,>])\s*', r'\1', source)
-    source = source.replace(';}', '}')
-    return source.strip()
-
-
-def setup_minify_html(source: str) -> str:
-    source = re.sub(r'<!--.*?-->', '', source, flags=re.S)
-    source = re.sub(r'<style[^>]*>(.*?)</style>', lambda m: f'<style>{minify_css(m.group(1))}</style>', source, flags=re.S | re.I)
-    source = re.sub(r'<script[^>]*>(.*?)</script>', lambda m: f'<script>{setup_minify_js(m.group(1))}</script>', source, flags=re.S | re.I)
-    source = re.sub(r'>\s+<', '><', source)
-    source = re.sub(r'\s+', ' ', source)
-    return source.strip()
-
 
 def format_c_array(data: bytes, values_per_line: int = 14) -> str:
     lines = []
@@ -287,7 +248,7 @@ def build_setup_portal(
     require_files([(source_path, 'setup portal HTML')])
 
     source_text = source_path.read_text(encoding='utf-8')
-    minified = setup_minify_html(source_text).encode('utf-8')
+    minified = minify_html_source(source_text).encode('utf-8')
     compressed = gzip.compress(minified, compresslevel=9, mtime=0)
     header = f"""/*
  * Stores the gzip-compressed captive-portal HTML page used to configure WiFi credentials.
@@ -331,64 +292,12 @@ def discover_app_version() -> str:
 
 def script_tag(script_id: str, mime_type: str, content: str) -> str:
     safe = content.replace('</script', '<\\/script')
-    return f'<script id="{script_id}" type="{mime_type}">{safe}</script>'
+    return f'<script id="{html.escape(script_id, quote=True)}" type="{html.escape(mime_type, quote=True)}">{safe}</script>'
 
 
-def webui_strip_js_comments(source: str) -> str:
-    r"""Remove source-level JavaScript comments without touching code literals."""
-    out: list[str] = []
-    in_block = False
-    for line in source.splitlines():
-        stripped = line.lstrip()
-        if in_block:
-            if '*/' in stripped:
-                in_block = False
-                after = stripped.split('*/', 1)[1].strip()
-                if after:
-                    out.append(after)
-            continue
-        if stripped.startswith('/*'):
-            if '*/' not in stripped:
-                in_block = True
-                continue
-            after = stripped.split('*/', 1)[1].strip()
-            if after:
-                out.append(after)
-            continue
-        if stripped.startswith('//'):
-            continue
-        out.append(line)
-    return '\n'.join(out)
-
-
-def webui_minify_js(source: str) -> str:
-    source = webui_strip_js_comments(source)
-    lines = [line.rstrip() for line in source.splitlines()]
-    compact: list[str] = []
-    previous_blank = False
-    for line in lines:
-        blank = not line.strip()
-        if blank:
-            if not previous_blank:
-                compact.append('')
-            previous_blank = True
-        else:
-            compact.append(line)
-            previous_blank = False
-    return '\n'.join(compact).strip() + '\n'
-
-
-def minify_html_markup(source: str, *, preserve_build_markers: bool = False) -> str:
-    def keep_or_drop(match: re.Match[str]) -> str:
-        body = match.group(1)
-        if preserve_build_markers and 'OCL_INLINE_' in body:
-            return match.group(0)
-        return ''
-
-    source = re.sub(r'<!--(.*?)-->', keep_or_drop, source, flags=re.S)
-    source = re.sub(r'>\s+<', '><', source)
-    source = '\n'.join(line.strip() for line in source.splitlines() if line.strip())
-    return source.strip() + '\n'
+def template_tag(template_id: str, content: str) -> str:
+    safe = content.replace('</template', '&lt;/template')
+    return f'<template id="{html.escape(template_id, quote=True)}">{safe}</template>'
 
 
 def lookup_text(bundle: object, dotted_key: str, fallback: str = '') -> str:
@@ -500,24 +409,17 @@ def build_webui(
 
     template = read_text(index_path)
     css = read_text(css_path)
-    js = '\n'.join(read_text(path) for path in js_files)
-    if minify:
-        css = minify_css(css)
-        js = webui_minify_js(js)
+    js = strip_js_comment_lines('\n'.join(read_text(path) for path in js_files))
 
     i18n = {lang: read_json(i18n_dir / f'{lang}.json') for lang in LANGS}
     i18n_blob = json.dumps(i18n, ensure_ascii=False, separators=(',', ':'))
 
     tutorials = []
     for lang in LANGS:
-        tutorial_html = read_text(tutorial_dir / f'{lang}.html')
-        if minify:
-            tutorial_html = minify_html_markup(tutorial_html)
-        tutorials.append(script_tag(f'ocl-tutorial-{lang}', 'text/html', tutorial_html))
+        tutorial_html = minify_html_source(read_text(tutorial_dir / f'{lang}.html'))
+        tutorials.append(template_tag(f'ocl-tutorial-{lang}', tutorial_html))
 
     html_out = remove_dev_assets(template)
-    if minify:
-        html_out = minify_html_markup(html_out, preserve_build_markers=True)
     html_out = re.sub(r'<html\s+lang="[^"]*"', f'<html lang="{html.escape(default_lang)}"', html_out, count=1)
     html_out = apply_static_i18n_defaults(html_out, i18n[default_lang])
     html_out = html_out.replace('<!-- OCL_INLINE_CSS -->', '<style>\n' + css + '\n</style>')
@@ -534,6 +436,12 @@ def build_webui(
     ]
     if missing:
         raise RuntimeError('Unreplaced build markers: ' + ', '.join(missing))
+
+    html_out = strip_js_comment_lines_from_html(html_out)
+
+    if minify:
+        html_out = minify_html_source(html_out)
+        html_out = strip_js_comment_lines_from_html(html_out) + '\n'
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html_out, encoding='utf-8')
@@ -589,7 +497,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--debug', action='store_true', help='print resolved paths and source-file checks')
     parser.add_argument('--skip-manifest-check', action='store_true', help='do not validate web/manifest.json release entry')
     parser.add_argument('--lang', choices=LANGS, default=DEFAULT_LANG, help='initial language for the compiled WebUI')
-    parser.add_argument('--no-minify', action='store_true', help='embed WebUI source files without comment stripping or whitespace compaction')
+    parser.add_argument('--no-minify', action='store_true', help='embed WebUI source files without minify-html processing')
     return build_release(parser.parse_args(argv))
 
 

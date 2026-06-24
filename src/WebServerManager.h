@@ -12,6 +12,7 @@
 #include "RuntimeSettings.h"
 #include "MeasurementTypes.h"
 #include "SensorManager.h"
+#include "BatteryMonitor.h"
 #include "WifiProvisioning.h"
 #include "JsonBuilder.h"
 #include "SetupPortalHtml.h"
@@ -99,6 +100,8 @@ public:
 
   // Attaches the hardware sensor manager used by /sensors diagnostics.
   void attachSensorManager(SensorManager& sensors) { _sensorManager = &sensors; }
+  // Attaches the battery monitor reported by /status.
+  void attachBatteryMonitor(BatteryMonitor& battery) { _batteryMonitor = &battery; }
 
 private:
   WebServer _server;
@@ -114,6 +117,7 @@ private:
   char _measIdStr[32] = "";
   DeviceStatus _deviceStatus;
   SensorManager* _sensorManager = nullptr;
+  BatteryMonitor* _batteryMonitor = nullptr;
 
   // Adds CORS and no-cache headers to API responses.
   void cors() {
@@ -524,6 +528,7 @@ private:
     view.measurementId = _measurementId;
     view.deviceStatus = _deviceStatus;
     view.networkHint = _wifi.networkHint();
+    view.batteryVoltage = (BATTERY_MONITOR_ENABLED && _batteryMonitor) ? _batteryMonitor->voltage() : 0.0f;
     return JsonBuilder::status(view);
   }
 

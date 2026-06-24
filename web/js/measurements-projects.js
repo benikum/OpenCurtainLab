@@ -21,6 +21,7 @@ function applyDeviceStatus(status) {
   S.deviceRuntime = Object.assign({}, S.deviceRuntime || {}, {
     uptime: Number.isFinite(Number(status.uptime)) ? Number(status.uptime) : null,
     measCount: Number.isFinite(Number(status.measCount)) ? Number(status.measCount) : null,
+    batteryVoltage: Number.isFinite(Number(status.batteryVoltage)) ? Number(status.batteryVoltage) : null,
     device: status.device || (S.deviceConfig && S.deviceConfig.device) || '',
     version: status.version || (S.deviceConfig && S.deviceConfig.version) || ''
   });
@@ -38,6 +39,8 @@ function isNoticeableNetworkHint(hint) {
 function notifyDeviceStatusChanges() {
   const dev = S.deviceStatus || {};
   const net = S.networkStatus || {};
+  const rt = S.deviceRuntime || {};
+  const settings = Object.assign({}, DEFAULT_DEVICE_SETTINGS, S.deviceSettings || {});
 
   // Device and network diagnostics are shown as popups, not in the connection pill.
   const devKey = dev.error && dev.error !== 'none' ? dev.error : '';
@@ -53,6 +56,27 @@ function notifyDeviceStatusChanges() {
   if (netKey !== S.lastNetworkHintNotice) {
     S.lastNetworkHintNotice = netKey;
     if (netKey) toast(net.hintText || net.hint || tx('connection.networkHint', 'Network issue'), 'warning');
+  }
+
+  if (!isBatteryVoltageEnabled()) {
+    S.lastBatteryWarningNotice = '';
+    return;
+  }
+
+  const voltage = Number(rt.batteryVoltage);
+  const warnAt = Number(settings.batteryWarningVoltage);
+  const lowBattery = settings.batteryWarningEnabled !== false &&
+    Number.isFinite(voltage) && Number.isFinite(warnAt) && voltage > 0 && voltage <= warnAt;
+  const batteryKey = lowBattery ? 'low' : '';
+  if (batteryKey !== S.lastBatteryWarningNotice) {
+    S.lastBatteryWarningNotice = batteryKey;
+    if (lowBattery) {
+      const pct = batteryPercentage(voltage);
+      toast(tf('toast.batteryLow', 'Battery low: {voltage} V ({percent}%).', {
+        voltage: voltage.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+        percent: pct == null ? 0 : pct
+      }), 'warning');
+    }
   }
 }
 

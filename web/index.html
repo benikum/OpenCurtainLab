@@ -86,6 +86,17 @@
 <div aria-live="polite" class="settings-error" id="device-address-error"></div>
 </div>
 <div class="settings-info-list" id="settings-device-info"></div>
+<div class="settings-line settings-toggle-line" id="battery-warning-enabled-row">
+<label data-i18n="html.batteryWarning" for="set-battery-warning-enabled">Low-battery notice</label>
+<label class="switch">
+<input id="set-battery-warning-enabled" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<div class="settings-line" id="battery-warning-voltage-row">
+<label data-i18n="html.batteryWarningVoltage" for="set-battery-warning-voltage">Warning below</label>
+<input class="settings-full-input" id="set-battery-warning-voltage" inputmode="decimal" min="6" max="9.5" step="0.1" type="number"/>
+</div>
 </div>
 <div class="settings-section">
 <div class="settings-section-title" data-i18n="html.measurement">Measurement</div>

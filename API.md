@@ -28,7 +28,7 @@ The firmware does not embed the full WebUI because the compiled file is too larg
 
 ## `GET /status`
 
-Returns device, network, uptime, measurement counter, and diagnostics.
+Returns device, network, uptime, measurement counter, battery voltage, and diagnostics.
 
 ```bash
 curl http://opencurtainlab.local/status
@@ -40,6 +40,7 @@ curl http://opencurtainlab.local/status
   "version": "0.1.0",
   "uptime": 1234,
   "measCount": 7,
+  "batteryVoltage": 8.62,
   "deviceStatus": {
     "error": "none",
     "errorText": "",
@@ -61,6 +62,8 @@ curl http://opencurtainlab.local/status
   }
 }
 ```
+
+`batteryVoltage` is the calculated battery voltage in volts when the optional monitor is enabled. If `BATTERY_MONITOR_ENABLED` is set to `false` in `src/Config.h`, the firmware keeps this field at `0` and the WebUI hides the battery row and low-battery notices. When enabled, the value is measured through the `220 kΩ / 100 kΩ` divider on `PIN_BATTERY_ADC` (`GPIO33`) and displayed as voltage plus percentage using `6.0 V = 0%` and `9.5 V = 100%`.
 
 Device error keys:
 
@@ -96,6 +99,9 @@ Returns firmware capabilities and current runtime settings. Sensor detection use
   "displayRotation": 2,
   "sensorCount": 5,
   "maxTargetTime": 2000,
+  "batteryVoltageEnabled": true,
+  "batteryEmptyVoltage": 6.0,
+  "batteryFullVoltage": 9.5,
   "sensorReadModel": "absolute_adc_threshold",
   "sensorThresholds": {
     "lowOnRaw": 1100,
@@ -116,7 +122,9 @@ Returns firmware capabilities and current runtime settings. Sensor detection use
     "resultDisplay": "until_button",
     "targetSeries": "standard",
     "customTargetTimes": [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2000],
-    "oledSleepMinutes": 5
+    "oledSleepMinutes": 5,
+    "batteryWarningEnabled": true,
+    "batteryWarningVoltage": 6.8
   },
   "githubProjectUrl": "https://github.com/benikum/OpenCurtainLab",
   "webManifestUrl": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/manifest.json",
@@ -145,6 +153,8 @@ Accepted fields:
 | `targetSeries` | string | `standard`, `custom` |
 | `customTargetTimes` | integer array | Positive exposure denominators up to `maxTargetTime` |
 | `oledSleepMinutes` | integer | `0`, `1`, `5`, `10`, `30` |
+| `batteryWarningEnabled` | boolean | Enables the WebUI low-battery toast message when `batteryVoltageEnabled` is `true` |
+| `batteryWarningVoltage` | number | Low-battery warning threshold in volts, clamped to `6.0`–`9.5`; ignored by the WebUI when battery monitoring is disabled |
 
 `maxTargetTime` is intentionally ignored if posted. Custom target times are de-duplicated, sorted, limited to `TARGET_TIMES_MAX_COUNT`, and filtered against `maxTargetTime`.
 
@@ -233,7 +243,7 @@ Returns a live diagnostics snapshot. The diagnostic reads do not create measurem
     }
   ],
   "flash": {
-    "pin": 33,
+    "pin": 23,
     "raw": 1,
     "active": false,
     "trackedActive": false,
@@ -316,3 +326,25 @@ Tests and stores WiFi credentials only while the setup AP is active. In station 
 - The setup AP is open by default and setup credentials are posted over HTTP.
 - Root WebUI delivery and `/version` fetch `web/manifest.json` with ESP32 TLS certificate validation disabled, then download the selected WebUI file without an additional integrity check.
 - The WebUI manifest must point to trusted compiled HTML files.
+
+## Hardware voltage divider
+
+The default hardware configuration reserves `GPIO33` / ADC1 for optional battery monitoring and moves flash sync to `GPIO23`. The module is controlled by a fixed project setting in `src/Config.h`:
+
+```cpp
+static constexpr bool BATTERY_MONITOR_ENABLED = true;
+```
+
+Set it to `false` when the divider is not installed. The same firmware source can then be used without hardware changes; `/status` reports `batteryVoltage: 0`, `/config` reports `batteryVoltageEnabled: false`, and the WebUI hides the battery row and low-battery notices.
+
+When enabled, connect the battery monitor like this:
+
+```text
+Battery + ---- 220 kΩ ----+---- GPIO33 / PIN_BATTERY_ADC
+                          |
+                        100 kΩ
+                          |
+GND ----------------------+
+```
+
+Recommended addition: `100 nF` from `GPIO33` to `GND`, close to the ESP32. With this divider the ADC input is approximately `2.97 V` at `9.5 V` battery voltage, leaving margin below `3.3 V`. The WebUI low-battery notice is configurable through `/config` only when the monitor is enabled; the default threshold is `6.8 V` and the percentage scale remains `6.0 V = 0%`, `9.5 V = 100%`.

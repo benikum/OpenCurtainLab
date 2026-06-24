@@ -33,7 +33,9 @@ const DEFAULT_DEVICE_SETTINGS = {
   resultDisplay: 'until_button',
   targetSeries: 'standard',
   customTargetTimes: DEFAULT_CUSTOM_TIMES.slice(),
-  oledSleepMinutes: 5
+  oledSleepMinutes: 5,
+  batteryWarningEnabled: true,
+  batteryWarningVoltage: 6.8
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
 const DEFAULT_UI_SETTINGS = { interpolateCharts: false };
@@ -68,11 +70,12 @@ let S = {
   deviceConfig: null,
   deviceStatus: { error: 'none', errorText: '', subsystem: 'none' },
   networkStatus: { hint: 'none', hintText: '', connected: false, apMode: false, mdnsStarted: false },
-  deviceRuntime: { uptime: null, measCount: null, device: '', version: '' },
+  deviceRuntime: { uptime: null, measCount: null, device: '', version: '', batteryVoltage: null },
   lastStatusAt: 0,
   lastDeviceErrorNotice: '',
   lastNetworkHintNotice: '',
   lastMeasurementHintNotice: '',
+  lastBatteryWarningNotice: '',
   connectionProblem: null,
   versionWarning: '',
   versionMismatch: '',

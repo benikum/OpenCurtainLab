@@ -43,7 +43,9 @@
     "measurementMovedToDefault": "Messung ins Standardprojekt verschoben",
     "measurementAssignedToDefaultIncompatible": "Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.",
     "deviceNotConnected": "Gerät nicht verbunden",
-    "languageUnavailable": "Sprachdateien sind nicht verfügbar"
+    "languageUnavailable": "Sprachdateien sind nicht verfügbar",
+    "batteryLow": "Batterie niedrig: {voltage} V ({percent}%).",
+    "batteryWarningVoltageInvalid": "Die Batterieschwelle muss zwischen {min} V und {max} V liegen."
   },
   "frame": {
     "manualTitle": "OpenCurtainLab Anleitung",
@@ -319,7 +321,9 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus"
+    "oledSleepOff": "aus",
+    "batteryWarning": "Batterie-Hinweis",
+    "batteryWarningVoltage": "Hinweis unter"
   },
   "targetSeries": {
     "standard": "Standard",
@@ -339,7 +343,8 @@
     "ok": "OK",
     "unavailable": "—",
     "measurementId": "Measurement-ID",
-    "problem": "Problem"
+    "problem": "Problem",
+    "battery": "Batterie"
   },
   "directions": {
     "leftRight": "links → rechts",

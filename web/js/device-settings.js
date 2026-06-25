@@ -158,12 +158,6 @@ function setCustomTargetTimesError(message = '') {
   if (input) input.classList.toggle('invalid', !!message);
 }
 
-// Keeps the optional custom target-time help element empty when older templates still contain it.
-function renderCustomTargetTimesHelp() {
-  const el = document.getElementById('custom-target-times-help');
-  if (el) el.textContent = '';
-}
-
 // Display or clear the device-address validation message.
 function setDeviceAddressError(message = '') {
   const el = document.getElementById('device-address-error');
@@ -489,7 +483,6 @@ function renderSettingsControls() {
   if (customEl) customEl.value = Array.isArray(st.customTargetTimes) ? st.customTargetTimes.join(',') : standardTargetTimes().join(',');
   if (addrEl) addrEl.value = S.deviceHost || DEFAULT_DEVICE_HOST;
   if (interpEl) interpEl.checked = !!(S.uiSettings && S.uiSettings.interpolateCharts);
-  renderCustomTargetTimesHelp();
   setCustomTargetTimesError('');
   setDeviceAddressError('');
   onTargetSeriesChanged(false);
@@ -575,10 +568,8 @@ function bindBackupFileInput() {
 // React to switching between standard and custom target time series.
 function onTargetSeriesChanged(markDirty = true) {
   const customEl = document.getElementById('set-custom-target-times');
-  const helpEl = document.getElementById('custom-target-times-help');
   const errorEl = document.getElementById('custom-target-times-error');
   if (customEl) customEl.style.display = '';
-  if (helpEl) helpEl.style.display = 'none';
   if (errorEl) errorEl.style.display = '';
   if (markDirty) updateSettingsSaveState();
 }

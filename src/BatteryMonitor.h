@@ -58,9 +58,6 @@ public:
   // Voltage actually present on the ESP32 ADC pin after the divider, useful for debugging only.
   float adcPinVoltage() const { return BATTERY_MONITOR_ENABLED ? _adcPinVoltage : 0.0f; }
 
-  // Backward-compatible alias. Keep returning the calculated battery voltage, not the ADC pin voltage.
-  float voltage() const { return batteryVoltage(); }
-
 private:
   float _batteryVoltage = 0.0f;
   float _adcPinVoltage = 0.0f;

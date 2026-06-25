@@ -250,7 +250,7 @@ void handleButtons() {
 
   // Result navigation is modal: buttons either change result page or return to READY.
   if (appState == AppState::RESULTS) {
-    if (ev.listenPressed) {
+    if (ev.selectPressed) {
       closeResultsAndReady();
       return;
     }
@@ -273,7 +273,7 @@ void handleButtons() {
 
   if (appState != AppState::READY) return;
 
-  if (ev.listenPressed) {
+  if (ev.selectPressed) {
     openMenu();
     return;
   }
@@ -329,7 +329,7 @@ void saveMenuDraftAndReady() {
 
 // Handles navigation and editing while the settings menu is open.
 void handleMenuButtons(const ButtonEvents& ev) {
-  if (ev.listenLongPressed) {
+  if (ev.selectLongPressed) {
     saveMenuDraftAndReady();
     return;
   }
@@ -343,7 +343,7 @@ void handleMenuButtons(const ButtonEvents& ev) {
     displayDirty = true;
     return;
   }
-  if (ev.listenPressed) {
+  if (ev.selectPressed) {
     applyMenuSetting(menuIndex);
     displayDirty = true;
   }
@@ -676,7 +676,7 @@ void noteUserActivity() {
 
 // Checks whether all physical buttons have been released.
 bool areButtonsReleased() {
-  return digitalRead(PIN_BTN_LISTEN) == HIGH
+  return digitalRead(PIN_BTN_SELECT) == HIGH
       && digitalRead(PIN_BTN_UP) == HIGH
       && digitalRead(PIN_BTN_DOWN) == HIGH;
 }
@@ -740,7 +740,8 @@ void refreshDisplay() {
   switch (appState) {
     case AppState::READY: {
       const String net = webServer.getNetworkLine();
-      displayManager.showReady(targetFraction, measureMode, net, currentDeviceError(), engine.getReadyHint());
+      const String ip = webServer.getIP();
+      displayManager.showReady(targetFraction, measureMode, net, ip, currentDeviceError(), engine.getReadyHint());
       break;
     }
 

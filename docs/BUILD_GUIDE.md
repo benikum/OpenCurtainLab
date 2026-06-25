@@ -2,9 +2,11 @@
 
 This guide explains how to build an OpenCurtainLab device from parts, PCB or perfboard layouts, 3D-printed parts, wiring, and firmware configuration.
 
-The images in this guide are JPG placeholders. Replace them with real photos, PCB renders, wiring diagrams, exported schematics, and printed-part photos before publishing a final hardware release.
-
 ![Finished device placeholder](images/device-overview.jpg)
+
+## Before you start
+
+This project assumes basic soldering experience, ESP32 firmware upload experience, and safe handling of battery-powered electronics.
 
 ## 1. Parts and example sources
 
@@ -17,31 +19,27 @@ The AliExpress links are example sources from the prototype documentation. Verif
 | 5 | 10 kΩ resistor | Sensor pull-up resistors | Sensor channel should idle high and be pulled down by light. | Local supplier |
 | 1 | 128×64 SSD1306 OLED display | Local status display | I2C, default address `0x3C`. | [AliExpress](https://de.aliexpress.com/item/1005006141235306.html) |
 | 3 | Momentary push button / DIP-style tactile switch | Local controls | Active-low buttons to GND. | [AliExpress](https://de.aliexpress.com/item/1005004971266223.html) |
-| 1 | 3.5 mm jack socket | Flash-sync input | Optional. | [AliExpress](https://de.aliexpress.com/item/1005005562420070.html) |
-| 1 | 3.5 mm flash-sync cable | Camera flash-sync cable | Optional, depending on camera/adapter. | [AliExpress](https://de.aliexpress.com/item/1005006828170608.html) |
-| 1 | Hot-shoe converter or flash-sync adapter | Camera flash-sync connection | Optional, depending on camera. | [AliExpress](https://de.aliexpress.com/item/1005003922472021.html) |
+| 1 | 3.5 mm jack socket | Flash-sync input | Required device input. | [AliExpress](https://de.aliexpress.com/item/1005005562420070.html) |
+| 1 | 3.5 mm flash-sync cable | Camera flash-sync cable | Required for flash-sync testing; exact cable depends on camera/adapter. | [AliExpress](https://de.aliexpress.com/item/1005006828170608.html) |
+| 1 | Hot-shoe converter or flash-sync adapter | Camera flash-sync connection | Required if the camera has no matching direct sync connector. | [AliExpress](https://de.aliexpress.com/item/1005003922472021.html) |
 | 1 | 3.3 V DC/DC buck converter | Power supply | Required if the battery voltage is above ESP32 input limits and no suitable board regulator is used. | [AliExpress](https://de.aliexpress.com/item/1005008257960729.html) |
 | 1 | Perfboard or custom PCB | Electronics carrier | Use perfboard for a prototype or replace with final PCB files. | Local supplier |
-| 1 | 330 kΩ resistor | Battery divider high side | Optional battery monitor. Measure the real installed value and enter it in firmware. | Local supplier |
-| 1 | 100 kΩ resistor | Battery divider low side | Optional battery monitor. Measure the real installed value and enter it in firmware. | Local supplier |
-| 1 | 100 nF capacitor | Battery ADC smoothing | Optional but recommended. | Local supplier |
+| 1 | 330 kΩ resistor | Battery divider high side | Battery monitor. Measure the real installed value and enter it in firmware. | Local supplier |
+| 1 | 100 kΩ resistor | Battery divider low side | Battery monitor. Measure the real installed value and enter it in firmware. | Local supplier |
 | as needed | 40-pin Dupont wires or headers | Internal wiring | Match your board and enclosure design. | [AliExpress](https://de.aliexpress.com/item/1005009071621102.html) |
 | as needed | Screws, inserts, spacers, heat-shrink, strain relief | Mechanical assembly | Match your enclosure and printed parts. | Local supplier |
 | as needed | 3D-printed case and sensor holder | Mechanical assembly | Replace placeholders with final STL/STEP files. | Printed locally |
-
-![Parts overview placeholder](images/bom-overview.jpg)
 
 ## 2. Tools
 
 Recommended tools:
 
-- Soldering iron and solder.
-- Wire stripper and side cutter.
-- Multimeter.
-- Computer with Arduino IDE or Arduino CLI.
-- USB cable for the ESP32 board.
-- 3D printer or access to printed parts.
-- Camera body and stable light source for validation.
+- Soldering iron and solder
+- Wire stripper and side cutter
+- Multimeter
+- Computer with Arduino IDE or Arduino CLI
+- USB cable for the ESP32 board
+- 3D printer or access to printed parts
 
 ## 3. Electrical design
 
@@ -60,11 +58,9 @@ The default pinout is defined in `src/Config.h`.
 | Flash sync | `PIN_FLASH_SENSOR` | GPIO14 |
 | Up button | `PIN_BTN_UP` | GPIO25 |
 | Down button | `PIN_BTN_DOWN` | GPIO26 |
-| Listen button | `PIN_BTN_LISTEN` | GPIO27 |
+| Select button | `PIN_BTN_SELECT` | GPIO27 |
 | OLED SDA | `I2C_SDA` | GPIO21 |
 | OLED SCL | `I2C_SCL` | GPIO22 |
-
-![Schematic overview placeholder](images/schematic-overview.jpg)
 
 ### 3.2 Phototransistor channels
 
@@ -96,7 +92,7 @@ Use `GET /sensors` or the WebUI sensor diagnostics to verify that dark readings 
 
 ### 3.3 Flash-sync input
 
-The flash-sync input is optional. It is active-low and uses the ESP32 internal pull-up.
+The flash-sync input is part of the base device. It is active-low and uses the ESP32 internal pull-up.
 
 Recommended wiring:
 
@@ -118,13 +114,6 @@ OLED SDA  -> GPIO21
 OLED SCL  -> GPIO22
 ```
 
-Default firmware settings:
-
-```cpp
-#define OLED_ADDRESS 0x3C
-#define DISPLAY_ROTATION 2
-```
-
 ### 3.5 Buttons
 
 All buttons are active-low. Wire each button between the configured GPIO and GND.
@@ -132,14 +121,14 @@ All buttons are active-low. Wire each button between the configured GPIO and GND
 ```text
 GPIO25 -- Up button ---- GND
 GPIO26 -- Down button -- GND
-GPIO27 -- Listen button - GND
+GPIO27 -- Select button - GND
 ```
 
 The firmware enables internal pull-ups and handles debounce.
 
-### 3.6 Optional battery monitor
+### 3.6 Battery monitor
 
-The optional battery monitor uses a nominal 330 kΩ / 100 kΩ voltage divider.
+The Battery monitor uses a nominal 330 kΩ / 100 kΩ voltage divider.
 
 Recommended circuit:
 
@@ -270,7 +259,7 @@ Mechanical checks:
 
 1. Wire the OLED to 3.3 V, GND, SDA, and SCL.
 2. Wire the three buttons to their GPIO pins and GND.
-3. Install the flash-sync jack if used.
+3. Install the flash-sync jack.
 4. Install the battery divider if used.
 
 ### Step 4: Install power wiring
@@ -302,10 +291,6 @@ Common settings:
 
 | Setting | Meaning |
 |---|---|
-| `FIRMWARE_VERSION` | Firmware/API/WebUI version. Usually managed by `tools/release.py`. |
-| `PIN_SENSOR_0` … `PIN_SENSOR_4` | Sensor ADC pins. |
-| `PIN_FLASH_SENSOR` | Active-low flash-sync input. |
-| `PIN_BATTERY_ADC` | Battery voltage ADC input. |
 | `BATTERY_MONITOR_ENABLED` | Set to `false` if the divider is not installed. |
 | `BATTERY_DIVIDER_HIGH_OHMS` / `BATTERY_DIVIDER_LOW_OHMS` | Measured resistor values of the installed battery divider. |
 | `BATTERY_EMPTY_VOLTAGE` / `BATTERY_FULL_VOLTAGE` | Voltage range used for battery percentage. |
@@ -313,10 +298,6 @@ Common settings:
 | `SENSOR_DISTANCE_Y_MM` | Physical vertical spacing between neighboring sensors. |
 | `SENSOR_ON_THRESHOLD_*` | ADC activation thresholds. |
 | `SENSOR_OFF_THRESHOLD_*` | ADC release thresholds. |
-| `DEFAULT_MEASUREMENT_MODE` | Startup mode: `horizontal`, `vertical`, or `central`. |
-| `DEFAULT_TARGET_TIME` | Startup target shutter denominator. |
-
-![Firmware configuration placeholder](images/firmware-config.jpg)
 
 ### 7.1 Firmware libraries
 
@@ -343,40 +324,10 @@ Install these libraries in Arduino IDE or make them available to Arduino CLI:
 Before publishing release files or when changing WebUI/setup portal files, run:
 
 ```bash
-python3 -m pip install minify-html
 python3 tools/release.py
 ```
 
-For local checks without manifest publication:
-
-```bash
-python3 tools/release.py --skip-manifest-check
-node --check web/app.js
-node --check web/js/*.js
-```
-
-## 8. Validation after assembly
-
-Follow the first-start steps in the [README](../README.md#first-start), then validate the hardware before making real measurements.
-
-Use the WebUI diagnostics or call:
-
-```bash
-curl http://opencurtainlab.local/sensors
-```
-
-Validation checklist:
-
-- Dark sensor readings are high.
-- Illuminated sensor readings cross the selected ON threshold.
-- Each sensor changes independently.
-- Flash-sync input is inactive when open and active when shorted to GND.
-- OLED reports the expected WiFi and measurement state.
-- Battery voltage is plausible if the battery monitor is installed.
-
-If a measurement reports `incomplete_sensor_coverage`, check alignment, light level, sensor thresholds, and whether the shutter opening covers all five sensors.
-
-## 9. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Likely cause | Check |
 |---|---|---|

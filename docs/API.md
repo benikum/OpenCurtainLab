@@ -2,6 +2,19 @@
 
 This document describes the current firmware HTTP API. All endpoints are served by the ESP32 on the local network.
 
+## Security warning
+
+OpenCurtainLab is designed for trusted local networks only. The firmware API is intentionally lightweight and does not provide user accounts, API tokens, HTTPS, request signing, or permission checks. The setup access point and local API should therefore be treated as physically local maintenance interfaces, not as internet-facing services.
+
+Do not expose the device to the public internet, port-forward it from a router, place it on an untrusted guest network, or rely on it as a secure remote-control endpoint. Anyone who can reach the device on the network may be able to read status data, change runtime settings, access live sensor diagnostics, or start WiFi setup actions where available.
+
+Recommended use:
+
+- connect the device only to a private LAN you control
+- keep it behind your router/firewall
+- avoid public, shared, or guest WiFi networks
+- disconnect or power down the device when it is not needed in an untrusted environment
+
 ## Base URLs
 
 Station mode:
@@ -19,8 +32,6 @@ http://192.168.4.1
 ```
 
 API responses are JSON unless the endpoint description says otherwise. CORS preflight is supported for the documented API paths.
-
-![API flow placeholder](images/api-flow.jpg)
 
 ## Endpoint summary
 
@@ -172,7 +183,7 @@ Example response:
   "mdnsName": "opencurtainlab",
   "sensorDistanceXmm": 13.17,
   "sensorDistanceYmm": 7.67,
-  "displayRotation": 2,
+  "displayRotation": 0,
   "sensorCount": 5,
   "maxTargetTime": 2000,
   "batteryVoltageEnabled": true,
@@ -279,10 +290,10 @@ Successful response:
 
 Notes:
 
-- `maxTargetTime` is a build-time capability and is ignored if posted
-- Invalid enum values fall back to firmware defaults during sanitization
-- Custom target times are sorted, de-duplicated, capped by firmware limits, and filtered against `maxTargetTime`
-- If the request body is syntactically valid JSON but contains no effective change, `changed` is `false`
+- `maxTargetTime` is a build-time capability and is ignored if posted.
+- Invalid enum values fall back to firmware defaults during sanitization.
+- Custom target times are sorted, de-duplicated, capped by firmware limits, and filtered against `maxTargetTime`.
+- If the request body is syntactically valid JSON but contains no effective change, `changed` is `false`.
 
 ## `GET /data`
 
@@ -569,8 +580,8 @@ Example:
 
 Selection rules:
 
-- `projectVersion` is the canonical project version used by `tools/release.py`
-- `match` is the firmware compatibility pattern, such as `0.1.x`
-- `version` is the WebUI release selected for compatible firmware
-- The middle version number is treated as the API version
-- If multiple entries match, the firmware selects the highest patch version
+- `projectVersion` is the canonical project version used by `tools/release.py`.
+- `match` is the firmware compatibility pattern, such as `0.1.x`.
+- `version` is the WebUI release selected for compatible firmware.
+- The middle version number is treated as the API version.
+- If multiple entries match, the firmware selects the highest patch version.

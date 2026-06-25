@@ -8,17 +8,17 @@
 #include "Config.h"
 
 struct ButtonEvents {
-  bool listenPressed = false;
+  bool selectPressed = false;
   bool upPressed     = false;
   bool downPressed   = false;
 
-  bool listenLongPressed = false;
+  bool selectLongPressed = false;
   bool upLongPressed     = false;
   bool downLongPressed   = false;
 
   // Returns true when any short or long button event is set.
   bool anyPressed() const {
-    return listenPressed || upPressed || downPressed || listenLongPressed || upLongPressed || downLongPressed;
+    return selectPressed || upPressed || downPressed || selectLongPressed || upLongPressed || downLongPressed;
   }
 
   // Resets all button event flags.
@@ -29,11 +29,11 @@ class ButtonManager {
 public:
   // Configures button pins and initializes their debounce trackers.
   void begin() {
-    pinMode(PIN_BTN_LISTEN, INPUT_PULLUP);
+    pinMode(PIN_BTN_SELECT, INPUT_PULLUP);
     pinMode(PIN_BTN_UP,     INPUT_PULLUP);
     pinMode(PIN_BTN_DOWN,   INPUT_PULLUP);
 
-    _listen.begin(PIN_BTN_LISTEN, MODE_HOLD_MS);
+    _select.begin(PIN_BTN_SELECT, MODE_HOLD_MS);
     _up.begin(PIN_BTN_UP, MODE_HOLD_MS);
     _down.begin(PIN_BTN_DOWN, MODE_HOLD_MS);
 
@@ -44,7 +44,7 @@ public:
   ButtonEvents poll() {
     ButtonEvents ev;
     const unsigned long now = millis();
-    _listen.update(now, ev.listenPressed, ev.listenLongPressed);
+    _select.update(now, ev.selectPressed, ev.selectLongPressed);
     _up.update(now, ev.upPressed, ev.upLongPressed);
     _down.update(now, ev.downPressed, ev.downLongPressed);
     return ev;
@@ -106,7 +106,7 @@ private:
     }
   };
 
-  DebouncedButton _listen;
+  DebouncedButton _select;
   DebouncedButton _up;
   DebouncedButton _down;
 };

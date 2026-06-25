@@ -4,7 +4,7 @@
    // CONSTANTS
 // ════════════════════════════════════════════
 const ALL_TIMES     = [1,2,4,8,15,30,60,125,250,500,1000,2000];
-const DEFAULT_CUSTOM_TIMES = ALL_TIMES.slice();
+const DEFAULT_CUSTOM_TIMES = [1,2,5,10,25,50,100,250,500,1000,2000];
 const DEFAULT_SENSOR_DISTANCE_X_MM = 13.17;
 const DEFAULT_SENSOR_DISTANCE_Y_MM = 7.67;
 const ID_COLORS = ['#f5b030','#68a8e0','#56c47e','#e86060','#c47aff'];

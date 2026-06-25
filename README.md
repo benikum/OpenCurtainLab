@@ -1,145 +1,151 @@
 # OpenCurtainLab
 
-OpenCurtainLab is an open-source ESP32-based shutter tester for focal-plane and leaf shutters. It uses five light sensors and a flash-sync input to measure shutter opening and closing times, then exposes the raw data through a local HTTP API and a standalone browser WebUI.
+**OpenCurtainLab is an open-source shutter tester for analog camera shutters.**
 
-![OpenCurtainLab device placeholder](docs/images/readme-hero.jpg)
+It combines an ESP32, five optical sensor channels, a flash-sync input, an OLED display, and a standalone browser WebUI. The device captures raw shutter timing locally and the WebUI turns that data into practical information: exposure accuracy, shutter spread, curtain travel behavior, flash-sync timing and charts.
 
-## What it does
+OpenCurtainLab is designed for camera repair, shutter testing, calibration work, and repeatable documentation of analog camera bodies without relying on a cloud service or proprietary backend.
 
-OpenCurtainLab helps compare the real exposure behavior of a camera shutter against nominal shutter speeds. It is intended for repair, testing, learning, and repeatable project documentation.
+<p align="center">
+  <img src="docs/images/readme-hero.jpg" alt="OpenCurtainLab device" width="48%">
+  <img src="docs/images/webui-overview.jpg" alt="OpenCurtainLab WebUI" width="48%">
+</p>
 
-Key features:
+## Features
 
-- Five phototransistor channels for shutter travel timing
-- Horizontal, vertical, and central shutter measurement modes
-- Flash-sync contact timing
-- OLED status display with local buttons for standalone use
-- WiFi setup portal and local HTTP API
-- Standalone WebUI for projects, measurement history, charts, import, and export
-- Sensor diagnostics through the WebUI and `/sensors` API endpoint
-- Configurable target-speed series and sensor sensitivity
-- Optional battery voltage monitor
-- No cloud service or account required during normal local operation
+### Hardware-focused measurement
 
-![WebUI placeholder](docs/images/webui-overview.jpg)
+- Five optical sensor channels for focal-plane shutter timing
+- Measurement modes for horizontal and vertical travel focal-plane shutters and leaf shutters.
+- Flash-sync input for checking X-sync behavior
+- OLED display for device status, WiFi information, measurement state, and quick results
+- Three-button local control for operation without a computer during basic use
+- Battery-voltage monitoring
+
+### Standalone WebUI
+
+- Runs in a normal browser after being downloaded from the device.
+- Connects to the ESP32 over the local network.
+- Shows exposure time, deviation from target speed, shutter spread, and measurement hints.
+- Provides timeline, curtain-speed, and flash-sync visualizations.
+- Stores projects and measurement history in the browser.
+- Supports import, export, CSV export, and mock/demo data.
+
+### Open local API
+
+- Local HTTP API for status, configuration, diagnostics, and raw measurement data.
+- JSON responses for easy integration with scripts, tools, or alternative UIs.
+- Sensor diagnostics endpoint for setup and troubleshooting.
 
 ## Project structure
 
 ```text
-OpenCurtainLab.ino              Main Arduino sketch
-src/                            Firmware modules and configuration
-web/                            Source files for the standalone WebUI
-web/compiled/                   Generated compiled WebUI release files
-tools/                          Release/build helper scripts
-docs/BUILD_GUIDE.md             Step-by-step build guide
-docs/API.md                     Firmware HTTP API documentation
+OpenCurtainLab.ino          Main Arduino sketch and application loop
+src/                        Firmware modules, configuration, measurement logic, API, WiFi, OLED
+web/                        WebUI source files
+web/compiled/               Generated standalone WebUI release file
+tools/                      Release and development helper scripts
+docs/BUILD_GUIDE.md         Step-by-step hardware and firmware build guide
+docs/API.md                 Firmware API documentation
+LICENSE                     Project license
 ```
 
-Generated files should not be edited manually:
+## Build the project
 
-```text
-src/SetupPortalHtml.h
-web/compiled/compiled-v*.html
-```
+OpenCurtainLab consists of a ESP32-based electronics assembly, a five-sensor shutter gate, flash-sync wiring, battery monitoring, and mechanical parts such as a sensor holder or enclosure.
 
-Use `tools/release.py` to rebuild them.
+The complete build process is documented in the build guide:
 
-## Hardware summary
+**[Open the step-by-step build guide](docs/BUILD_GUIDE.md)**
 
-The default firmware configuration expects:
+The build guide covers:
 
-| Function | Default pin |
-|---|---:|
-| Sensor 0 | GPIO36 |
-| Sensor 1 | GPIO39 |
-| Sensor 2 | GPIO34 |
-| Sensor 3 | GPIO35 |
-| Sensor 4 | GPIO32 |
-| Battery voltage ADC | GPIO33 |
-| Flash sync | GPIO14 |
-| Button Up | GPIO25 |
-| Button Down | GPIO26 |
-| Button Listen | GPIO27 |
-| I2C SDA | GPIO21 |
-| I2C SCL | GPIO22 |
+- required parts and example purchase links
+- PCB or perfboard layout planning
+- sensor board wiring
+- OLED, buttons, flash-sync input, and battery divider
+- 3D-printed parts and enclosure placeholders
+- firmware pin configuration
+- first electrical checks and troubleshooting
 
-The phototransistor channels are expected to read high ADC values in darkness and lower values when light reaches the sensor. The firmware uses absolute ADC thresholds with hysteresis.
+<p align="center">
+  <img src="docs/images/schematic-overview.jpg" alt="OpenCurtainLab electronics overview" width="70%">
+</p>
 
-Default geometry:
+## Basic usage
 
-| Setting | Value |
-|---|---:|
-| Sensor count | 5 |
-| Horizontal sensor spacing | 13.17 mm |
-| Vertical sensor spacing | 7.67 mm |
+### 1. Power the device
 
-See the full [build guide](docs/BUILD_GUIDE.md) for parts, wiring, PCB layouts, 3D-prints, and firmware configuration.
+Flash the firmware, connect the electronics, and power the ESP32. The OLED shows the current device state.
 
-## Software requirements
+### 2. Connect WiFi
 
-Firmware build:
+On first start, the device opens a setup access point named `OpenCurtainLab`.
 
-- Arduino IDE or Arduino CLI
-- ESP32 Arduino core
-- ArduinoJson
-- Adafruit GFX Library
-- Adafruit SSD1306
-- Wire, included with the Arduino/ESP32 core
+Connect to that access point and open the captive portal.
 
-WebUI build and release helper:
+Select your WiFi network, enter the password, and save the settings.
 
-- Python 3.10 or newer
-- `minify-html` Python package
-- Node.js is optional, but useful for JavaScript syntax checks
+### 3. Download the WebUI
 
-Install the Python minifier:
-
-```bash
-python3 -m pip install minify-html
-```
-
-## First start
-
-1. Build and flash the firmware to the ESP32
-2. Power the device
-3. If no WiFi credentials are stored, the device starts the setup access point `OpenCurtainLab`
-4. Connect a phone or computer to that access point
-5. Open the captive portal or go to:
-
-```text
-http://192.168.4.1
-```
-
-6. Select your WiFi network and save the credentials
-7. After the ESP32 joins your network, download the WebUI at:
+Download the standalone WebUI on your browser through:
 
 ```text
 http://opencurtainlab.local
 ```
 
-If mDNS is not available on your system, use the IP address shown on the OLED.
+The WebUI can then be opened locally in the browser and connects to the device on your network.
 
-![First start placeholder](docs/images/first-start.jpg)
+### 4. Make the first measurement
 
-## Basic measurement workflow
+Place the sensor assembly where the film gate would be, point a stable light source through the shutter, select the measurement mode and target speed, then fire the shutter.
 
-1. Place the sensor assembly where the film gate would be
-2. Point a stable light source through the shutter toward the sensors
-3. Select the measurement mode and target shutter speed on the device or in the WebUI
-4. Press Listen or start listening through the WebUI
-5. Fire the camera shutter
-6. Open the WebUI to review exposure values, spread, timing charts, flash-sync timing, and project history
+### Local button controls
 
-The firmware reports raw timestamps. The WebUI performs exposure, deviation, travel, and chart calculations.
+The device has three active-low buttons: **Up**, **Down**, and **Select**. In normal ready mode, the firmware automatically listens for a shutter event; the buttons are mainly used to change the target speed, switch the measurement direction, open the local menu, and review results.
+
+| State | Button | Action |
+|---|---|---|
+| Ready | Up | Select the next faster target speed. |
+| Ready | Down | Select the next slower target speed. |
+| Ready | Hold Up | Cycle the measurement direction: horizontal, vertical, or central shutter. |
+| Ready | Select | Open the OLED settings menu. |
+| Menu | Up / Down | Move through the menu entries. |
+| Menu | Select | Change the selected menu value. |
+| Menu | Hold Select | Save the menu settings and return to ready mode. |
+| Results | Up / Down | Switch between result pages or leave the result view. |
+| Results | Select | Close the result view and return to ready mode. |
+
+The OLED menu provides quick access to sensor sensitivity, target time series, result display behavior, OLED sleep timeout, and network reset.
+The WebUI displays the captured result, including exposure timing, shutter spread, chart views, measurement hints, and flash-sync information.
+
+<p align="center">
+  <img src="docs/images/first-start.jpg" alt="OpenCurtainLab first start" width="70%">
+</p>
 
 ## API documentation
 
-See [docs/API.md](docs/API.md) for all current endpoints, response examples, status keys, measurement hints, and WiFi setup responses.
+The firmware exposes a local HTTP API for status, configuration, live sensor diagnostics, and measurement data.
 
-## Development notes
+**[Open the API documentation](docs/API.md)**
 
-OpenCurtainLab is a hardware-tested project developed and maintained by the author. AI tools were used during development as an assistant for review, refactoring, documentation, and implementation exploration. Hardware behavior, firmware changes, API behavior, and measurement results remain the maintainer's responsibility.
+Typical endpoints include:
+
+```text
+GET  /version
+GET  /status
+GET  /config
+POST /config
+GET  /data
+GET  /sensors
+GET  /wifi/status
+POST /wifi
+```
+
+## AI usage transparency
+
+AI tools were used during development as an assistant for code review, refactoring, documentation drafting, and implementation exploration. The project design, hardware decisions, test results, firmware behavior, API behavior, and published releases remain the responsibility of the maintainer.
 
 ## License
 
-This project is released under the MIT License. See [LICENSE](LICENSE).
+OpenCurtainLab is released under the MIT License. See [LICENSE](LICENSE).

@@ -38,12 +38,12 @@
 // Button Pins
 #define PIN_BTN_UP        25
 #define PIN_BTN_DOWN      26
-#define PIN_BTN_LISTEN    27
+#define PIN_BTN_SELECT    27
 
-// Optional battery voltage monitor. Set this to false when the voltage divider is not installed.
+// Optional battery voltage monitor.
 static constexpr bool BATTERY_MONITOR_ENABLED = true;
-#define BATTERY_DIVIDER_HIGH_OHMS  324400.0f
-#define BATTERY_DIVIDER_LOW_OHMS   99100.0f
+#define BATTERY_DIVIDER_HIGH_OHMS  330000.0f
+#define BATTERY_DIVIDER_LOW_OHMS   100000.0f
 #define BATTERY_EMPTY_VOLTAGE      7.0f
 #define BATTERY_FULL_VOLTAGE       9.3f
 #define BATTERY_ADC_SAMPLES        8
@@ -55,7 +55,7 @@ static constexpr bool BATTERY_MONITOR_ENABLED = true;
 #define OLED_ADDRESS         0x3C
 #define SCREEN_WIDTH         128
 #define SCREEN_HEIGHT        64
-#define DISPLAY_ROTATION     2
+#define DISPLAY_ROTATION     0
 
 // Sensor Geometry
 static constexpr int SENSOR_COUNT = 5;

@@ -69,8 +69,8 @@ public:
     _display.ssd1306_command(SSD1306_DISPLAYON);
   }
 
-  // Renders the ready screen including target time, mode, network line, and possible error/hint.
-  void showReady(int targetFraction, MeasurementMode mode, const String& networkLine,
+  // Renders the ready screen including target time, mode, SSID/network line, IP address, and possible error/hint.
+  void showReady(int targetFraction, MeasurementMode mode, const String& networkLine, const String& ipAddress,
                  DeviceError deviceError = DeviceError::None,
                  MeasurementHint readyHint = MeasurementHint::None) {
     _display.ssd1306_command(SSD1306_DISPLAYON);
@@ -78,8 +78,7 @@ public:
     _display.setTextColor(SSD1306_WHITE);
     _display.setTextSize(1);
     _display.setCursor(0, 0);
-
-    _display.print("READY");
+    _printClipped(networkLine.length() ? networkLine.c_str() : "offline", 17);
     _drawModeIcon(mode, 105, 0);
 
     char buf[16];
@@ -87,7 +86,7 @@ public:
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
-    _display.setCursor((SCREEN_WIDTH - w) / 2, 18);
+    _display.setCursor((SCREEN_WIDTH - w) / 2, 16);
     _display.print(buf);
 
     _display.setTextSize(1);
@@ -95,8 +94,13 @@ public:
     if (deviceError != DeviceError::None) _printClipped(deviceErrorText(deviceError), 21);
     else if (readyHint != MeasurementHint::None) _printClipped(measurementHintText(readyHint), 21);
 
-    _display.setCursor(0, 54);
-    _printClipped(networkLine.length() ? networkLine.c_str() : "offline", 21);
+    _display.setCursor(0, 56);
+    if (ipAddress.length() && ipAddress != "0.0.0.0") {
+      _display.print("IP ");
+      _printClipped(ipAddress.c_str(), 18);
+    } else {
+      _printClipped("IP unavailable", 21);
+    }
     _display.display();
   }
 

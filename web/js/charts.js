@@ -55,16 +55,23 @@ function getCurtainSamples(entry) {
     .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs) && Number.isFinite(sensor.closeMs));
   if (sensors.length < 2) return null;
 
-  // The first sensor that opens becomes position 0 mm. The remaining sensors are
-  // mapped along the shutter travel direction in the detected opening order.
-  const ordered = sensors.sort((a, b) => a.openMs - b.openMs).map((sensor, positionIndex) => ({
-    ...sensor,
-    positionIndex,
-  }));
   const distanceMm = distanceForMode(entry.mode, entry);
   if (distanceMm == null) return null;
-  const reverseAxis = ordered.length > 1 && ordered[0].index > ordered[ordered.length - 1].index;
-  return { sensors: ordered, distanceMm, reverseAxis };
+
+  // The first sensor that opens becomes position 0 mm. Further positions are
+  // based on the physical sensor index distance, not on the number of detected
+  // samples. This keeps speed correct when one or more intermediate sensors were
+  // not triggered or filtered out.
+  const ordered = sensors.sort((a, b) => a.openMs - b.openMs);
+  const originIndex = ordered[0].index;
+  const reverseAxis = ordered.length > 1 && originIndex > ordered[ordered.length - 1].index;
+  const positioned = ordered.map((sensor, positionIndex) => ({
+    ...sensor,
+    positionIndex,
+    positionMm: Math.abs(sensor.index - originIndex) * distanceMm,
+  }));
+
+  return { sensors: positioned, distanceMm, reverseAxis };
 }
 
 // Convert sensor timing samples into curtain-speed segments.
@@ -78,18 +85,21 @@ function curtainSpeedProfile(entry) {
   for (let i = 1; i < act.length; i++) {
     const prev = act[i - 1];
     const cur = act[i];
-    const x = (i - 0.5) * distanceMm;
+    const physicalDistanceMm = Math.abs(cur.index - prev.index) * distanceMm;
+    if (physicalDistanceMm <= 0) continue;
+
+    const x = (prev.positionMm + cur.positionMm) / 2;
     const dtOpen = cur.openMs - prev.openMs;
     const dtClose = cur.closeMs - prev.closeMs;
-    if (dtOpen > 0) open.push({ x, v: distanceMm / dtOpen });
-    if (dtClose > 0) close.push({ x, v: distanceMm / dtClose });
+    if (dtOpen > 0) open.push({ x, v: physicalDistanceMm / dtOpen, sensorGap: Math.abs(cur.index - prev.index) });
+    if (dtClose > 0) close.push({ x, v: physicalDistanceMm / dtClose, sensorGap: Math.abs(cur.index - prev.index) });
   }
 
   return {
     open,
     close,
     distanceMm,
-    maxPositionMm: Math.max((act.length - 1) * distanceMm, 0),
+    maxPositionMm: Math.max(...act.map(sensor => sensor.positionMm), 0),
     sensorCount: act.length,
     reverseAxis,
   };

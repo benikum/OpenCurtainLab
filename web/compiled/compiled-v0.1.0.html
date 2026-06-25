@@ -2156,6 +2156,7 @@ function load() {
     const y = Number(h.sensorDistanceYmm);
     h.sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : DEFAULT_SENSOR_DISTANCE_X_MM;
     h.sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : DEFAULT_SENSOR_DISTANCE_Y_MM;
+    if (h.flash && typeof h.flash === 'object') delete h.flash['enabled'];
   });
   S.selectedProjId = loadedProjectIdMap.get(String(projectsStore.selectedProjId || '')) || projectsStore.selectedProjId || null;
   if (S.selectedProjId && !S.projects.some(p => p.id === S.selectedProjId)) S.selectedProjId = null;
@@ -3379,7 +3380,6 @@ function buildEntryFromPacket(d) {
       const triggerUs = Number(d.flash.triggerUs || 0);
       const detected = !!d.flash.detected && triggerUs > 0;
       flash = {
-        enabled: !!d.flash.enabled,
         detected,
         pin: d.flash.pin,
         raw: d.flash.raw,
@@ -4304,14 +4304,19 @@ function getCurtainSamples(entry) {
     .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs) && Number.isFinite(sensor.closeMs));
   if (sensors.length < 2) return null;
 
-  const ordered = sensors.sort((a, b) => a.openMs - b.openMs).map((sensor, positionIndex) => ({
-    ...sensor,
-    positionIndex,
-  }));
   const distanceMm = distanceForMode(entry.mode, entry);
   if (distanceMm == null) return null;
-  const reverseAxis = ordered.length > 1 && ordered[0].index > ordered[ordered.length - 1].index;
-  return { sensors: ordered, distanceMm, reverseAxis };
+
+  const ordered = sensors.sort((a, b) => a.openMs - b.openMs);
+  const originIndex = ordered[0].index;
+  const reverseAxis = ordered.length > 1 && originIndex > ordered[ordered.length - 1].index;
+  const positioned = ordered.map((sensor, positionIndex) => ({
+    ...sensor,
+    positionIndex,
+    positionMm: Math.abs(sensor.index - originIndex) * distanceMm,
+  }));
+
+  return { sensors: positioned, distanceMm, reverseAxis };
 }
 
 function curtainSpeedProfile(entry) {
@@ -4324,18 +4329,21 @@ function curtainSpeedProfile(entry) {
   for (let i = 1; i < act.length; i++) {
     const prev = act[i - 1];
     const cur = act[i];
-    const x = (i - 0.5) * distanceMm;
+    const physicalDistanceMm = Math.abs(cur.index - prev.index) * distanceMm;
+    if (physicalDistanceMm <= 0) continue;
+
+    const x = (prev.positionMm + cur.positionMm) / 2;
     const dtOpen = cur.openMs - prev.openMs;
     const dtClose = cur.closeMs - prev.closeMs;
-    if (dtOpen > 0) open.push({ x, v: distanceMm / dtOpen });
-    if (dtClose > 0) close.push({ x, v: distanceMm / dtClose });
+    if (dtOpen > 0) open.push({ x, v: physicalDistanceMm / dtOpen, sensorGap: Math.abs(cur.index - prev.index) });
+    if (dtClose > 0) close.push({ x, v: physicalDistanceMm / dtClose, sensorGap: Math.abs(cur.index - prev.index) });
   }
 
   return {
     open,
     close,
     distanceMm,
-    maxPositionMm: Math.max((act.length - 1) * distanceMm, 0),
+    maxPositionMm: Math.max(...act.map(sensor => sensor.positionMm), 0),
     sensorCount: act.length,
     reverseAxis,
   };
@@ -4987,7 +4995,6 @@ function normalizeImportedBackup(data) {
     const triggerUs = finiteNumber(raw.triggerUs, 0);
     const detected = !!raw.detected && triggerUs > 0;
     return {
-      enabled: !!raw.enabled,
       detected,
       pin: Number.isInteger(Number(raw.pin)) ? Number(raw.pin) : undefined,
       raw: Number.isFinite(Number(raw.raw)) ? Number(raw.raw) : 0,

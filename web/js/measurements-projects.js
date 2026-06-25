@@ -213,7 +213,6 @@ function buildEntryFromPacket(d) {
       const triggerUs = Number(d.flash.triggerUs || 0);
       const detected = !!d.flash.detected && triggerUs > 0;
       flash = {
-        enabled: !!d.flash.enabled,
         detected,
         pin: d.flash.pin,
         raw: d.flash.raw,

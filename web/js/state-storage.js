@@ -322,6 +322,7 @@ function load() {
     const y = Number(h.sensorDistanceYmm);
     h.sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : DEFAULT_SENSOR_DISTANCE_X_MM;
     h.sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : DEFAULT_SENSOR_DISTANCE_Y_MM;
+    if (h.flash && typeof h.flash === 'object') delete h.flash['enabled'];
   });
   S.selectedProjId = loadedProjectIdMap.get(String(projectsStore.selectedProjId || '')) || projectsStore.selectedProjId || null;
   if (S.selectedProjId && !S.projects.some(p => p.id === S.selectedProjId)) S.selectedProjId = null;

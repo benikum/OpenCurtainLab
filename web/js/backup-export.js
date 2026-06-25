@@ -161,7 +161,6 @@ function normalizeImportedBackup(data) {
     const triggerUs = finiteNumber(raw.triggerUs, 0);
     const detected = !!raw.detected && triggerUs > 0;
     return {
-      enabled: !!raw.enabled,
       detected,
       pin: Number.isInteger(Number(raw.pin)) ? Number(raw.pin) : undefined,
       raw: Number.isFinite(Number(raw.raw)) ? Number(raw.raw) : 0,

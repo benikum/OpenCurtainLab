@@ -3,11 +3,11 @@
   <head>
     <!--
       OpenCurtainLab Wi-Fi setup portal.
-      This readable source file is minified and gzip-compressed into SetupPortalHtml.h
+      This readable source file is cleaned and gzip-compressed into SetupPortalHtml.h
       by tools/release.py.
     -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>OpenCurtainLab Setup</title>
 
     <style>
@@ -20,7 +20,11 @@
         padding: 14px;
         background: #0c0e0d;
         color: #f0f4f0;
-        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
       }
 
       .card {
@@ -201,7 +205,9 @@
     <div class="card">
       <div class="logo">
         <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-          <path d="M456-600h320q-27-69-82.5-118.5T566-788L456-600Zm-92 80 160-276q-11-2-22-3t-22-1q-66 0-123 25t-101 67l108 188ZM170-400h218L228-676q-32 41-50 90.5T160-480q0 21 2.5 40.5T170-400Zm224 228 108-188H184q27 69 82.5 118.5T394-172Zm86 12q66 0 123-25t101-67L596-440 436-164q11 2 21.5 3t22.5 1Zm252-124q32-41 50-90.5T800-480q0-21-2.5-40.5T790-560H572l160 276ZM480-480Zm0 400q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Z"></path>
+          <path
+            d="M456-600h320q-27-69-82.5-118.5T566-788L456-600Zm-92 80 160-276q-11-2-22-3t-22-1q-66 0-123 25t-101 67l108 188ZM170-400h218L228-676q-32 41-50 90.5T160-480q0 21 2.5 40.5T170-400Zm224 228 108-188H184q27 69 82.5 118.5T394-172Zm86 12q66 0 123-25t101-67L596-440 436-164q11 2 21.5 3t22.5 1Zm252-124q32-41 50-90.5T800-480q0-21-2.5-40.5T790-560H572l160 276ZM480-480Zm0 400q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-155.5t86-127Q252-817 325-848.5T480-880q83 0 155.5 31.5t127 86q54.5 54.5 86 127T880-480q0 82-31.5 155t-86 127.5q-54.5 54.5-127 86T480-80Z"
+          ></path>
         </svg>
         <div>
           <div class="brand">OPEN<em>CURTAIN</em>LAB</div>
@@ -220,13 +226,13 @@
 
       <form id="wifiForm" onsubmit="submitCredentials(event)">
         <label for="ssid">SSID</label>
-        <input id="ssid" name="ssid" required autocomplete="off">
+        <input id="ssid" name="ssid" required autocomplete="off" />
 
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password">
+        <input id="password" name="password" type="password" autocomplete="current-password" />
 
         <label>
-          <input id="showPw" type="checkbox" style="width: auto; margin-right: 8px;" onchange="togglePassword(this)">
+          <input id="showPw" type="checkbox" style="width: auto; margin-right: 8px" onchange="togglePassword(this)" />
           Show password
         </label>
 
@@ -247,62 +253,67 @@
 
       // Escapes text before it is inserted as HTML.
       function escapeHtml(value) {
-        return String(value || '')
-          .split('&').join('&amp;')
-          .split('<').join('&lt;')
-          .split('>').join('&gt;')
-          .split('"').join('&quot;')
-          .split("'").join('&#39;');
+        return String(value || "")
+          .split("&")
+          .join("&amp;")
+          .split("<")
+          .join("&lt;")
+          .split(">")
+          .join("&gt;")
+          .split('"')
+          .join("&quot;")
+          .split("'")
+          .join("&#39;");
       }
 
       // Escapes text for safe use inside an HTML attribute.
       function escapeAttr(value) {
-        return escapeHtml(value).split('`').join('&#96;');
+        return escapeHtml(value).split("`").join("&#96;");
       }
 
       // Updates the status panel and visual status class.
       function setStatus(message, type) {
-        byId('status').className = 'status ' + (type || '');
-        byId('status').innerHTML = message;
+        byId("status").className = "status " + (type || "");
+        byId("status").innerHTML = message;
       }
 
       // Converts RSSI into a compact signal indicator.
       function signalBars(rssi) {
-        if (rssi > -55) return '||||';
-        if (rssi > -67) return '|||';
-        if (rssi > -78) return '||';
-        return '|';
+        if (rssi > -55) return "||||";
+        if (rssi > -67) return "|||";
+        if (rssi > -78) return "||";
+        return "|";
       }
 
       // Renders the current Wi-Fi provisioning status.
       function renderStatus(data) {
         if (!data) {
-          setStatus('Status unavailable.', 'bad');
+          setStatus("Status unavailable.", "bad");
           return;
         }
 
         if (data.lastError || data.error) {
-          setStatus('Wrong password or network unreachable.', 'bad');
+          setStatus("Wrong password or network unreachable.", "bad");
           return;
         }
 
         if (data.connected) {
-          setStatus('Connected to <b>' + escapeHtml(data.currentSsid || data.savedSsid || 'Wi-Fi') + '</b><br><code>opencurtainlab.local</code>', 'ok');
+          setStatus("Connected to <b>" + escapeHtml(data.currentSsid || data.savedSsid || "Wi-Fi") + "</b><br><code>opencurtainlab.local</code>", "ok");
           return;
         }
 
         if (data.hasSaved) {
-          setStatus('<b>' + escapeHtml(data.savedSsid) + '</b> saved.', '');
+          setStatus("<b>" + escapeHtml(data.savedSsid) + "</b> saved.", "");
           return;
         }
 
-        setStatus('No saved network.', '');
+        setStatus("No saved network.", "");
       }
 
       // Loads the provisioning status from the device.
       async function loadStatus() {
         try {
-          const response = await fetch('/wifi/status', { cache: 'no-store' });
+          const response = await fetch("/wifi/status", { cache: "no-store" });
           renderStatus(await response.json());
         } catch (error) {
           renderStatus(null);
@@ -311,17 +322,17 @@
 
       // Copies the selected network name into the SSID field.
       function selectNetwork(button) {
-        byId('ssid').value = button.dataset.ssid || '';
-        byId('password').focus();
+        byId("ssid").value = button.dataset.ssid || "";
+        byId("password").focus();
       }
 
       // Scans nearby Wi-Fi networks and renders selectable rows.
       async function scanNetworks() {
-        const networks = byId('networks');
+        const networks = byId("networks");
         networks.innerHTML = '<div class="small">Scanning...</div>';
 
         try {
-          const response = await fetch('/wifi/scan', { cache: 'no-store' });
+          const response = await fetch("/wifi/scan", { cache: "no-store" });
           const data = await response.json();
 
           if (!data.networks || !data.networks.length) {
@@ -333,14 +344,18 @@
             return b.rssi - a.rssi;
           });
 
-          networks.innerHTML = data.networks.map(function (network) {
-            const ssid = String(network.ssid || '');
-            const label = escapeHtml(ssid || '(hidden)');
-            const security = network.secure ? ' secured' : ' open';
-            const signal = signalBars(network.rssi) + ' ' + network.rssi + ' dBm' + security;
+          networks.innerHTML = data.networks
+            .map(function (network) {
+              const ssid = String(network.ssid || "");
+              const label = escapeHtml(ssid || "(hidden)");
+              const security = network.secure ? " secured" : " open";
+              const signal = signalBars(network.rssi) + " " + network.rssi + " dBm" + security;
 
-            return '<button type="button" class="net" data-ssid="' + escapeAttr(ssid) + '" onclick="selectNetwork(this)"><strong>' + label + '</strong><span>' + escapeHtml(signal) + '</span></button>';
-          }).join('');
+              return (
+                '<button type="button" class="net" data-ssid="' + escapeAttr(ssid) + '" onclick="selectNetwork(this)"><strong>' + label + "</strong><span>" + escapeHtml(signal) + "</span></button>"
+              );
+            })
+            .join("");
         } catch (error) {
           networks.innerHTML = '<div class="small">Scan failed.</div>';
         }
@@ -348,34 +363,34 @@
 
       // Toggles password visibility without changing the input value.
       function togglePassword(checkbox) {
-        byId('password').type = checkbox.checked ? 'text' : 'password';
+        byId("password").type = checkbox.checked ? "text" : "password";
       }
 
       // Sends credentials to the device and renders the connection-test result.
       async function submitCredentials(event) {
         event.preventDefault();
 
-        const ssid = byId('ssid');
-        const password = byId('password');
-        const connectButton = byId('connectBtn');
+        const ssid = byId("ssid");
+        const password = byId("password");
+        const connectButton = byId("connectBtn");
 
         connectButton.disabled = true;
-        setStatus('Testing <b>' + escapeHtml(ssid.value) + '</b>...', '');
+        setStatus("Testing <b>" + escapeHtml(ssid.value) + "</b>...", "");
 
         try {
-          const response = await fetch('/wifi', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ssid: ssid.value, password: password.value })
+          const response = await fetch("/wifi", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ssid: ssid.value, password: password.value }),
           });
           const data = await response.json();
 
           renderStatus(data);
           if (data.connected) {
-            setStatus('Connected. The setup AP will close.<br><code>opencurtainlab.local</code>', 'ok');
+            setStatus("Connected. The setup AP will close.<br><code>opencurtainlab.local</code>", "ok");
           }
         } catch (error) {
-          setStatus('Connection failed. Reconnect to the setup AP and try again.', 'bad');
+          setStatus("Connection failed. Reconnect to the setup AP and try again.", "bad");
         }
 
         connectButton.disabled = false;

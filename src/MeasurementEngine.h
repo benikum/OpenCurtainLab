@@ -103,9 +103,9 @@ public:
       count++;
     }
 
-    _result.valid = count > 0;
+    _result.valid = count >= MIN_VALID_SENSOR_COUNT;
     _result.activatedCount = count;
-    _summary.valid = count > 0;
+    _summary.valid = count >= MIN_VALID_SENSOR_COUNT;
     _summary.activatedCount = count;
 
     if (count > 0) {
@@ -114,7 +114,9 @@ public:
       _summary.avgDeviationStops = log2f(_summary.avgSeconds / targetSeconds);
       _summary.spreadStops = (count > 1 && minSeconds > 0) ? log2f(maxSeconds / minSeconds) : 0.0f;
       // Partial coverage is a measurement hint, not a blocking device error.
-      if (count < SENSOR_COUNT && _result.hint == MeasurementHint::None) {
+      if (count < MIN_VALID_SENSOR_COUNT && _result.hint == MeasurementHint::None) {
+        _result.hint = MeasurementHint::TooFewSensors;
+      } else if (count < SENSOR_COUNT && _result.hint == MeasurementHint::None) {
         _result.hint = MeasurementHint::IncompleteSensorCoverage;
       }
     }
@@ -208,7 +210,7 @@ private:
     _result.flash = _sm.getFlash();
     _result.mode = _mode;
     _result.activatedCount = _sm.countActivated();
-    _result.valid = _result.activatedCount > 0;
+    _result.valid = _result.activatedCount >= MIN_VALID_SENSOR_COUNT;
     updateBaseTimestamp();
   }
 

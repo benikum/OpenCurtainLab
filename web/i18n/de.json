@@ -34,8 +34,6 @@
     "customTimesInvalid": "Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.",
     "customTimesDuplicate": "Custom-Zielzeiten enthalten doppelte Werte",
     "customTimesTooMany": "Maximal 16 Custom-Zielzeiten erlaubt",
-    "customTimesLoaded": "Custom-Zeiten ins Gerät geladen",
-    "customTimesLoadFailed": "Custom-Zeiten konnten nicht geladen werden",
     "customTimesInvalidWithMax": "Custom-Zielzeiten ungültig. Nutze positive Zahlen bis 1/{max}, getrennt mit Komma.",
     "customTimesDefaulted": "Standardzeiten geladen",
     "localDataReset": "Lokale WebUI-Daten zurückgesetzt",
@@ -47,8 +45,8 @@
     "batteryLow": "Batterie niedrig: {voltage} V ({percent}%)."
   },
   "frame": {
-    "manualTitle": "OpenCurtainLab Anleitung",
-    "manualLoadFailed": "Die Anleitung konnte nicht geladen werden."
+    "tutorialTitle": "OpenCurtainLab Anleitung",
+    "tutorialLoadFailed": "Die Anleitung konnte nicht geladen werden."
   },
   "connection": {
     "connected": "VERBUNDEN",
@@ -156,7 +154,6 @@
     "closingCurtain": "Schließender Vorhang",
     "zeroMeas": "0 Mess.",
     "measShort": "Mess.",
-    "loadCustomTimes": "Custom-Zeiten laden",
     "series": "Messreihe",
     "defaultName": "Standardprojekt",
     "deleteProject": "Projekt löschen",
@@ -233,6 +230,11 @@
       "title": "Blitzkontakt bereits aktiv",
       "body": "Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.",
       "action": "Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."
+    },
+    "too_few_sensors": {
+      "title": "Zu wenige Sensoren wurden abgedeckt",
+      "body": "Die Messung hat weniger als drei Sensoren verwendet und bleibt nur im Standardprojekt.",
+      "action": "Kameraausrichtung prüfen und die Messung wiederholen."
     }
   },
   "deviceErrors": {
@@ -320,7 +322,8 @@
     "cancel": "Abbrechen",
     "create": "Erstellen",
     "resultDisplayOff": "gar nicht",
-    "oledSleepOff": "aus"
+    "oledSleepOff": "aus",
+    "pollIntervalMs": "Polling-Intervall (ms)"
   },
   "targetSeries": {
     "standard": "Standard",

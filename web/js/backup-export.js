@@ -1,4 +1,4 @@
-// Notes, backup/import, CSV export, modal helpers, toasts, and mock data injection.
+// Notes, backup/import, CSV export, modal helpers, toasts, and developer test-data injection.
 
 // ════════════════════════════════════════════
    // NOTE FIELD HELPERS
@@ -56,13 +56,12 @@ function calcCurtain(entry) {
 }
 
 
-// Move one measurement back to the default project.
+// Move one measurement back to the default project without changing the active project.
 function moveMeasurementToDefault(id) {
   ensureDefaultProject();
   const entry = S.history.find(h => h.id === id);
   if (!entry) return;
   entry.projId = DEFAULT_PROJECT_ID;
-  S.selectedProjId = DEFAULT_PROJECT_ID;
   saveAppData();
   renderProjList();
   renderHistList();
@@ -203,17 +202,23 @@ function normalizeImportedBackup(data) {
     const minSec = Math.min(...durations);
     const maxSec = Math.max(...durations);
     const hint = normalizeHint(raw);
+    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: raw.valid !== false, count: active.length });
+    if (projectInvalid && hint.hint === 'none' && active.length > 0 && active.length < MIN_VALID_SENSOR_COUNT) {
+      hint.hint = 'too_few_sensors';
+      hint.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
+      hint.hasHint = true;
+    }
     const geometry = currentMeasurementGeometry();
     const x = Number(raw.sensorDistanceXmm);
     const y = Number(raw.sensorDistanceYmm);
 
     const entry = Object.assign({}, raw, {
       id: makeSafeInternalId('m'),
-      projId: projectIdMap.get(String(raw.projId || '')) || DEFAULT_PROJECT_ID,
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : (projectIdMap.get(String(raw.projId || '')) || DEFAULT_PROJECT_ID),
       mode: normalizeMeasurementMode(raw.mode),
       targetFrac: target,
       ts: Number.isFinite(Number(raw.ts)) ? Number(raw.ts) : Date.now(),
-      valid: raw.valid !== false,
+      valid: !projectInvalid,
       sensors,
       flash: normalizeImportedFlash(raw.flash, baseUs),
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
@@ -250,6 +255,7 @@ async function importBackupJSON(file) {
     sanitizeMeasurementAssignments();
     S.uiSettings = sanitizeUiSettings(data.uiSettings || S.uiSettings || {});
     saveUiSettings();
+    startPollingLoop();
     S.selId = null;
     S.lastMeasId = S.history.length ? S.history[0].id : null;
     saveAppData();
@@ -277,6 +283,7 @@ function resetLocalWebUiData() {
   S.deviceConfig = null;
   S.deviceSettings = Object.assign({}, DEFAULT_DEVICE_SETTINGS);
   S.uiSettings = Object.assign({}, DEFAULT_UI_SETTINGS);
+  startPollingLoop();
   ensureDefaultProject();
   saveAppData();
   renderProjList();
@@ -287,35 +294,6 @@ function resetLocalWebUiData() {
   toast(tx('toast.localDataReset', 'Local WebUI data reset'), 'success');
 }
 
-// Load custom target times from the active project into the device settings form.
-async function loadProjectCustomTimes(projId) {
-  const p = S.projects.find(x => x.id === projId);
-  if (!p || projectTargetSeries(p) !== 'custom') return;
-  const times = (Array.isArray(p.customTargetTimes) && p.customTargetTimes.length ? p.customTargetTimes : p.times)
-    .map(Number).filter(v => Number.isFinite(v) && v > 0);
-  if (!times.length) { toast(tx('toast.noTargetTimesSelected', 'Select at least one target time'), 'warning'); return; }
-  const maxT = deviceMaxTargetTime();
-  if (times.some(v => v > maxT)) {
-    toast(tf('toast.customTimesInvalidWithMax', 'Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.', {max: maxT}), 'warning');
-    return;
-  }
-  if (!S.deviceBase && !(await initDeviceConnection(true))) return;
-  try {
-    const body = { targetSeries: 'custom', customTargetTimes: times };
-    const r = await fetch(api('/config'), {
-      method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(body), signal: AbortSignal.timeout(2500)
-    });
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    applyConfigPostResponse(d);
-    saveDeviceConfigLocal();
-    renderSettingsControls();
-    toast(tx('toast.customTimesLoaded', 'Custom times loaded into the device'), 'success');
-  } catch (e) {
-    toast(tx('toast.customTimesLoadFailed', 'Custom times could not be loaded'), 'error');
-  }
-}
 
 // ════════════════════════════════════════════
    // CSV EXPORT

@@ -35,12 +35,14 @@
 #define PIN_BATTERY_ADC   33
 #define PIN_FLASH_SENSOR  14
 
-// Button Pins
+// Buttons
 #define PIN_BTN_UP        25
 #define PIN_BTN_DOWN      26
 #define PIN_BTN_SELECT    27
+#define DEBOUNCE_MS       50UL
+#define MODE_HOLD_MS      1000UL
 
-// Optional battery voltage monitor.
+// Battery voltage monitor
 static constexpr bool BATTERY_MONITOR_ENABLED = true;
 #define BATTERY_DIVIDER_HIGH_OHMS  330000.0f
 #define BATTERY_DIVIDER_LOW_OHMS   100000.0f
@@ -62,9 +64,7 @@ static constexpr int SENSOR_COUNT = 5;
 static constexpr float SENSOR_DISTANCE_X_MM = 13.17f;
 static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 
-// Runtime sensitivity presets use absolute ADC hysteresis thresholds.
-// Phototransistors are expected to pull the ADC value downward when light reaches a sensor.
-// Active: raw <= ON threshold. Released: raw >= OFF threshold.
+// Runtime sensitivity presets use absolute ADC hysteresis thresholds
 #define SENSOR_ON_THRESHOLD_LOW      1100
 #define SENSOR_OFF_THRESHOLD_LOW     1250
 #define SENSOR_ON_THRESHOLD_MEDIUM   2100
@@ -78,9 +78,6 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define MEASUREMENT_LATE_SENSOR_SETTLE_MS 120UL
 #define FLASH_TO_SENSOR_TIMEOUT_MS   250UL
 
-// Buttons
-#define DEBOUNCE_MS       50UL
-#define MODE_HOLD_MS      1000UL
 
 // Factory defaults for runtime settings
 #define DEFAULT_MEASUREMENT_MODE    "horizontal"
@@ -89,3 +86,5 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define DEFAULT_SENSOR_SENSITIVITY  "medium"
 #define DEFAULT_RESULT_DISPLAY      "until_button"
 #define DEFAULT_OLED_SLEEP_MINUTES  5
+
+#define MIN_VALID_SENSOR_COUNT      3

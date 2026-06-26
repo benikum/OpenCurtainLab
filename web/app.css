@@ -331,7 +331,7 @@ header {
 .h-dev.warn { color: var(--orange); }
 .h-dev.pos  { color: var(--red); }
 .h-dev.neg  { color: var(--red); }
-.h-mode { grid-column:3; grid-row:1/3; align-self:center; justify-self:end; display:flex; align-items:center; gap:6px; max-width:96px; color:var(--tx2); font-size:10px; line-height:1; text-align:right; text-transform:uppercase; }
+.h-mode { grid-column:3; grid-row:1/3; align-self:center; justify-self:end; display:flex; align-items:center; justify-content:center; max-width:28px; color:var(--tx2); font-size:10px; line-height:1; text-align:right; text-transform:uppercase; }
 .h-mode-empty { color:var(--tx4); }
 .h-dir-icon { width:16px; height:16px; flex:0 0 16px; display:inline-grid; place-items:center; color:var(--tx3); }
 .h-dir-icon svg { width:15px; height:15px; display:block; fill:currentColor; transform:rotate(var(--dir-rot, 0deg)); transform-origin:center; }
@@ -675,7 +675,7 @@ input[type="text"]:focus,
    Tutorial files are stored as HTML fragments under web/tutorial/.
    They share the main Web UI tokens and components; no tutorial-local CSS is kept
    in the fragment files so the single-file build stays compact and consistent. */
-.manual-page.tutorial {
+.tutorial-page.tutorial {
   max-width: 980px;
   margin: 0 auto;
   padding: 0;
@@ -1060,6 +1060,8 @@ canvas#tl {
   text-align: left;
 }
 .notice-card ol { margin: 8px 0 0 18px; color: var(--tx2); font-size: 11px; line-height: 1.5; }
+.notice-card.notice-warning { padding-bottom: 14px; }
+.notice-card.notice-warning + .metrics-row { margin-top: 14px; }
 .notice-title { color: var(--tx1); font-size: 12px; margin-bottom: 5px; }
 .notice-body, .notice-action { color: var(--tx3); font-size: 11px; line-height: 1.4; }
 .notice-action { margin-top: 5px; color: var(--tx2); }

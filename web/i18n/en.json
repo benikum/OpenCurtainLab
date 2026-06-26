@@ -34,8 +34,6 @@
     "customTimesInvalid": "Invalid custom target times. Use positive numbers separated by commas.",
     "customTimesDuplicate": "Custom target times contain duplicates",
     "customTimesTooMany": "Maximum 16 custom target times allowed",
-    "customTimesLoaded": "Custom times loaded into the device",
-    "customTimesLoadFailed": "Custom times could not be loaded",
     "customTimesInvalidWithMax": "Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.",
     "customTimesDefaulted": "Standard target times loaded",
     "localDataReset": "Local WebUI data reset",
@@ -47,8 +45,8 @@
     "batteryLow": "Battery low: {voltage} V ({percent}%)."
   },
   "frame": {
-    "manualTitle": "OpenCurtainLab Guide",
-    "manualLoadFailed": "The guide could not be loaded."
+    "tutorialTitle": "OpenCurtainLab Guide",
+    "tutorialLoadFailed": "The guide could not be loaded."
   },
   "connection": {
     "connected": "CONNECTED",
@@ -156,7 +154,6 @@
     "closingCurtain": "Closing curtain",
     "zeroMeas": "0 meas.",
     "measShort": "meas.",
-    "loadCustomTimes": "Load custom times",
     "series": "Time series",
     "defaultName": "Default project",
     "deleteProject": "Delete project",
@@ -233,6 +230,11 @@
       "title": "Flash contact already active",
       "body": "The flash contact was already closed when the device tried to arm the measurement.",
       "action": "Check the flash sync cable and camera contact. The input must be open before release."
+    },
+    "too_few_sensors": {
+      "title": "Too few sensors were covered",
+      "body": "The measurement used fewer than three sensors and is kept only in the default project.",
+      "action": "Check camera alignment and repeat the measurement."
     }
   },
   "deviceErrors": {
@@ -320,7 +322,8 @@
     "cancel": "Cancel",
     "create": "Create",
     "resultDisplayOff": "off",
-    "oledSleepOff": "off"
+    "oledSleepOff": "off",
+    "pollIntervalMs": "Polling interval (ms)"
   },
   "targetSeries": {
     "standard": "Standard",

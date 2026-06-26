@@ -29,7 +29,7 @@ function init() {
   initDeviceConnection(false).then(() => poll());
   renderEmptyStateIfNeeded();
   updateLanguageButton();
-  setInterval(poll, POLL_MS);
+  startPollingLoop();
   window.addEventListener('resize', () => {
     const e = S.history.find(h => h.id === S.selId);
     if (e) requestAnimationFrame(() => { drawTimeline(e); drawCurtainTimeChart(e); });

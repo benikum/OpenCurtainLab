@@ -7,10 +7,14 @@ const ALL_TIMES     = [1,2,4,8,15,30,60,125,250,500,1000,2000];
 const DEFAULT_CUSTOM_TIMES = [1,2,5,10,25,50,100,250,500,1000,2000];
 const DEFAULT_SENSOR_DISTANCE_X_MM = 13.17;
 const DEFAULT_SENSOR_DISTANCE_Y_MM = 7.67;
+const MIN_VALID_SENSOR_COUNT = 3;
+const PROJECT_INVALID_HINTS = ['timeout_with_data', 'too_few_sensors'];
 const ID_COLORS = ['#f5b030','#68a8e0','#56c47e','#e86060','#c47aff'];
 const ID_BG     = ['rgba(245,176,48,0.18)','rgba(104,168,224,0.18)',
                        'rgba(86,196,126,0.18)','rgba(232,96,96,0.18)','rgba(196,122,255,0.18)'];
-const POLL_MS = 1000;
+const DEFAULT_POLL_INTERVAL_MS = 1000;
+const MIN_POLL_INTERVAL_MS = 200;
+const MAX_POLL_INTERVAL_MS = 10000;
 const STATUS_POLL_MS = 20000;
 const LS_HISTORY_KEY = 'ocl_history_v1';
 const LS_PROJECTS_KEY = 'ocl_projects_v1';
@@ -36,7 +40,7 @@ const DEFAULT_DEVICE_SETTINGS = {
   oledSleepMinutes: 5
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
-const DEFAULT_UI_SETTINGS = { interpolateCharts: false };
+const DEFAULT_UI_SETTINGS = { interpolateCharts: false, pollIntervalMs: DEFAULT_POLL_INTERVAL_MS };
 
 
 // Console-only developer helpers are disabled unless explicitly enabled through ?dev=1 or localStorage.ocl_dev_tools=1.
@@ -86,6 +90,7 @@ let S = {
   deviceSettings: Object.assign({}, DEFAULT_DEVICE_SETTINGS),
   targetTimes: ALL_TIMES.slice(),
   uiSettings: Object.assign({}, DEFAULT_UI_SETTINGS),
+  pollTimer: null,
 };
 
 
@@ -168,12 +173,32 @@ function projectSupportsMeasurement(p, targetFrac, mode) {
          times.includes(target);
 }
 
+// Return whether a measurement must stay in the default diagnostics bucket.
+function isProjectInvalidMeasurement(entry) {
+  if (!entry) return false;
+  if (entry.valid === false) return true;
+  const count = Number(entry.count);
+  if (Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) return true;
+  const hint = String(entry.hint || 'none');
+  return PROJECT_INVALID_HINTS.includes(hint);
+}
+
 // Move measurements away from projects that no longer support them.
 function sanitizeMeasurementAssignments() {
   ensureDefaultProject();
   S.history.forEach(entry => {
     const p = projectById(entry.projId);
-    if (!projectSupportsMeasurement(p, entry.targetFrac, entry.mode)) {
+    const invalid = isProjectInvalidMeasurement(entry);
+    if (invalid) {
+      entry.valid = false;
+      const count = Number(entry.count);
+      if ((!entry.hint || entry.hint === 'none') && Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) {
+        entry.hint = 'too_few_sensors';
+        entry.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
+        entry.warning = entry.hintText;
+      }
+    }
+    if (invalid || !projectSupportsMeasurement(p, entry.targetFrac, entry.mode)) {
       entry.projId = DEFAULT_PROJECT_ID;
     }
   });
@@ -187,7 +212,7 @@ function activeProjectIdForMeasurement(targetFrac, mode) {
 
 // Return all measurements assigned to a project.
 function projectEntries(projId, includeErrors = true) {
-  return S.history.filter(h => h.projId === projId && (includeErrors || !h.isError));
+  return S.history.filter(h => h.projId === projId && (includeErrors || (!h.isError && h.valid !== false)));
 }
 
 // Return all measurements for the selected project.
@@ -228,6 +253,13 @@ function removeStorageKey(key) {
     if (typeof console !== 'undefined' && console.warn) console.warn('OpenCurtainLab localStorage remove failed', key, e);
     return false;
   }
+}
+
+// Clamp the WebUI polling interval to a practical range.
+function normalizePollIntervalMs(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_POLL_INTERVAL_MS;
+  return Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, n));
 }
 
 function isSafeInternalId(value) {
@@ -271,7 +303,8 @@ function saveDeviceConfigLocal() {
 // Persist UI-only preferences.
 function saveUiSettings() {
   writeJsonStorage(LS_UI_KEY, {
-    interpolateCharts: !!(S.uiSettings && S.uiSettings.interpolateCharts)
+    interpolateCharts: !!(S.uiSettings && S.uiSettings.interpolateCharts),
+    pollIntervalMs: normalizePollIntervalMs(S.uiSettings && S.uiSettings.pollIntervalMs)
   });
 }
 
@@ -279,7 +312,8 @@ function saveUiSettings() {
 function sanitizeUiSettings(input) {
   const raw = Object.assign({}, input || {});
   return {
-    interpolateCharts: raw.interpolateCharts === true
+    interpolateCharts: raw.interpolateCharts === true,
+    pollIntervalMs: normalizePollIntervalMs(raw.pollIntervalMs)
   };
 }
 

@@ -12,7 +12,7 @@ function setContentEmptyView(enabled) {
   if (content) content.classList.toggle('empty-view', !!enabled);
 }
 
-const SIDEBAR_TOOL_BUTTON_IDS = ['github-btn', 'manual-toggle-btn', 'language-btn', 'settings-toggle-btn'];
+const SIDEBAR_TOOL_BUTTON_IDS = ['github-btn', 'tutorial-toggle-btn', 'language-btn', 'settings-toggle-btn'];
 
 // Keep sidebar tool highlighting mutually exclusive.
 function setSidebarToolActive(btnId) {
@@ -163,7 +163,7 @@ function showTutorialHtml(html, title) {
   if (!content) return;
   S.selId = null;
   renderHistList();
-  setSidebarToolActive('manual-toggle-btn');
+  setSidebarToolActive('tutorial-toggle-btn');
   setToolPanel('language-panel', 'language-btn', false);
   setContentEmptyView(false);
   setContentFlush(false);
@@ -178,9 +178,7 @@ function showTutorialHtml(html, title) {
 function getEmbeddedTutorialHtml() {
   const lang = getUiLanguage();
   const el = document.getElementById('ocl-tutorial-' + lang)
-    || document.getElementById('ocl-tutorial-en')
-    || document.getElementById('ocl-manual-' + lang)
-    || document.getElementById('ocl-manual-en');
+    || document.getElementById('ocl-tutorial-en');
   return el ? (el.innerHTML || el.textContent || '') : '';
 }
 
@@ -193,8 +191,8 @@ function getTutorialUrl() {
 }
 
 // Load and show the tutorial for the active language.
-function showManualPage() {
-  const title = tx('frame.manualTitle', 'OpenCurtainLab Guide');
+function showTutorialPage() {
+  const title = tx('frame.tutorialTitle', 'OpenCurtainLab Guide');
   const html = getEmbeddedTutorialHtml();
   if (html) {
     showTutorialHtml(html, title);
@@ -206,11 +204,11 @@ function showManualPage() {
     .catch(() => {
       const content = document.getElementById('content');
       if (!content) return;
-      setSidebarToolActive('manual-toggle-btn');
+      setSidebarToolActive('tutorial-toggle-btn');
       setToolPanel('language-panel', 'language-btn', false);
       setContentEmptyView(true);
       setContentFlush(false);
-      content.innerHTML = `<div class="empty"><div class="empty-ico">?</div><div class="empty-txt">${esc(title)}</div><div class="empty-sub">${esc(tx('frame.manualLoadFailed', 'The guide could not be loaded.'))}</div></div>`;
+      content.innerHTML = `<div class="empty"><div class="empty-ico">?</div><div class="empty-txt">${esc(title)}</div><div class="empty-sub">${esc(tx('frame.tutorialLoadFailed', 'The guide could not be loaded.'))}</div></div>`;
     });
 }
 
@@ -257,7 +255,7 @@ function syncLanguageUrl(lang) {
 // Check whether the tutorial is currently displayed.
 function isTutorialPageVisible() {
   const content = document.getElementById('content');
-  return !!(content && content.querySelector('.manual-page.tutorial'));
+  return !!(content && content.querySelector('.tutorial-page.tutorial'));
 }
 
 // Refresh all visible UI sections after a language switch.
@@ -273,7 +271,7 @@ function rerenderAfterLanguageChange() {
   renderDeviceConfigSummary();
   renderWebUiVersionSummary();
 
-  if (tutorialVisible) showManualPage();
+  if (tutorialVisible) showTutorialPage();
   else if (isSettingsPageVisible()) showSettingsPage();
   else if (S.selId) renderDetailView(S.selId);
   else renderEmptyStateIfNeeded();

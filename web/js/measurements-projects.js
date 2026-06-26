@@ -139,21 +139,17 @@ function ingestMeasurement(d) {
   const h = normalizeHint(d);
   if (h.hasHint) notifyMeasurementHint({ id: d.id, hint: h.hint, hintText: h.hintText });
 
-  // Store only valid measurements. Measurement hints remain part of valid
-  // measurements, but invalid diagnostic packets are not added to history.
-  if (d.valid === false) return false;
-
+  // Store measurements with raw timing data even when they are invalid for camera projects.
+  // They are kept in the default project for diagnostics and excluded from project scores.
   const previouslyActive = activeProject();
   const entry = buildEntryFromPacket(d);
   if (!entry) return false;
 
-  const movedToDefault = previouslyActive &&
+  const assignedToDefault = previouslyActive &&
     !isDefaultProject(previouslyActive) &&
-    entry.projId === DEFAULT_PROJECT_ID &&
-    !projectSupportsMeasurement(previouslyActive, entry.targetFrac, entry.mode);
+    entry.projId === DEFAULT_PROJECT_ID;
 
-  if (movedToDefault) {
-    S.selectedProjId = DEFAULT_PROJECT_ID;
+  if (assignedToDefault) {
     toast(tx('toast.measurementAssignedToDefaultIncompatible', 'Measurement assigned to the default project because it does not match the selected project.'), 'warning');
   }
 
@@ -162,8 +158,14 @@ function ingestMeasurement(d) {
   saveAppData();
   renderProjList();
   renderHistList();
-  selectEntry(entry.id, false);
-  redirectToLatestMeasurement();
+
+  if (entry.projId === S.selectedProjId) {
+    selectEntry(entry.id, false);
+    redirectToLatestMeasurement();
+  } else {
+    renderEmptyStateIfNeeded();
+  }
+
   requestAnimationFrame(() => {
     const el = document.getElementById('he-' + entry.id);
     if (el) el.classList.add('new-flash');
@@ -174,8 +176,6 @@ function ingestMeasurement(d) {
 // Convert raw firmware measurement data into a WebUI history entry.
 function buildEntryFromPacket(d) {
   if (!d || !d.id) return null;
-  if (d.valid === false) return null;
-
   // Current firmware interface: baseUs plus per-sensor openUs/closeUs timestamps.
   if (d.baseUs != null && Array.isArray(d.sensors)) {
     const target = Number(d.target || 0);
@@ -222,12 +222,19 @@ function buildEntryFromPacket(d) {
     }
 
     const h = normalizeHint(d);
+    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: d.valid !== false, count: act.length });
+    if (projectInvalid && h.hint === 'none' && act.length > 0 && act.length < MIN_VALID_SENSOR_COUNT) {
+      h.hint = 'too_few_sensors';
+      h.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
+      h.hasHint = true;
+    }
+    if (!act.length) return null;
     const geometry = currentMeasurementGeometry();
     const x = Number(d.sensorDistanceXmm);
     const y = Number(d.sensorDistanceYmm);
     const entry = {
       id: d.id,
-      valid: true,
+      valid: !projectInvalid,
       ts: Date.now(),
       targetFrac: target,
       mode: normalizeMeasurementMode(d.mode),
@@ -243,7 +250,7 @@ function buildEntryFromPacket(d) {
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
-      projId: activeProjectIdForMeasurement(target, normalizeMeasurementMode(d.mode)),
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, normalizeMeasurementMode(d.mode)),
       raw: d,
     };
     entry.flashSyncOk = isFlashSyncOk(entry);
@@ -318,7 +325,8 @@ function historyCentralIconHtml() {
 function historyModeHtml(entry) {
   const mode = normalizeMeasurementMode(entry && entry.mode);
   const icon = mode === 'central' ? historyCentralIconHtml() : historyDirectionArrowHtml(entry);
-  return `<div class="h-mode"><span>${esc(modeLabel(mode))}</span>${icon}</div>`;
+  const label = measurementModeSummary(entry);
+  return `<div class="h-mode" title="${esc(label)}">${icon}</div>`;
 }
 
 // Return a localized label for a target-time series.

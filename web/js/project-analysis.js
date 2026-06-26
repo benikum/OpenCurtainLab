@@ -259,6 +259,7 @@ function showProject(projId) {
   if (!p) return;
   S.selectedProjId = projId;
   saveAppData();
+  if (!isDefaultProject(p)) syncProjectSettingsToDevice(p);
   renderProjList();
   renderHistList();
 
@@ -280,7 +281,6 @@ function showProject(projId) {
       <div class="card-hdr">
         <span class="card-title">${esc(p.name)} — ${modeLabel(p.mode)}</span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          ${projectTargetSeries(p) === 'custom' ? `<button class="btn btn-amber btn-sm" onclick="loadProjectCustomTimes('${projId}')">${esc(tx('project.loadCustomTimes', 'Load custom times'))}</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="exportProjCSV('${projId}')">CSV EXPORT</button>
         </div>
       </div>
@@ -492,7 +492,7 @@ function renderEmptyStateIfNeeded() {
   const content = document.getElementById('content');
   if (!content) return;
 
-  const hasRealContent = content.querySelector('.card, canvas, table, .manual-page, .help-page, .settings-page');
+  const hasRealContent = content.querySelector('.card, canvas, table, .tutorial-page, .settings-page');
   if (S.selId || hasRealContent) return;
 
   let title, sub, iconKind = 'aperture', action = '', stateKey = 'idle';

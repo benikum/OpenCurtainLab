@@ -187,7 +187,8 @@ enum class MeasurementHint : uint8_t {
   FlashAlreadyActiveAtStart,
   FlashWithoutSensor,
   TimeoutWithData,
-  IncompleteSensorCoverage
+  IncompleteSensorCoverage,
+  TooFewSensors
 };
 
 // Converts a measurement hint to its API key.
@@ -199,6 +200,7 @@ static inline const char* measurementHintKey(MeasurementHint hint) {
     case MeasurementHint::FlashWithoutSensor: return "flash_without_sensor";
     case MeasurementHint::TimeoutWithData: return "timeout_with_data";
     case MeasurementHint::IncompleteSensorCoverage: return "incomplete_sensor_coverage";
+    case MeasurementHint::TooFewSensors: return "too_few_sensors";
   }
   return "unknown";
 }
@@ -212,6 +214,7 @@ static inline const char* measurementHintText(MeasurementHint hint) {
     case MeasurementHint::FlashWithoutSensor: return "Flash contact triggered, but no sensor activated";
     case MeasurementHint::TimeoutWithData: return "Timeout: measurement finished with available raw data";
     case MeasurementHint::IncompleteSensorCoverage: return "Incomplete measurement: not all sensors were covered";
+    case MeasurementHint::TooFewSensors: return "Too few sensors covered for a valid measurement";
   }
   return "Unknown measurement hint";
 }

@@ -18,6 +18,17 @@ function httpStatusError(response) {
   return err;
 }
 
+// Return the current WebUI polling interval in milliseconds.
+function currentPollIntervalMs() {
+  return normalizePollIntervalMs(S.uiSettings && S.uiSettings.pollIntervalMs);
+}
+
+// Restart the measurement polling loop after interval changes.
+function startPollingLoop() {
+  if (S.pollTimer) clearInterval(S.pollTimer);
+  S.pollTimer = setInterval(poll, currentPollIntervalMs());
+}
+
 // Run one background polling cycle for measurement data. /status is rate-limited by STATUS_POLL_MS.
 // Device discovery is intentionally not retried here; otherwise the empty start screen
 // is rebuilt every polling tick while the device is offline. Manual Connect still retries.
@@ -476,6 +487,7 @@ function renderSettingsControls() {
   const customEl = document.getElementById('set-custom-target-times');
   const addrEl = document.getElementById('device-address-input');
   const interpEl = document.getElementById('ui-interpolate-charts');
+  const pollEl = document.getElementById('ui-poll-interval-ms');
   if (seriesSel) seriesSel.value = st.targetSeries || 'standard';
   if (sensSel) sensSel.value = SENSOR_SENSITIVITIES.includes(st.sensorSensitivity) ? st.sensorSensitivity : DEFAULT_DEVICE_SETTINGS.sensorSensitivity;
   if (resultSel) resultSel.value = st.resultDisplay || 'until_button';
@@ -483,10 +495,12 @@ function renderSettingsControls() {
   if (customEl) customEl.value = Array.isArray(st.customTargetTimes) ? st.customTargetTimes.join(',') : standardTargetTimes().join(',');
   if (addrEl) addrEl.value = S.deviceHost || DEFAULT_DEVICE_HOST;
   if (interpEl) interpEl.checked = !!(S.uiSettings && S.uiSettings.interpolateCharts);
+  if (pollEl) pollEl.value = String(currentPollIntervalMs());
   setCustomTargetTimesError('');
   setDeviceAddressError('');
   onTargetSeriesChanged(false);
   bindSettingsChangeHandlers();
+  bindBackupFileInput();
   S.settingsSnapshot = snapshotSettingsForm();
   S.settingsDirty = false;
   S.settingsSaving = false;
@@ -541,6 +555,16 @@ function setChartInterpolation(enabled) {
   if (entry) requestAnimationFrame(() => drawCurtainTimeChart(entry));
   const project = activeProject();
   if (project && !isDefaultProject(project)) requestAnimationFrame(() => drawCurtainChart(project));
+}
+
+// Save and apply the WebUI polling interval.
+function setPollingIntervalMs(value) {
+  const interval = normalizePollIntervalMs(value);
+  S.uiSettings = Object.assign({}, DEFAULT_UI_SETTINGS, S.uiSettings || {}, { pollIntervalMs: interval });
+  saveUiSettings();
+  const input = document.getElementById('ui-poll-interval-ms');
+  if (input) input.value = String(interval);
+  startPollingLoop();
 }
 
 // Attach event handlers for settings controls once.
@@ -730,6 +754,53 @@ async function saveDeviceSettings() {
 async function ensureDeviceConnection(showMessages = true) {
   if (S.deviceBase) return true;
   return initDeviceConnection(showMessages);
+}
+
+function arraysEqualNumberList(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (Number(a[i]) !== Number(b[i])) return false;
+  return true;
+}
+
+function projectTargetTimes(p) {
+  const values = Array.isArray(p && p.times) ? p.times : [];
+  return values.map(Number).filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
+}
+
+function deviceSettingsForProject(p) {
+  const times = projectTargetTimes(p);
+  if (!p || isDefaultProject(p) || !times.length) return null;
+
+  const standard = standardTargetTimes();
+  const useStandard = projectTargetSeries(p) === 'standard' && arraysEqualNumberList(times, standard);
+  const currentDefault = Number(S.deviceSettings && S.deviceSettings.defaultTargetTime);
+  const defaultTargetTime = times.includes(currentDefault) ? currentDefault : times[0];
+  const body = {
+    defaultMeasurementMode: normalizeMeasurementMode(p.mode),
+    defaultTargetTime,
+    targetSeries: useStandard ? 'standard' : 'custom'
+  };
+  if (!useStandard) body.customTargetTimes = times;
+  return body;
+}
+
+async function syncProjectSettingsToDevice(p) {
+  if (!S.deviceBase) return false;
+  const body = deviceSettingsForProject(p);
+  if (!body) return false;
+  try {
+    const r = await fetch(api('/config'), {
+      method: 'POST', mode: 'cors', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body), signal: AbortSignal.timeout(2200)
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    applyConfigPostResponse(d);
+    saveDeviceConfigLocal();
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Fetch live sensor diagnostics for developer console use.

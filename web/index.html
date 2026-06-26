@@ -90,8 +90,8 @@
                 class="btn btn-ghost btn-sm btn-icon"
                 data-i18n-aria-label="html.guide"
                 data-i18n-title="html.guide"
-                id="manual-toggle-btn"
-                onclick="showManualPage()"
+                id="tutorial-toggle-btn"
+                onclick="showTutorialPage()"
                 title="Guide"
               >
                 <svg aria-hidden="true" class="svg-icon" fill="currentColor" focusable="false" viewbox="0 -960 960 960" xmlns="http://www.w3.org/2000/svg">
@@ -142,6 +142,10 @@
                       <button class="btn btn-amber btn-sm" data-i18n="html.connect" onclick="connectToDeviceAddress()">Connect</button>
                     </div>
                     <div aria-live="polite" class="settings-error" id="device-address-error"></div>
+                  </div>
+                  <div class="settings-line">
+                    <label data-i18n="html.pollIntervalMs" for="ui-poll-interval-ms">Polling interval (ms)</label>
+                    <input class="settings-full-input" id="ui-poll-interval-ms" min="200" max="10000" onchange="setPollingIntervalMs(this.value)" step="100" type="number" />
                   </div>
                   <div class="settings-info-list" id="settings-device-info"></div>
                 </div>

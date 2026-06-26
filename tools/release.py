@@ -3,9 +3,7 @@
 
 This script updates version references, regenerates the embedded setup portal,
 and builds the self-contained WebUI release file. It keeps the generated HTML
-readable and only removes standalone JavaScript comment lines. The former
-standalone build scripts now delegate to this file so release generation has a
-single entry point.
+readable and only removes standalone JavaScript comment lines.
 """
 from __future__ import annotations
 
@@ -403,13 +401,12 @@ def build_webui(
     html_out = html_out.replace('<!-- OCL_INLINE_CSS -->', '<style>\n' + css + '\n</style>')
     html_out = html_out.replace('<!-- OCL_INLINE_I18N -->', script_tag('ocl-i18n-all', 'application/json', i18n_blob))
     html_out = html_out.replace('<!-- OCL_INLINE_TUTORIALS -->', '\n'.join(tutorials))
-    html_out = html_out.replace('<!-- OCL_INLINE_MANUALS -->', '\n'.join(tutorials))
     html_out = html_out.replace('<!-- OCL_INLINE_JS -->', '<script>\n' + js.replace('</script', '<\\/script') + '\n</script>')
 
     missing = [
         marker for marker in (
             'OCL_INLINE_CSS', 'OCL_INLINE_I18N', 'OCL_INLINE_TUTORIALS',
-            'OCL_INLINE_MANUALS', 'OCL_INLINE_JS'
+            'OCL_INLINE_JS'
         ) if marker in html_out
     ]
     if missing:

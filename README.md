@@ -16,7 +16,7 @@ OpenCurtainLab is designed for camera repair, shutter testing, calibration work,
 ### Hardware-focused measurement
 
 - Five optical sensor channels for focal-plane shutter timing
-- Measurement modes for horizontal and vertical travel focal-plane shutters and leaf shutters.
+- Measurement modes for horizontal and vertical travel focal-plane shutters and leaf shutters
 - Flash-sync input for checking X-sync behavior
 - OLED display for device status, WiFi information, measurement state, and quick results
 - Three-button local control for operation without a computer during basic use
@@ -24,18 +24,18 @@ OpenCurtainLab is designed for camera repair, shutter testing, calibration work,
 
 ### Standalone WebUI
 
-- Runs in a normal browser after being downloaded from the device.
-- Connects to the ESP32 over the local network.
-- Shows exposure time, deviation from target speed, shutter spread, and measurement hints.
-- Provides timeline, curtain-speed, and flash-sync visualizations.
-- Stores projects and measurement history in the browser.
-- Supports import, export, CSV export, and mock/demo data.
+- Runs in a normal browser after being downloaded from the device
+- Connects to the ESP32 over the local network
+- Shows exposure time, deviation from target speed, shutter spread, and measurement hints
+- Provides timeline, curtain-speed, and flash-sync visualizations
+- Stores projects and measurement history in the browser
+- Supports import, export and CSV export
 
 ### Open local API
 
-- Local HTTP API for status, configuration, diagnostics, and raw measurement data.
-- JSON responses for easy integration with scripts, tools, or alternative UIs.
-- Sensor diagnostics endpoint for setup and troubleshooting.
+- Local HTTP API for status, configuration, diagnostics, and raw measurement data
+- JSON responses for easy integration with scripts, tools, or alternative UIs
+- Sensor diagnostics endpoint for setup and troubleshooting
 
 ## Project structure
 

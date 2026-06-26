@@ -86,7 +86,7 @@ Firmware detection model:
 | Medium | 2100 | 2250 |
 | High | 3100 | 3250 |
 
-Use `GET /sensors` or the WebUI sensor diagnostics to verify that dark readings are close to the upper ADC range and illuminated readings cross the selected threshold.
+Use `GET /sensors` or, in WebUI dev mode, the oclSensors() console helper.
 
 ![Sensor wiring placeholder](images/wiring-sensors.jpg)
 

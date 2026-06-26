@@ -392,6 +392,7 @@ Measurement hint keys:
 | `flash_without_sensor` | Flash input fired but no sensor was covered. |
 | `timeout_with_data` | Measurement timed out after partial data. |
 | `incomplete_sensor_coverage` | Not all five sensors were covered. |
+| `too_few_sensors` | Fewer than three sensors were covered; the measurement is diagnostic only. |
 
 ## `GET /sensors`
 

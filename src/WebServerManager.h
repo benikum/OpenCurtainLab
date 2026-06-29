@@ -94,9 +94,23 @@ public:
   // Returns the current sanitized runtime settings.
   const RuntimeSettings& getSettings() const { return _settings.get(); }
   // Applies settings JSON and records that the runtime needs to refresh settings.
-  bool applySettingsJson(const String& body) { const bool changed = _settings.applyJson(body); if (changed) _settingsChanged = true; return changed; }
+  bool applySettingsJson(const String& body) {
+    const bool selectionChanged = isSelectionSettingsUpdate(body);
+    const bool targetTimeSelectionChanged = isTargetTimeSelectionUpdate(body);
+    const bool changed = _settings.applyJson(body);
+    if (changed) {
+      _settingsChanged = true;
+      if (selectionChanged) _settingsSelectionChanged = true;
+      if (targetTimeSelectionChanged) _settingsTargetTimeSelectionChanged = true;
+    }
+    return changed;
+  }
   // Returns and clears the settings-changed flag.
   bool consumeSettingsChanged() { const bool v = _settingsChanged; _settingsChanged = false; return v; }
+  // Returns and clears whether the last settings update should apply saved mode/target-series settings.
+  bool consumeSettingsSelectionChanged() { const bool v = _settingsSelectionChanged; _settingsSelectionChanged = false; return v; }
+  // Returns and clears whether the last settings update explicitly selected a target time.
+  bool consumeSettingsTargetTimeSelectionChanged() { const bool v = _settingsTargetTimeSelectionChanged; _settingsTargetTimeSelectionChanged = false; return v; }
 
   // Attaches the hardware sensor manager used by /sensors diagnostics.
   void attachSensorManager(SensorManager& sensors) { _sensorManager = &sensors; }
@@ -109,6 +123,8 @@ private:
   RuntimeSettingsStore _settings;
   bool _serverStarted = false;
   bool _settingsChanged = false;
+  bool _settingsSelectionChanged = false;
+  bool _settingsTargetTimeSelectionChanged = false;
 
   MeasurementResult _result;
   int _targetFraction = DEFAULT_TARGET_TIME;
@@ -118,6 +134,28 @@ private:
   DeviceStatus _deviceStatus;
   SensorManager* _sensorManager = nullptr;
   BatteryMonitor* _batteryMonitor = nullptr;
+
+  // Detects /config updates that should be applied to the live mode/target selection immediately.
+  bool isSelectionSettingsUpdate(const String& body) const {
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, body);
+    if (err) return false;
+    return doc["defaultMeasurementMode"].is<const char*>() ||
+           doc["defaultTargetTime"].is<int>() ||
+           doc["targetSeries"].is<const char*>() ||
+           doc["customTargetTimes"].is<JsonArray>();
+  }
+
+  // Explicit target-time selection is only honored when no new target-time list is posted.
+  // Updating a series or custom list keeps the current index stable and clamps only if needed.
+  bool isTargetTimeSelectionUpdate(const String& body) const {
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, body);
+    if (err) return false;
+    return doc["defaultTargetTime"].is<int>() &&
+           !doc["targetSeries"].is<const char*>() &&
+           !doc["customTargetTimes"].is<JsonArray>();
+  }
 
   // Adds CORS and no-cache headers to API responses.
   void cors() {
@@ -272,7 +310,7 @@ private:
     const String body = http.getString();
     http.end();
 
-    DynamicJsonDocument doc(8192);
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, body);
     if (err) {
       Serial.printf("[Web] Manifest JSON parse failed: %s\n", err.c_str());
@@ -556,15 +594,21 @@ private:
     }
 
     const String body = _server.arg("plain");
-    StaticJsonDocument<1024> validation;
+    JsonDocument validation;
     DeserializationError err = deserializeJson(validation, body);
     if (err) {
       sendJson(400, JsonBuilder::error("invalid_json"));
       return;
     }
 
+    const bool selectionChanged = isSelectionSettingsUpdate(body);
+    const bool targetTimeSelectionChanged = isTargetTimeSelectionUpdate(body);
     const bool changed = _settings.applyJson(body);
-    if (changed) _settingsChanged = true;
+    if (changed) {
+      _settingsChanged = true;
+      if (selectionChanged) _settingsSelectionChanged = true;
+      if (targetTimeSelectionChanged) _settingsTargetTimeSelectionChanged = true;
+    }
 
     sendJson(200, JsonBuilder::settingsResponse(_settings.get(), changed));
   }
@@ -581,7 +625,7 @@ private:
 
     // The setup page posts JSON, while simple tools may submit form fields.
     if (!ssid.length() && _server.hasArg("plain")) {
-      StaticJsonDocument<384> doc;
+      JsonDocument doc;
       if (!deserializeJson(doc, _server.arg("plain"))) {
         ssid = String(doc["ssid"] | "");
         pass = String(doc["password"] | "");

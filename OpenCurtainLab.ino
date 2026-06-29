@@ -61,6 +61,7 @@ unsigned long oledNoticeStartedMs = 0;
 unsigned long oledNoticeDurationMs = 0;
 DeviceError lastOledDeviceError = DeviceError::None;
 NetworkHint lastOledNetworkHint = NetworkHint::None;
+bool oledFlashContactClosed = false;
 
 uint8_t resultPage = 1;
 unsigned long resultStartedMs = 0;
@@ -83,9 +84,9 @@ void refreshDisplay();
 void setAppState(AppState next);
 bool hasBlockingDeviceError();
 void cycleMeasureMode();
-void applyRuntimeSettings(bool resetSelection);
+void applyRuntimeSettings(bool applySelection, bool useSavedTargetTime);
 void applyUiSettings(const RuntimeSettings& cfg);
-void applyTargetSettings(const RuntimeSettings& cfg, bool resetSelection);
+void applyTargetSettings(const RuntimeSettings& cfg, bool useSavedTargetTime);
 void applySensorSettings(const RuntimeSettings& cfg);
 void setDeviceError(DeviceError error, DeviceSubsystem subsystem);
 void clearDeviceError(DeviceSubsystem subsystem = DeviceSubsystem::None);
@@ -93,6 +94,8 @@ bool hasDeviceError();
 DeviceError currentDeviceError();
 NetworkHint currentNetworkHint();
 void monitorOledDiagnostics();
+void monitorFlashContactIndicator();
+bool isFlashContactClosed();
 void enqueueOledNotice(const char* title, const char* message);
 void startNextOledNotice();
 bool isOledNoticeActive();
@@ -137,7 +140,7 @@ void setup() {
   webServer.attachBatteryMonitor(batteryMonitor);
 
   webServer.begin(WIFI_CONNECT_TIMEOUT_MS);
-  applyRuntimeSettings(true);
+  applyRuntimeSettings(true, true);
   webServer.consumeWifiEvent();
 
   Serial.printf("[Main] Target time: 1/%d s\n", targetFraction);
@@ -165,7 +168,9 @@ void loop() {
 
   // Settings can change from the WebUI; reapply them centrally.
   if (webServer.consumeSettingsChanged()) {
-    applyRuntimeSettings(false);
+    const bool applySelection = webServer.consumeSettingsSelectionChanged();
+    const bool useSavedTargetTime = webServer.consumeSettingsTargetTimeSelectionChanged();
+    applyRuntimeSettings(applySelection, useSavedTargetTime);
     noteUserActivity();
 
     if (appState == AppState::MENU) {
@@ -206,6 +211,7 @@ void loop() {
     webServer.update();
     handleWifiEvents();
     monitorOledDiagnostics();
+    monitorFlashContactIndicator();
   }
   updateOledNoticeTimer();
   updateOledSleep();
@@ -322,7 +328,9 @@ void saveMenuDraftAndReady() {
   if (menuDirty) {
     webServer.applySettingsJson(menuDraftJson());
     webServer.consumeSettingsChanged();
-    applyRuntimeSettings(false);
+    const bool applySelection = webServer.consumeSettingsSelectionChanged();
+    const bool useSavedTargetTime = webServer.consumeSettingsTargetTimeSelectionChanged();
+    applyRuntimeSettings(applySelection, useSavedTargetTime);
   }
   closeMenuAndReady();
 }
@@ -384,7 +392,9 @@ void applyMenuSetting(uint8_t idx) {
       if (menuDirty) {
         webServer.applySettingsJson(menuDraftJson());
         webServer.consumeSettingsChanged();
-        applyRuntimeSettings(false);
+        const bool applySelection = webServer.consumeSettingsSelectionChanged();
+        const bool useSavedTargetTime = webServer.consumeSettingsTargetTimeSelectionChanged();
+        applyRuntimeSettings(applySelection, useSavedTargetTime);
       }
       menuDirty = false;
       webServer.resetNetworkAndStartAp();
@@ -417,17 +427,16 @@ void handleEngineState() {
 
 // Processes a newly finished capture exactly once and prepares the result screen and API data.
 void processNewResult() {
-  // The API keeps raw timestamps plus validity/hints; derived exposure values are prepared only for the OLED.
+  // The API keeps raw timestamps; derived exposure values and measurement hints are handled by the WebUI.
   engine.calculateResults(targetFraction);
 
   webServer.setLastResult(engine.getResult(), targetFraction, measureMode);
 
   noteUserActivity();
-  Serial.printf("[Main] Result: avg 1/%d s  (%+.2f EV), Mode %s, hint=%s\n",
+  Serial.printf("[Main] Result: avg 1/%d s  (%+.2f EV), Mode %s\n",
                 engine.getSummary().avgFraction,
                 engine.getSummary().avgDeviationStops,
-                measurementModeKey(measureMode),
-                measurementHintKey(engine.getResult().hint));
+                measurementModeKey(measureMode));
 
   // Copy the finished result before marking it handled so display and API state stay stable.
   displayedResult = engine.getResult();
@@ -449,12 +458,12 @@ void processNewResult() {
 }
 
 // Applies stored settings to UI state, target selection, sensors, and the engine.
-void applyRuntimeSettings(bool resetSelection) {
+void applyRuntimeSettings(bool applySelection, bool useSavedTargetTime) {
   const RuntimeSettings& cfg = webServer.getSettings();
 
   // Apply settings in separated domains so future changes remain localized.
   applyUiSettings(cfg);
-  applyTargetSettings(cfg, resetSelection);
+  if (applySelection) applyTargetSettings(cfg, useSavedTargetTime);
   applySensorSettings(cfg);
 
   engine.setMode(measureMode);
@@ -471,15 +480,19 @@ void applyUiSettings(const RuntimeSettings& cfg) {
   oledSleepMinutes = cfg.oledSleepMinutes;
 }
 
-// Selects the active target-time series and current target index.
-void applyTargetSettings(const RuntimeSettings& cfg, bool resetSelection) {
+// Selects the active target-time series while keeping the current target index stable.
+void applyTargetSettings(const RuntimeSettings& cfg, bool useSavedTargetTime) {
+  measureMode = cfg.defaultMode;
   targetSeries = cfg.targetSeries;
-  if (resetSelection) {
-    measureMode = cfg.defaultMode;
+
+  if (useSavedTargetTime) {
     targetIndex = targetIndexForTime(cfg.defaultTargetTime, targetSeries);
   } else {
-    targetIndex = targetIndexForTime(targetFraction, targetSeries);
+    const int maxIndex = maxTargetIndex(targetSeries);
+    if (targetIndex < 0) targetIndex = 0;
+    if (targetIndex > maxIndex) targetIndex = maxIndex;
   }
+
   targetFraction = targetTimeAt(targetIndex, targetSeries);
 }
 
@@ -512,7 +525,7 @@ void setDeviceError(DeviceError error, DeviceSubsystem subsystem) {
     engine.cancel();
     setAppState(AppState::READY);
     resultStartedMs = 0;
-  resultDurationMs = 0;
+    resultDurationMs = 0;
   }
   displayDirty = true;
 }
@@ -553,6 +566,19 @@ void monitorOledDiagnostics() {
     lastOledNetworkHint = net;
     if (net != NetworkHint::None) enqueueOledNotice("NETWORK", networkHintText(net));
   }
+}
+
+// Returns the current flash-contact state without touching measurement edge tracking.
+bool isFlashContactClosed() {
+  return sensorManager.isDiagnosticFlashActive(sensorManager.readDiagnosticFlashRaw());
+}
+
+// Keeps the OLED status icon live while the flash contact is held closed.
+void monitorFlashContactIndicator() {
+  const bool closed = isFlashContactClosed();
+  if (closed == oledFlashContactClosed) return;
+  oledFlashContactClosed = closed;
+  if (appState == AppState::READY) displayDirty = true;
 }
 
 // Adds a short diagnostic message to the OLED notice queue.
@@ -638,7 +664,7 @@ bool startMeasurementFromCurrentSettings(bool noteActivity) {
   return true;
 }
 
-// Retries arming while ready if a temporary start hint previously prevented arming.
+// Retries arming while ready if the previous attempt found active inputs.
 void maintainReadyCapture() {
   if (appState != AppState::READY || hasBlockingDeviceError()) return;
   if (engine.isArmed() || engine.isCapturing() || engine.hasNewResult()) return;
@@ -713,13 +739,13 @@ void buildMenuValues(const char* values[MENU_COUNT]) {
 
 // Serializes the current menu draft into the same JSON accepted by /config.
 String menuDraftJson() {
-  StaticJsonDocument<768> doc;
+  JsonDocument doc;
   doc["defaultMeasurementMode"] = measurementModeKey(menuDraft.defaultMode);
   doc["defaultTargetTime"] = menuDraft.defaultTargetTime;
   doc["sensorSensitivity"] = menuDraft.sensorSensitivity;
   doc["resultDisplay"] = menuDraft.resultDisplayMode;
   doc["targetSeries"] = targetSeriesKey(menuDraft.targetSeries);
-  JsonArray custom = doc.createNestedArray("customTargetTimes");
+  JsonArray custom = doc["customTargetTimes"].to<JsonArray>();
   for (int i = 0; i < menuDraft.customTargetTimesCount && i < TARGET_TIMES_MAX_COUNT; i++) custom.add(menuDraft.customTargetTimes[i]);
   doc["oledSleepMinutes"] = menuDraft.oledSleepMinutes;
   String out;
@@ -741,7 +767,8 @@ void refreshDisplay() {
     case AppState::READY: {
       const String net = webServer.getNetworkLine();
       const String ip = webServer.getIP();
-      displayManager.showReady(targetFraction, measureMode, net, ip, currentDeviceError(), engine.getReadyHint());
+      oledFlashContactClosed = isFlashContactClosed();
+      displayManager.showReady(targetFraction, measureMode, net, ip, oledFlashContactClosed);
       break;
     }
 

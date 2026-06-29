@@ -8,7 +8,7 @@ function showSourceI18nWarningIfNeeded() {
   const warning = document.createElement('div');
   warning.id = 'source-i18n-warning';
   warning.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;padding:12px 14px;border:1px solid rgba(245,176,48,.55);border-radius:12px;background:#1b1509;color:#f5e6c8;font:14px/1.4 system-ui, sans-serif;box-shadow:0 12px 36px rgba(0,0,0,.35)';
-  warning.innerHTML = '<b>OpenCurtainLab source mode:</b> i18n JSON could not be loaded. Start a local web server in <code>web/</code>, for example <code>python3 -m http.server 8000</code>, or open <code>web/compiled/compiled-v0.1.0.html</code>.';
+  warning.innerHTML = '<b>OpenCurtainLab source mode:</b> i18n JSON could not be loaded. Start a local web server in <code>web/</code>, for example <code>python3 -m http.server 8000</code>, or open <code>web/compiled/compiled-v0.1.1.html</code>.';
   document.body.appendChild(warning);
 }
 
@@ -25,7 +25,6 @@ function init() {
   renderSettingsControls();
   renderDeviceConfigSummary();
   renderWebUiVersionSummary();
-  checkAppVersion();
   initDeviceConnection(false).then(() => poll());
   renderEmptyStateIfNeeded();
   updateLanguageButton();

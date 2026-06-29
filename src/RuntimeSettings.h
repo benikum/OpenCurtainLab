@@ -114,28 +114,35 @@ public:
 
   // Applies a partial /config JSON update and persists it when changed.
   bool applyJson(const String& body) {
-    StaticJsonDocument<1024> doc;
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, body);
     if (err) return false;
 
     bool changed = false;
 
-    if (doc.containsKey("defaultMeasurementMode")) {
+    if (doc["defaultMeasurementMode"].is<const char*>()) {
       _s.defaultMode = measurementModeFromKey(String(doc["defaultMeasurementMode"] | ""));
       changed = true;
     }
 
     // maxTargetTime is a build-time device capability and is intentionally ignored if posted.
-    if (doc.containsKey("defaultTargetTime")) { _s.defaultTargetTime = doc["defaultTargetTime"].as<int>(); changed = true; }
+    if (doc["defaultTargetTime"].is<int>()) {
+      _s.defaultTargetTime = doc["defaultTargetTime"].as<int>();
+      changed = true;
+    }
 
-    if (doc.containsKey("resultDisplay")) { _s.resultDisplayMode = String(doc["resultDisplay"] | DEFAULT_RESULT_DISPLAY); changed = true; }
-    if (doc.containsKey("targetSeries")) {
+    if (doc["resultDisplay"].is<const char*>()) {
+      _s.resultDisplayMode = String(doc["resultDisplay"] | DEFAULT_RESULT_DISPLAY);
+      changed = true;
+    }
+
+    if (doc["targetSeries"].is<const char*>()) {
       _s.targetSeries = targetSeriesFromKey(String(doc["targetSeries"] | ""));
       changed = true;
     }
 
     // Custom times are accepted as unsorted raw input; sanitize() applies limits, de-duplication, and sorting.
-    if (doc.containsKey("customTargetTimes") && doc["customTargetTimes"].is<JsonArray>()) {
+    if (doc["customTargetTimes"].is<JsonArray>()) {
       JsonArray arr = doc["customTargetTimes"].as<JsonArray>();
       int n = 0;
       for (JsonVariant v : arr) {
@@ -147,10 +154,12 @@ public:
       changed = true;
     }
 
-    if (doc.containsKey("oledSleepMinutes")) { _s.oledSleepMinutes = doc["oledSleepMinutes"].as<int>(); changed = true; }
+    if (doc["oledSleepMinutes"].is<int>()) {
+      _s.oledSleepMinutes = doc["oledSleepMinutes"].as<int>();
+      changed = true;
+    }
 
-
-    if (doc.containsKey("sensorSensitivity")) {
+    if (doc["sensorSensitivity"].is<const char*>()) {
       _s.sensorSensitivity = String(doc["sensorSensitivity"] | "");
       changed = true;
     }

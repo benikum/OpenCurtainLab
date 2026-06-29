@@ -258,9 +258,18 @@ function isTutorialPageVisible() {
   return !!(content && content.querySelector('.tutorial-page.tutorial'));
 }
 
+// Check whether a camera project page is currently displayed.
+function isProjectPageVisible() {
+  const content = document.getElementById('content');
+  return !!(content && content.querySelector('[data-proj-id], .tbl-wrap'));
+}
+
 // Refresh all visible UI sections after a language switch.
 function rerenderAfterLanguageChange() {
   const tutorialVisible = isTutorialPageVisible();
+  const settingsVisible = isSettingsPageVisible();
+  const projectVisible = isProjectPageVisible();
+  const selectedProjectId = S.selectedProjId;
 
   applyStaticTranslations();
   ensureDefaultProject();
@@ -272,9 +281,14 @@ function rerenderAfterLanguageChange() {
   renderWebUiVersionSummary();
 
   if (tutorialVisible) showTutorialPage();
-  else if (isSettingsPageVisible()) showSettingsPage();
+  else if (settingsVisible) showSettingsPage();
   else if (S.selId) renderDetailView(S.selId);
-  else renderEmptyStateIfNeeded();
+  else if (projectVisible && selectedProjectId && selectedProjectId !== DEFAULT_PROJECT_ID) showProject(selectedProjectId);
+  else {
+    const content = document.getElementById('content');
+    if (content) content.innerHTML = '';
+    renderEmptyStateIfNeeded();
+  }
 
   updateLanguageButton();
 }

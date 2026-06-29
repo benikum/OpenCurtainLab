@@ -16,12 +16,14 @@ const DEFAULT_POLL_INTERVAL_MS = 1000;
 const MIN_POLL_INTERVAL_MS = 200;
 const MAX_POLL_INTERVAL_MS = 10000;
 const STATUS_POLL_MS = 20000;
+const WEB_MEASUREMENT_TIMEOUT_MS = 5000;
+const WEB_MEASUREMENT_TIMEOUT_MARGIN_MS = 40;
 const LS_HISTORY_KEY = 'ocl_history_v1';
 const LS_PROJECTS_KEY = 'ocl_projects_v1';
 const LS_DEVICE_KEY = 'ocl_device_config_v1';
 const LS_UI_KEY = 'ocl_ui_settings_v1';
 const DEFAULT_PROJECT_ID = 'p_default';
-const APP_VERSION = '0.1.0';
+const APP_VERSION = '0.1.1';
 const BATTERY_LOW_NOTICE_PERCENT = 20;
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
@@ -40,7 +42,10 @@ const DEFAULT_DEVICE_SETTINGS = {
   oledSleepMinutes: 5
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
-const DEFAULT_UI_SETTINGS = { interpolateCharts: false, pollIntervalMs: DEFAULT_POLL_INTERVAL_MS };
+const DEFAULT_UI_SETTINGS = {
+  interpolateCharts: false,
+  pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+};
 
 
 // Console-only developer helpers are disabled unless explicitly enabled through ?dev=1 or localStorage.ocl_dev_tools=1.
@@ -302,10 +307,7 @@ function saveDeviceConfigLocal() {
 
 // Persist UI-only preferences.
 function saveUiSettings() {
-  writeJsonStorage(LS_UI_KEY, {
-    interpolateCharts: !!(S.uiSettings && S.uiSettings.interpolateCharts),
-    pollIntervalMs: normalizePollIntervalMs(S.uiSettings && S.uiSettings.pollIntervalMs)
-  });
+  writeJsonStorage(LS_UI_KEY, sanitizeUiSettings(S.uiSettings));
 }
 
 // Normalize UI preferences loaded from storage.
@@ -313,7 +315,7 @@ function sanitizeUiSettings(input) {
   const raw = Object.assign({}, input || {});
   return {
     interpolateCharts: raw.interpolateCharts === true,
-    pollIntervalMs: normalizePollIntervalMs(raw.pollIntervalMs)
+    pollIntervalMs: normalizePollIntervalMs(raw.pollIntervalMs),
   };
 }
 

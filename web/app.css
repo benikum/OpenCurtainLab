@@ -247,7 +247,20 @@ header {
 .sidebar-block {
   padding: 12px 14px;
   border-bottom: 1px solid var(--bdr);
-  flex-shrink: 0;
+  flex: 0 0 auto;
+}
+.sidebar-scroll-block {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-block-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .blk-hdr {
@@ -294,9 +307,10 @@ header {
 
 /* ── HISTORY ────────────────────────────────── */
 .history-scroll {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 6px 8px;
+  padding: 0 2px 0 0;
 }
 .h-entry {
   background: var(--bg3);
@@ -323,8 +337,9 @@ header {
 .h-entry.new-flash { animation: flash-in 0.7s ease-out forwards; }
 
 .h-time { font-size: 15px; color: var(--amber); letter-spacing: 0.5px; grid-column:1; grid-row:1; white-space: nowrap; }
-.h-meta { grid-column:2; grid-row:1/3; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:2px; font-size:10px; line-height:1.25; color:var(--tx3); }
-.h-meta-line { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.h-meta { grid-column:2; grid-row:1/3; min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:2px; font-size:10px; line-height:1.25; color:var(--tx3); }
+.h-meta-line { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.h-meta-hint { color:var(--amber); }
 .h-dev { grid-column:1; grid-row:2; align-self:start; font-size:12px; line-height:1.05; text-align:left; white-space:nowrap; }
 .h-dev-unit { margin-left:4px; font-size:9px; opacity:0.6; }
 .h-dev.ok   { color: var(--green); }
@@ -592,7 +607,7 @@ input[type="text"]:focus,
 .empty-sub  { font-size: 11px; color: var(--tx3); }
 
 .sidebar-tools {
-  margin-top: auto;
+  min-height: 0;
   border-top: 1px solid var(--bdr);
   border-bottom: 0;
   background: var(--bg2);
@@ -1193,3 +1208,10 @@ canvas#tl {
 }
 
 .settings-toggle-line { align-items: center; }
+
+.settings-help {
+  color: var(--tx3);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: -2px 0 10px;
+}

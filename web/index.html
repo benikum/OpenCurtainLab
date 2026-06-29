@@ -42,7 +42,7 @@
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
           <!-- Projects -->
-          <div class="sidebar-block">
+          <div class="sidebar-block sidebar-scroll-block">
             <div class="blk-hdr">
               <span class="blk-label" data-i18n="html.projects">Projects</span>
               <button
@@ -58,17 +58,16 @@
                 </svg>
               </button>
             </div>
-            <div id="proj-list"></div>
+            <div class="sidebar-block-scroll" id="proj-list"></div>
           </div>
-          <!-- History header -->
-          <div class="sidebar-block" style="padding-bottom: 8px">
-            <div class="blk-hdr" style="margin-bottom: 0">
+          <!-- History -->
+          <div class="sidebar-block sidebar-scroll-block">
+            <div class="blk-hdr">
               <span class="blk-label" data-i18n="html.projectMeasurements">Project measurements</span>
               <span id="hist-count" style="font-size: 10px; color: var(--tx3)">0</span>
             </div>
+            <div class="history-scroll" id="hist-list"></div>
           </div>
-          <!-- History list -->
-          <div class="history-scroll" id="hist-list"></div>
           <!-- Tools / Settings -->
           <div class="sidebar-block sidebar-tools">
             <div class="language-panel" id="language-panel" style="display: none">
@@ -152,6 +151,14 @@
                 <div class="settings-section">
                   <div class="settings-section-title" data-i18n="html.measurement">Measurement</div>
                   <div class="settings-line">
+                    <label data-i18n="html.sensitivity" for="set-sensitivity">Sensitivity</label>
+                    <select class="h-proj-select" id="set-sensitivity">
+                      <option data-i18n="html.sensitivityLow" value="low">low</option>
+                      <option data-i18n="html.sensitivityMedium" value="medium">medium</option>
+                      <option data-i18n="html.sensitivityHigh" value="high">high</option>
+                    </select>
+                  </div>
+                  <div class="settings-line">
                     <label data-i18n="html.targetSeries" for="set-target-series">Target series</label>
                     <select class="h-proj-select" id="set-target-series" onchange="onTargetSeriesChanged()">
                       <option data-i18n="targetSeries.standard" value="standard">Standard</option>
@@ -162,14 +169,6 @@
                     <label data-i18n="html.customTargetTimes" for="set-custom-target-times">Custom target times</label>
                     <input class="settings-full-input" id="set-custom-target-times" oninput="validateCustomTargetTimesField()" placeholder="1,2,5,10,25,50,100,250,500,1000,2000" type="text" />
                     <div aria-live="polite" class="settings-error" id="custom-target-times-error"></div>
-                  </div>
-                  <div class="settings-line">
-                    <label data-i18n="html.sensitivity" for="set-sensitivity">Sensitivity</label>
-                    <select class="h-proj-select" id="set-sensitivity">
-                      <option data-i18n="html.sensitivityLow" value="low">low</option>
-                      <option data-i18n="html.sensitivityMedium" value="medium">medium</option>
-                      <option data-i18n="html.sensitivityHigh" value="high">high</option>
-                    </select>
                   </div>
                 </div>
                 <div class="settings-section">
@@ -258,7 +257,7 @@
                 <button class="btn btn-amber btn-sm" data-i18n="html.saveSettings" id="save-device-settings-btn" onclick="saveDeviceSettings()">SAVE SETTINGS</button>
               </div>
               <div class="settings-page-footer">
-                <div class="settings-version-summary" id="settings-version-summary"><span>WebUI v0.1.0</span><span>Device unknown</span><span class="version-unknown">Update unknown</span></div>
+                <div class="settings-version-summary" id="settings-version-summary"><span>WebUI v0.1.1</span><span>Device unknown</span><span class="version-unknown">Update unknown</span></div>
               </div>
             </div>
           </div>
@@ -322,6 +321,7 @@
     </script>
     <!-- OCL_INLINE_I18N -->
     <!-- OCL_INLINE_TUTORIALS -->
+    <!-- OCL_INLINE_REPORT_TEMPLATE -->
     <script src="js/i18n.js" defer data-ocl-asset="js"></script>
     <script src="js/utils.js" defer data-ocl-asset="js"></script>
     <script src="js/state-storage.js" defer data-ocl-asset="js"></script>
@@ -331,6 +331,7 @@
     <script src="js/project-analysis.js" defer data-ocl-asset="js"></script>
     <script src="js/charts.js" defer data-ocl-asset="js"></script>
     <script src="js/backup-export.js" defer data-ocl-asset="js"></script>
+    <script src="js/report-export.js" defer data-ocl-asset="js"></script>
     <script src="app.js" defer data-ocl-asset="js"></script>
     <!-- OCL_INLINE_JS -->
   </body>

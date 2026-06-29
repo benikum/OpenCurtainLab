@@ -7,7 +7,7 @@
 
 // Project / URLs
 #define DEVICE_NAME                 "OpenCurtainLab"
-#define FIRMWARE_VERSION            "0.1.0"
+#define FIRMWARE_VERSION            "0.1.1"
 #define MDNS_NAME                   "opencurtainlab"
 #define GITHUB_PROJECT_URL          "https://github.com/benikum/OpenCurtainLab"
 #define WEB_MANIFEST_URL            "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/manifest.json"
@@ -36,9 +36,9 @@
 #define PIN_FLASH_SENSOR  14
 
 // Buttons
-#define PIN_BTN_UP        25
+#define PIN_BTN_UP        27
 #define PIN_BTN_DOWN      26
-#define PIN_BTN_SELECT    27
+#define PIN_BTN_SELECT    25
 #define DEBOUNCE_MS       50UL
 #define MODE_HOLD_MS      1000UL
 
@@ -59,10 +59,10 @@ static constexpr bool BATTERY_MONITOR_ENABLED = true;
 #define SCREEN_HEIGHT        64
 #define DISPLAY_ROTATION     0
 
-// Sensor Geometry
+// Sensor Geometry (perfboard spacing)
 static constexpr int SENSOR_COUNT = 5;
-static constexpr float SENSOR_DISTANCE_X_MM = 13.17f;
-static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
+static constexpr float SENSOR_DISTANCE_X_MM = 3*2.54f;
+static constexpr float SENSOR_DISTANCE_Y_MM = 2*2.54f;
 
 // Runtime sensitivity presets use absolute ADC hysteresis thresholds
 #define SENSOR_ON_THRESHOLD_LOW      1100
@@ -78,7 +78,6 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define MEASUREMENT_LATE_SENSOR_SETTLE_MS 120UL
 #define FLASH_TO_SENSOR_TIMEOUT_MS   250UL
 
-
 // Factory defaults for runtime settings
 #define DEFAULT_MEASUREMENT_MODE    "horizontal"
 #define DEFAULT_TARGET_TIME         500
@@ -86,5 +85,3 @@ static constexpr float SENSOR_DISTANCE_Y_MM = 7.67f;
 #define DEFAULT_SENSOR_SENSITIVITY  "medium"
 #define DEFAULT_RESULT_DISPLAY      "until_button"
 #define DEFAULT_OLED_SLEEP_MINUTES  5
-
-#define MIN_VALID_SENSOR_COUNT      3

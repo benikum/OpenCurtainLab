@@ -28,7 +28,7 @@
     "backupImported": "Backup JSON imported",
     "importFailed": "Import failed: no valid JSON file",
     "backupExported": "Backup JSON exported",
-    "csvExported": "Camera summary CSV exported — {count} target times",
+    "csvExported": "Camera attributes CSV exported — {count} target times",
     "projectNameExists": "A project with this name already exists",
     "noTargetTimesSelected": "Select at least one target time",
     "customTimesInvalid": "Invalid custom target times. Use positive numbers separated by commas.",
@@ -42,7 +42,9 @@
     "measurementAssignedToDefaultIncompatible": "Measurement assigned to the default project because it does not match the selected project.",
     "deviceNotConnected": "Device not connected",
     "languageUnavailable": "Language resources are not available",
-    "batteryLow": "Battery low: {voltage} V ({percent}%)."
+    "batteryLow": "Battery low: {voltage} V ({percent}%).",
+    "reportExported": "HTML camera report exported",
+    "reportExportFailed": "HTML camera report could not be exported"
   },
   "frame": {
     "tutorialTitle": "OpenCurtainLab Guide",
@@ -106,7 +108,6 @@
     "flashSync": "Flash sync"
   },
   "placeholders": {
-    "measurementNotes": "Notes for this measurement…",
     "projectNotes": "Notes for this project…"
   },
   "condition": {
@@ -133,10 +134,10 @@
   "flash": {
     "within": "Flash within total opening",
     "outside": "Flash outside total opening",
+    "late": "Flash in the last 2 ms of total opening",
     "none": "No flash detected"
   },
   "project": {
-    "distributionTitle": "Distribution of repeated measurements",
     "overallRating": "Camera — overall rating",
     "condition": "Condition",
     "measurements": "Measurements",
@@ -149,22 +150,17 @@
     "fromLocalCurtainSpeeds": "from local curtain speeds",
     "parallelism": "Parallelism",
     "fromSlitWidth": "from slit width at each sensor",
-    "curtainsSummary": "Curtains — speed summary",
-    "openingCurtain": "Opening curtain",
-    "closingCurtain": "Closing curtain",
     "zeroMeas": "0 meas.",
     "measShort": "meas.",
     "series": "Time series",
     "defaultName": "Default project",
     "deleteProject": "Delete project",
     "deleteProjectHelp": "Deletes the project. Its measurements move to the default project.",
-    "delete": "DELETE",
-    "localSpeedVariation": "local speed variation"
+    "delete": "DELETE"
   },
   "table": {
     "target": "Target",
     "avgMeasurement": "Avg measurement",
-    "distribution": "Distribution",
     "grade": "Grade",
     "flash": "Flash",
     "curtainSpeed": "Curtain speed"
@@ -285,7 +281,7 @@
     "projects": "Projects",
     "newProject": "New project",
     "projectMeasurements": "Project measurements",
-    "webUiVersion": "Web UI v0.1.0",
+    "webUiVersion": "Web UI v0.1.1",
     "device": "Device",
     "deviceAddress": "Device address",
     "connect": "Connect",
@@ -332,12 +328,11 @@
   "settingsInfo": {
     "connection": "Connection",
     "connected": "connected",
-    "notConnected": "not connected",
+    "notConnected": "disconnected",
     "ip": "IP",
     "hostname": "Hostname",
     "wifi": "Wi-Fi",
     "signal": "Signal",
-    "uptime": "Uptime",
     "measurements": "Measurements",
     "status": "Status",
     "ok": "OK",
@@ -351,5 +346,54 @@
     "rightLeft": "right → left",
     "topDown": "top → bottom",
     "bottomTop": "bottom → top"
-  }
+  },
+  "report": {
+    "title": "Camera measurement report",
+    "notRated": "Not rated",
+    "excellent": "Excellent",
+    "good": "Good",
+    "usable": "Usable",
+    "needsServiceSoon": "Service useful",
+    "serviceRecommended": "Service recommended",
+    "flashRecommendedMeasured": "Maximum measured flash time",
+    "noSafeFlashSync": "No safe flash time measured",
+    "flashNotMeasured": "Flash sync not measured",
+    "allMeasuredFlashFailed": "Every measured flash time had failures",
+    "noFlashData": "No flash data in this project",
+    "notMeasured": "Not measured",
+    "projectNote": "Project note",
+    "accuracyBody": "Based on measured exposure times and image-position spread. Spread is weighted higher than offset because uneven exposure is harder to compensate.",
+    "reliabilityBody": "Based on differences between repeated measurements of the same target times. Single measurements are listed but not enough for reliability.",
+    "curtainBody": "Based on local curtain-speed uniformity and the parallelism between opening and closing curtain speeds.",
+    "measurements": "Measurements",
+    "targetTimes": "Target times",
+    "mode": "Mode",
+    "overall": "Overall",
+    "recommendedFlash": "Maximum flash time",
+    "accuracy": "Accuracy",
+    "reliability": "Reliability",
+    "curtainCondition": "Curtain condition",
+    "exposureOffsets": "Exposure offsets",
+    "resultsTable": "Results table",
+    "measured": "Measured",
+    "time": "Time",
+    "offset": "Offset",
+    "spread": "Spread",
+    "repeatability": "Repeatability",
+    "maximumFlashTime": "Maximum flash time",
+    "evScale": "Offset in EV, error indicator shows spread",
+    "validProjectMeasurements": "valid project measurements",
+    "measuredTargets": "measured target times",
+    "sensorDistance": "Sensor distance",
+    "sensorDistanceSub": "X × Y spacing",
+    "accuracyBodyShort": "Exposure times and spread",
+    "reliabilityBodyShort": "Repeat measurements",
+    "curtainBodyShort": "Uniformity and parallelism"
+  },
+  "report.scoresTitle": "Assessment",
+  "report.scoresIntro": "The rating separates exposure accuracy, repeatability and curtain travel. Old mechanical cameras are rated with tolerant thresholds.",
+  "report.dataTitle": "Camera data",
+  "report.exposureOffsetsExplanation": "The horizontal scale is measured in EV. Bars to the left of 0 EV are faster than the selected time, bars to the right are slower.",
+  "report.exposureBarLegend": "Bar: average exposure offset",
+  "report.exposureErrorLegend": "Whisker: spread across the image"
 }

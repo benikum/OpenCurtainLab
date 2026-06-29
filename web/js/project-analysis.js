@@ -50,20 +50,6 @@ function scoreForTarget(avgAbsDev, sigmaEv, n) {
   const nPenalty = n >= 5 ? 0 : (5 - n) * 3;
   return clampNumber(100 - avgAbsDev * 130 - sigmaEv * 220 - nPenalty, 0, 100);
 }
-// Build a small inline normal-distribution SVG for project analysis.
-function normalDistributionMini(values) {
-  const arr = values.filter(v => Number.isFinite(v));
-  if (arr.length < 2) return '<span style="color:var(--tx4);font-size:10px;">—</span>';
-  const m = average(arr);
-  const sd = stddev(arr) || 0.0001;
-  const bins = [0,0,0,0,0,0,0];
-  arr.forEach(v => {
-    const z = clampNumber(Math.floor(((v - m) / (sd * 2) + 0.5) * bins.length), 0, bins.length - 1);
-    bins[z]++;
-  });
-  const max = Math.max(...bins, 1);
-  return `<div class="dist-mini" title="${esc(tx('project.distributionTitle', 'Distribution of repeated measurements'))}">${bins.map(c => `<i style="height:${Math.max(3, Math.round(c / max * 22))}px"></i>`).join('')}</div>`;
-}
 // Return measurements for a project by id.
 function getProjectEntries(projId) {
   return projectEntries(projId, false);
@@ -106,6 +92,7 @@ function projectAnalysis(p) {
   const scoreParts = [accuracyScore, repeatScore, linearityScore, parallelScore].filter(Number.isFinite);
   const conditionScore = scoreParts.length ? average(scoreParts) : null;
   const syncOk = entries.filter(e => isFlashSyncOk(e) === true).length;
+  const syncLate = entries.filter(e => typeof flashSyncState === 'function' && flashSyncState(e) === 'late').length;
   const syncBad = entries.filter(e => isFlashSyncOk(e) === false).length;
   const syncDetected = entries.filter(e => e.flash && e.flash.detected).length;
 
@@ -115,7 +102,7 @@ function projectAnalysis(p) {
     openV: openAvg, closeV: closeAvg,
     openSpeedVariation: openCv ? openCv * 100 : null,
     closeSpeedVariation: closeCv ? closeCv * 100 : null,
-    syncOk, syncBad, syncDetected,
+    syncOk, syncLate, syncBad, syncDetected,
   };
 }
 // Build an HTML badge for a project grade.
@@ -125,10 +112,31 @@ function gradeBadge(score) {
 }
 // Build the project overview summary cards.
 function buildProjectSummary(p) {
-  const a = projectAnalysis(p);
-  const cond = gradeFromScore(a.conditionScore);
-  const fmtEv = v => v == null ? '—' : v.toFixed(3) + ' EV';
-  const fmtPct = v => v == null ? '—' : Math.round(v) + ' %';
+  if (typeof projectScoreModel !== 'function') {
+    const a = projectAnalysis(p);
+    const cond = gradeFromScore(a.conditionScore);
+    const fmtPct = v => v == null ? '—' : Math.round(v) + ' %';
+    return `<div class="card">
+      <div class="card-hdr">
+        <span class="card-title">${tx('project.overallRating', 'Camera — overall rating')}</span>
+        <span class="grade-badge ${cond.cls}">${cond.grade}</span>
+      </div>
+      <div class="card-body">
+        <div class="quality-grid">
+          <div class="q-card q-amber"><div class="q-label">${tx('project.condition', 'Condition')}</div><div class="q-value">${conditionLabel(a.conditionScore)}</div><div class="q-sub">Score ${fmtPct(a.conditionScore)}</div></div>
+          <div class="q-card q-blue"><div class="q-label">${tx('project.measurements', 'Measurements')}</div><div class="q-value">${a.total}</div><div class="q-sub">${a.measuredTimes}/${p.times.length} ${tx('project.targetSpeedsMeasured', 'target speeds measured')}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const model = projectScoreModel(p);
+  const cond = gradeFromScore(model.overall);
+  const pct = v => Number.isFinite(v) ? Math.round(v) + ' %' : '—';
+  const score = v => typeof formatScore === 'function' ? formatScore(v) : pct(v);
+  const label = v => typeof scoreLabel === 'function' ? scoreLabel(v) : conditionLabel(v);
+  const measuredTargets = model.measuredRows ? model.measuredRows.length : 0;
+  const flashLabel = model.flash && model.flash.label ? model.flash.label : '—';
   return `<div class="card">
     <div class="card-hdr">
       <span class="card-title">${tx('project.overallRating', 'Camera — overall rating')}</span>
@@ -136,41 +144,16 @@ function buildProjectSummary(p) {
     </div>
     <div class="card-body">
       <div class="quality-grid">
-        <div class="q-card q-amber"><div class="q-label">${tx('project.condition', 'Condition')}</div><div class="q-value">${conditionLabel(a.conditionScore)}</div><div class="q-sub">Score ${fmtPct(a.conditionScore)}</div></div>
-        <div class="q-card q-blue"><div class="q-label">${tx('project.measurements', 'Measurements')}</div><div class="q-value">${a.total}</div><div class="q-sub">${a.measuredTimes}/${p.times.length} ${tx('project.targetSpeedsMeasured', 'target speeds measured')}</div></div>
-        <div class="q-card q-orange"><div class="q-label">${tx('project.avgDeviation', 'Avg deviation')}</div><div class="q-value">${fmtEv(a.avgAbsDev)}</div><div class="q-sub">${tx('project.absoluteAcrossRuns', 'absolute, across all runs')}</div></div>
-        <div class="q-card q-teal"><div class="q-label">${tx('project.avgScatter', 'Avg scatter σ')}</div><div class="q-value">${fmtEv(a.avgSigma)}</div><div class="q-sub">${tx('project.repeatability', 'repeatability')}</div></div>
-        <div class="q-card q-green"><div class="q-label">${tx('project.linearity', 'Linearity')}</div><div class="q-value">${fmtPct(a.linearityScore)}</div><div class="q-sub">${tx('project.fromLocalCurtainSpeeds', 'from local speed variation')}</div></div>
-        <div class="q-card q-green"><div class="q-label">${tx('project.parallelism', 'Parallelism')}</div><div class="q-value">${fmtPct(a.parallelScore)}</div><div class="q-sub">${tx('project.fromSlitWidth', 'from slit width at each sensor')}</div></div>
+        <div class="q-card q-amber"><div class="q-label">${tx('report.overall', 'Overall')}</div><div class="q-value">${esc(label(model.overall))}</div><div class="q-sub">${score(model.overall)}</div></div>
+        <div class="q-card q-orange"><div class="q-label">${tx('report.accuracy', 'Accuracy')}</div><div class="q-value">${score(model.accuracyScore)}</div><div class="q-sub">${tx('report.accuracyBodyShort', 'Exposure times and spread')}</div></div>
+        <div class="q-card q-teal"><div class="q-label">${tx('report.reliability', 'Reliability')}</div><div class="q-value">${score(model.reliabilityScore)}</div><div class="q-sub">${tx('report.reliabilityBodyShort', 'Repeat measurements')}</div></div>
+        <div class="q-card q-green"><div class="q-label">${tx('report.curtainCondition', 'Curtain condition')}</div><div class="q-value">${score(model.curtain && model.curtain.curtainScore)}</div><div class="q-sub">${tx('report.curtainBodyShort', 'Uniformity and parallelism')}</div></div>
+        <div class="q-card q-blue"><div class="q-label">${tx('project.measurements', 'Measurements')}</div><div class="q-value">${model.entries.length}</div><div class="q-sub">${measuredTargets}/${p.times.length} ${tx('project.targetSpeedsMeasured', 'target speeds measured')}</div></div>
+        <div class="q-card q-blue"><div class="q-label">${tx('report.maximumFlashTime', 'Maximum flash time')}</div><div class="q-value">${esc(flashLabel)}</div><div class="q-sub">${esc(model.flash && model.flash.status ? model.flash.status : '')}</div></div>
       </div>
     </div>
   </div>`;
 }
-// Build the curtain-speed summary cards.
-function buildCurtainSummary(p) {
-  if (normalizeMeasurementMode(p.mode) === 'central') return '';
-  const a = projectAnalysis(p);
-  const fmt = (v, d=2) => v == null ? '—' : v.toFixed(d);
-  const pct = v => v == null ? '—' : v.toFixed(1) + ' %';
-  return `<div class="card">
-    <div class="card-hdr"><span class="card-title">${tx('project.curtainsSummary', 'Curtains — speed summary')}</span></div>
-    <div class="card-body">
-      <div class="dual-summary">
-        <div class="q-card q-blue">
-          <div class="q-label">${tx('project.openingCurtain', 'Opening curtain')}</div>
-          <div class="q-value">${fmt(a.openV)} m/s</div>
-          <div class="q-sub">${tx('project.localSpeedVariation', 'local speed variation')} ${pct(a.openSpeedVariation)}</div>
-        </div>
-        <div class="q-card q-teal">
-          <div class="q-label">${tx('project.closingCurtain', 'Closing curtain')}</div>
-          <div class="q-value">${fmt(a.closeV)} m/s</div>
-          <div class="q-sub">${tx('project.localSpeedVariation', 'local speed variation')} ${pct(a.closeSpeedVariation)}</div>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
 // ════════════════════════════════════════════
    // PROJECT TABLE — rows=targetTimes, cols=metrics, cells=averages
 // ════════════════════════════════════════════
@@ -196,9 +179,10 @@ function aggregateForTarget(projId, targetFrac) {
 
   const flashDetected = entries.filter(entry => entry.flash && entry.flash.detected).length;
   const flashOk = entries.filter(entry => isFlashSyncOk(entry) === true).length;
+  const flashLate = entries.filter(entry => typeof flashSyncState === 'function' && flashSyncState(entry) === 'late').length;
   const flashBad = entries.filter(entry => isFlashSyncOk(entry) === false).length;
 
-  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, avgSpread, avgV1, avgV2, flashDetected, flashOk, flashBad };
+  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, avgSpread, avgV1, avgV2, flashDetected, flashOk, flashLate, flashBad };
 }
 
 // Build the per-target project analysis table.
@@ -215,7 +199,6 @@ function buildProjectTable(p) {
         <td class="t-dim">—</td>
         <td class="t-dim">—</td>
         <td class="t-dim">—</td>
-        <td class="t-dim">—</td>
         <td class="t-dim" style="font-size:10px;">${tx('project.zeroMeas', '0 meas.')}</td>
       </tr>`;
     }
@@ -226,10 +209,9 @@ function buildProjectTable(p) {
       <td class="t-target">1/${tgt}</td>
       <td class="t-amber">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
       <td><span style="color:var(--tx1)">${agg.sigmaEv.toFixed(3)} EV</span><br><span style="font-size:10px;color:var(--tx3)">σ ${tx('project.repeatability', 'repeatability')}</span></td>
-      <td>${normalDistributionMini(agg.entries.map(e => e.avgDev))}</td>
       <td>${gradeBadge(agg.score)}</td>
       <td class="t-teal">${agg.avgV1!=null ? fmt(agg.avgV1,2) : '—'} / ${agg.avgV2!=null ? fmt(agg.avgV2,2) : '—'}</td>
-      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : '<span style="color:var(--green);font-size:16px;">●</span>') : '<span style="color:var(--tx4);font-size:16px;">—</span>'}</td>
+      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : (agg.flashLate ? '<span style="color:var(--amber);font-size:16px;">●</span>' : '<span style="color:var(--green);font-size:16px;">●</span>')) : '<span style="color:var(--tx4);font-size:16px;">—</span>'}</td>
       <td style="font-size:10px;color:var(--tx3)">${agg.n} ${tx('project.measShort', 'meas.')}</td>
     </tr>`;
   }).join('');
@@ -241,7 +223,6 @@ function buildProjectTable(p) {
           <th>${tx('table.target', 'Target')}</th>
           <th>${tx('table.avgMeasurement', 'Avg measurement')}</th>
           <th>σ</th>
-          <th>${tx('table.distribution', 'Distribution')}</th>
           <th>${tx('table.grade', 'Grade')}</th>
           <th>${tx('table.curtainSpeed', 'Curtain speed')} V₁/V₂ (m/s)</th>
           <th>${tx('table.flash', 'Flash')}</th>
@@ -258,6 +239,7 @@ function showProject(projId) {
   const p = S.projects.find(x => x.id === projId);
   if (!p) return;
   S.selectedProjId = projId;
+  S.selId = null;
   saveAppData();
   if (!isDefaultProject(p)) syncProjectSettingsToDevice(p);
   renderProjList();
@@ -274,14 +256,14 @@ function showProject(projId) {
   setContentFlush(false);
   document.getElementById('content').innerHTML = `
     ${buildProjectSummary(p)}
-    ${buildCurtainSummary(p)}
 
     <!-- Project table -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">${esc(p.name)} — ${modeLabel(p.mode)}</span>
+        <span class="card-title">${esc(p.name)}</span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="exportProjCSV('${projId}')">CSV EXPORT</button>
+          <button class="btn btn-amber btn-sm" onclick="exportProjectReportHtml('${projId}')">HTML REPORT</button>
         </div>
       </div>
       <div class="card-body" style="padding:0;">
@@ -425,18 +407,34 @@ function drawCurtainChart(p) {
 
   function drawLine(pts, color, label) {
     if (!pts.length) return;
+    const ordered = pts.slice().sort((a, b) => allTimes.indexOf(a.tgt) - allTimes.indexOf(b.tgt));
+    const px = ordered.map(pt => ({ x: xOf(pt.tgt), y: yV(pt.val) }));
+    const smooth = typeof chartInterpolationEnabled === 'function' && chartInterpolationEnabled() && px.length >= 3;
+
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    pts.forEach((pt, i) => {
-      const x = xOf(pt.tgt);
-      const y = yV(pt.val);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
+    ctx.moveTo(px[0].x, px[0].y);
+    if (smooth) {
+      for (let i = 0; i < px.length - 1; i++) {
+        const p0 = px[i - 1] || px[i];
+        const p1 = px[i];
+        const p2 = px[i + 1];
+        const p3 = px[i + 2] || p2;
+        const c1x = p1.x + (p2.x - p0.x) / 6;
+        const c1y = p1.y + (p2.y - p0.y) / 6;
+        const c2x = p2.x - (p3.x - p1.x) / 6;
+        const c2y = p2.y - (p3.y - p1.y) / 6;
+        ctx.bezierCurveTo(c1x, c1y, c2x, c2y, p2.x, p2.y);
+      }
+    } else {
+      for (let i = 1; i < px.length; i++) ctx.lineTo(px[i].x, px[i].y);
+    }
     ctx.stroke();
-    pts.forEach(pt => {
+    ordered.forEach(pt => {
       ctx.beginPath();
       ctx.arc(xOf(pt.tgt), yV(pt.val), 3.5, 0, Math.PI * 2);
       ctx.fillStyle = color;

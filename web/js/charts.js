@@ -5,19 +5,43 @@ function chartInterpolationEnabled() {
   return !!(S.uiSettings && S.uiSettings.interpolateCharts);
 }
 
-// Extend a speed series so the chart reaches the image edges.
-function extendSpeedSeriesToChartEdges(points, maxX) {
+// Return speed points in display order without extending them beyond the measured segment centers.
+function speedSeriesForChart(points) {
   if (!Array.isArray(points) || !points.length) return points || [];
-  const sorted = points.slice().sort((a, b) => a.x - b.x);
-  const out = [];
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
+  return points.slice().sort((a, b) => a.x - b.x);
+}
 
-  // The measured speeds live between adjacent sensors.
-  if (first.x > 0) out.push({ x: 0, v: first.v, synthetic: true });
-  out.push(...sorted);
-  if (last.x < maxX) out.push({ x: maxX, v: last.v, synthetic: true });
-  return out;
+
+// Extend a measured speed path visually to the full sensor span. These segments
+// are deliberately dashed because they are display continuity only, not measured
+// speed samples.
+function drawSpeedEdgeExtensions(ctx, points, minX, maxX, toX, toY) {
+  if (!points.length || !chartInterpolationEnabled()) return;
+  const line = points.slice().sort((a, b) => a.x - b.x);
+  const first = line[0];
+  const last = line[line.length - 1];
+  const eps = 0.0001;
+
+  ctx.save();
+  ctx.setLineDash([5, 5]);
+  ctx.globalAlpha = 0.72;
+  ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.85);
+
+  if (first.x > minX + eps) {
+    ctx.beginPath();
+    ctx.moveTo(toX(minX), toY(first.v));
+    ctx.lineTo(toX(first.x), toY(first.v));
+    ctx.stroke();
+  }
+
+  if (last.x < maxX - eps) {
+    ctx.beginPath();
+    ctx.moveTo(toX(last.x), toY(last.v));
+    ctx.lineTo(toX(maxX), toY(last.v));
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 // Draw one curtain-speed path on the chart canvas.
@@ -33,7 +57,7 @@ function drawSpeedPath(ctx, points, toX, toY, smooth) {
   }
 
   // Smooth interpolation keeps the calculated speed points fixed and rounds the
-  // line between them. Edge extensions remain visible but do not add dots.
+  // line between them.
   for (let i = 0; i < px.length - 1; i++) {
     const p0 = px[i - 1] || px[i];
     const p1 = px[i];
@@ -51,27 +75,27 @@ function drawSpeedPath(ctx, points, toX, toY, smooth) {
 function getCurtainSamples(entry) {
   if (!entry || normalizeMeasurementMode(entry.mode) === 'central') return null;
   const sensors = (entry.sensors || [])
-    .map((sensor, index) => ({ ...sensor, index }))
+    .map((sensor, index) => ({ ...sensor, index: Number.isFinite(Number(sensor.id)) ? Number(sensor.id) : index }))
     .filter(sensor => sensor.activated && Number.isFinite(sensor.openMs) && Number.isFinite(sensor.closeMs));
   if (sensors.length < 2) return null;
 
   const distanceMm = distanceForMode(entry.mode, entry);
   if (distanceMm == null) return null;
 
-  // The first sensor that opens becomes position 0 mm. Further positions are
-  // based on the physical sensor index distance, not on the number of detected
-  // samples. This keeps speed correct when one or more intermediate sensors were
-  // not triggered or filtered out.
+  // The chart always uses the full five-sensor physical span. The first sensor
+  // in the detected travel direction (S0 or S4) is position 0 mm. Speed points
+  // are placed halfway between the available sensor positions, so missing
+  // intermediate sensors keep the physical scale intact.
   const ordered = sensors.sort((a, b) => a.openMs - b.openMs);
-  const originIndex = ordered[0].index;
-  const reverseAxis = ordered.length > 1 && originIndex > ordered[ordered.length - 1].index;
-  const positioned = ordered.map((sensor, positionIndex) => ({
+  const firstIndex = ordered[0].index;
+  const lastIndex = ordered[ordered.length - 1].index;
+  const originIndex = firstIndex > lastIndex ? 4 : 0;
+  const positioned = ordered.map(sensor => ({
     ...sensor,
-    positionIndex,
     positionMm: Math.abs(sensor.index - originIndex) * distanceMm,
   }));
 
-  return { sensors: positioned, distanceMm, reverseAxis };
+  return { sensors: positioned, distanceMm, originIndex };
 }
 
 // Convert sensor timing samples into curtain-speed segments.
@@ -99,9 +123,9 @@ function curtainSpeedProfile(entry) {
     open,
     close,
     distanceMm,
-    maxPositionMm: Math.max(...act.map(sensor => sensor.positionMm), 0),
+    maxPositionMm: distanceMm * 4,
     sensorCount: act.length,
-    reverseAxis,
+    originIndex: sample.originIndex,
   };
 }
 
@@ -150,13 +174,9 @@ function drawCurtainTimeChart(entry) {
   }
 
   const all = [...profile.open, ...profile.close];
-  const maxX = Math.max(4 * profile.distanceMm, profile.maxPositionMm || 0, 1);
+  const maxX = Math.max(profile.maxPositionMm || 0, profile.distanceMm || 0, 1);
   const vMax = Math.max(...all.map(point => Math.abs(point.v)), 1) * 1.20;
-  // Draw the detected travel direction when the sensor order runs from a high to a low index.
-  const reversePositionAxis = !!profile.reverseAxis;
-  const toX = x => reversePositionAxis
-    ? (W - PAD_R) - (x / maxX) * PW
-    : PAD_L + (x / maxX) * PW;
+  const toX = x => PAD_L + (x / maxX) * PW;
   const toY = v => PAD_T + PH * (1 - v / vMax);
 
   // Horizontal speed grid.
@@ -178,7 +198,7 @@ function drawCurtainTimeChart(entry) {
   }
   ctx.restore();
 
-  // Vertical sensor-position grid: 0 mm to 4 * sensor spacing.
+  // Vertical position grid over the full five-sensor span.
   ctx.save();
   ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
@@ -186,8 +206,9 @@ function drawCurtainTimeChart(entry) {
   ctx.font = `10px 'Share Tech Mono', monospace`;
   ctx.fillStyle = C.text;
   ctx.textAlign = 'center';
-  for (let i = 0; i <= 4; i++) {
-    const pos = i * profile.distanceMm;
+  const xGridSteps = Math.max(1, Math.round(maxX / Math.max(profile.distanceMm, 0.001)));
+  for (let i = 0; i <= xGridSteps; i++) {
+    const pos = Math.min(i * profile.distanceMm, maxX);
     const x = toX(pos);
     ctx.beginPath();
     ctx.moveTo(x, PAD_T);
@@ -226,12 +247,13 @@ function drawCurtainTimeChart(entry) {
 
   function drawLine(arr, color) {
     if (!arr.length) return;
-    const line = extendSpeedSeriesToChartEdges(arr, maxX);
+    const line = speedSeriesForChart(arr);
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+    drawSpeedEdgeExtensions(ctx, line, 0, maxX, toX, toY);
     drawSpeedPath(ctx, line, toX, toY, chartInterpolationEnabled());
     ctx.stroke();
     arr.forEach(point => {
@@ -409,9 +431,8 @@ function drawTimeline(entry) {
   if (entry.flash && entry.flash.detected && entry.flash.triggerMs != null) {
     const fx = toX(entry.flash.triggerMs);
     if (fx >= PAD_L && fx <= W - PAD_R) {
-      const ok = isFlashSyncOk(entry);
       ctx.save();
-      ctx.strokeStyle = ok ? '#56c47e' : '#e86060';
+      ctx.strokeStyle = flashSyncColor(entry);
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
@@ -536,19 +557,40 @@ function getTotalOpenWindow(entry) {
   return { startMs: lastOpen, endMs: firstClose };
 }
 
+const FLASH_SYNC_LATE_MARGIN_MS = 2;
+
+// Return the detailed flash-sync state for the useful open window.
+function flashSyncState(entry) {
+  if (!entry || !entry.flash || !entry.flash.detected || entry.flash.triggerMs == null) return 'none';
+  const w = getTotalOpenWindow(entry);
+  if (!w) return 'bad';
+  const trigger = Number(entry.flash.triggerMs);
+  if (!Number.isFinite(trigger) || trigger < w.startMs || trigger > w.endMs) return 'bad';
+  return trigger >= (w.endMs - FLASH_SYNC_LATE_MARGIN_MS) ? 'late' : 'ok';
+}
+
 // Check whether the flash trigger occurred during the useful open window.
 function isFlashSyncOk(entry) {
-  if (!entry || !entry.flash || !entry.flash.detected || entry.flash.triggerMs == null) return null;
-  const w = getTotalOpenWindow(entry);
-  if (!w) return false;
-  return entry.flash.triggerMs >= w.startMs && entry.flash.triggerMs <= w.endMs;
+  const state = flashSyncState(entry);
+  if (state === 'none') return null;
+  return state === 'ok' || state === 'late';
+}
+
+// Return a drawing color for the detailed flash-sync state.
+function flashSyncColor(entry) {
+  const state = flashSyncState(entry);
+  if (state === 'ok') return '#56c47e';
+  if (state === 'late') return '#f5b030';
+  if (state === 'bad') return '#e86060';
+  return '#4a564a';
 }
 
 // Return HTML for the flash-sync status icon.
 function flashSyncIcon(entry) {
-  const ok = isFlashSyncOk(entry);
-  if (ok === true) return `<span title="${esc(tx('flash.within', 'Flash within total opening'))}" style="color:var(--green);font-size:16px;">●</span>`;
-  if (ok === false) return `<span title="${esc(tx('flash.outside', 'Flash outside total opening'))}" style="color:var(--red);font-size:16px;">×</span>`;
+  const state = flashSyncState(entry);
+  if (state === 'ok') return `<span title="${esc(tx('flash.within', 'Flash within total opening'))}" style="color:var(--green);font-size:16px;">●</span>`;
+  if (state === 'late') return `<span title="${esc(tx('flash.late', 'Flash near the end of total opening'))}" style="color:var(--amber);font-size:16px;">●</span>`;
+  if (state === 'bad') return `<span title="${esc(tx('flash.outside', 'Flash outside total opening'))}" style="color:var(--red);font-size:16px;">×</span>`;
   return `<span title="${esc(tx('flash.none', 'No flash detected'))}" style="color:var(--tx4);font-size:16px;">—</span>`;
 }
 
@@ -611,9 +653,8 @@ function drawTimelineVertical(entry, canvas) {
   if (entry.flash && entry.flash.detected && entry.flash.triggerMs != null) {
     const fy = toY(entry.flash.triggerMs);
     if (fy >= PAD_T && fy <= H - PAD_B) {
-      const ok = isFlashSyncOk(entry);
       ctx.save();
-      ctx.strokeStyle = ok ? '#56c47e' : '#e86060';
+      ctx.strokeStyle = flashSyncColor(entry);
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();

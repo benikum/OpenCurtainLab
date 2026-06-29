@@ -69,10 +69,8 @@ public:
     _display.ssd1306_command(SSD1306_DISPLAYON);
   }
 
-  // Renders the ready screen including target time, mode, SSID/network line, IP address, and possible error/hint.
-  void showReady(int targetFraction, MeasurementMode mode, const String& networkLine, const String& ipAddress,
-                 DeviceError deviceError = DeviceError::None,
-                 MeasurementHint readyHint = MeasurementHint::None) {
+  // Renders the ready screen including target time, mode, SSID, IP address, and status indicators.
+  void showReady(int targetFraction, MeasurementMode mode, const String& networkLine, const String& ipAddress, bool flashContactClosed = false) {
     _display.ssd1306_command(SSD1306_DISPLAYON);
     _display.clearDisplay();
     _display.setTextColor(SSD1306_WHITE);
@@ -81,26 +79,22 @@ public:
     _printClipped(networkLine.length() ? networkLine.c_str() : "offline", 17);
     _drawModeIcon(mode, 105, 0);
 
+    _display.setCursor(0, 10);
+    if (ipAddress.length() && ipAddress != "0.0.0.0") _printClipped(ipAddress.c_str(), 17);
+    else _printClipped("0.0.0.0", 17);
+
     char buf[16];
     _formatFraction(buf, sizeof(buf), targetFraction, true);
     _display.setTextSize(3);
     int16_t x1, y1; uint16_t w, h;
     _display.getTextBounds(buf, 0, 0, &x1, &y1, &w, &h);
-    _display.setCursor((SCREEN_WIDTH - w) / 2, 16);
+    const int targetAreaTop = 24;
+    const int targetAreaBottom = 56;
+    const int targetY = targetAreaTop + ((targetAreaBottom - targetAreaTop - (int)h) / 2);
+    _display.setCursor((SCREEN_WIDTH - w) / 2, targetY);
     _display.print(buf);
 
-    _display.setTextSize(1);
-    _display.setCursor(0, 46);
-    if (deviceError != DeviceError::None) _printClipped(deviceErrorText(deviceError), 21);
-    else if (readyHint != MeasurementHint::None) _printClipped(measurementHintText(readyHint), 21);
-
-    _display.setCursor(0, 56);
-    if (ipAddress.length() && ipAddress != "0.0.0.0") {
-      _display.print("IP ");
-      _printClipped(ipAddress.c_str(), 18);
-    } else {
-      _printClipped("IP unavailable", 21);
-    }
+    if (flashContactClosed) _drawFlashContactIcon(0, SCREEN_HEIGHT - FLASH_ICON_HEIGHT);
     _display.display();
   }
 
@@ -111,31 +105,23 @@ public:
     _display.setTextColor(SSD1306_WHITE);
     _display.setTextSize(1);
 
-    // Invalid measurements still show the diagnostic hint instead of an empty result screen.
+    // Invalid measurements show only a compact generic result screen; WebUI performs detailed hint analysis.
     if (!result.valid || result.activatedCount <= 0) {
-      _display.setCursor(10, 12);
+      _display.setCursor(10, 18);
       _display.print("No valid");
-      _display.setCursor(20, 26);
+      _display.setCursor(20, 32);
       _display.print("measurement");
-      if (result.hint != MeasurementHint::None) {
-        _printWrapped(measurementHintText(result.hint), 0, 42, 21, 2);
-      }
       _display.display();
       return;
     }
 
     const bool capping = (result.activatedCount < SENSOR_COUNT && mode != MeasurementMode::CENTRAL);
 
-    // Page 2 uses a fixed two-column layout for the five sensor raw/display summaries.
+    // Page 2 shows the five sensor values along the physical sensor diagonal: S0 top-right, S4 bottom-left.
     if (page == 2) {
       for (int i = 0; i < SENSOR_COUNT; i++) {
-        const int x = (i < 3) ? 0 : 68;
-        const int y = (i < 3) ? i * 20 : (i - 3) * 20;
-        _drawResultSensorCell(x, y, i, result.sensors[i], summary.sensors[i]);
+        _drawResultSensorValueDiagonal(i, result.sensors[i], summary.sensors[i]);
       }
-      _display.setCursor(68, 44);
-      if (capping) _display.print("CAP");
-      else if (result.hint != MeasurementHint::None) _printClipped(measurementHintKey(result.hint), 10);
       _display.display();
       return;
     }
@@ -228,16 +214,22 @@ private:
   }
 
 
-  // Draws one compact sensor result cell on the per-sensor page.
-  void _drawResultSensorCell(int x, int y, int idx, const SensorReading& s, const SensorDisplaySummary& summary) {
-    _display.setTextSize(1);
-    _display.setCursor(x, y);
-    _display.print("S");
-    _display.print(idx);
-    _display.print(" ");
+  // Draws one sensor value on the diagonal per-sensor page.
+  void _drawResultSensorValueDiagonal(int idx, const SensorReading& s, const SensorDisplaySummary& summary) {
+    static const int centerX[SENSOR_COUNT] = { 106, 82, 64, 46, 22 };
+    static const int y[SENSOR_COUNT] = { 0, 13, 26, 39, 52 };
+
     char frac[12];
     if (s.wasActivated && summary.measuredFraction > 0) _formatFraction(frac, sizeof(frac), summary.measuredFraction, true);
     else snprintf(frac, sizeof(frac), "---");
+
+    _display.setTextSize(1);
+    int16_t x1, y1; uint16_t w, h;
+    _display.getTextBounds(frac, 0, 0, &x1, &y1, &w, &h);
+    int x = centerX[idx] - ((int)w / 2);
+    if (x < 0) x = 0;
+    if (x + (int)w > SCREEN_WIDTH) x = SCREEN_WIDTH - (int)w;
+    _display.setCursor(x, y[idx]);
     _display.print(frac);
   }
 
@@ -299,9 +291,22 @@ private:
     0x00, 0xFF, 0xFF, 0x00, 0x00, 0x3F, 0xFC, 0x00
   };
 
+
+
+  static constexpr uint8_t FLASH_ICON_WIDTH = 6;
+  static constexpr uint8_t FLASH_ICON_HEIGHT = 9;
+  static constexpr uint8_t FLASH_ICON_BITMAP[] PROGMEM = {
+    0xF0, 0xF0, 0xF0, 0xFC, 0xFC, 0xF8, 0x38, 0x30, 0x20
+  };
+
   // Draws the built-in bitmap logo at the requested position.
   void _drawLogo(int x, int y) {
     _display.drawBitmap(x, y, LOGO_BITMAP, LOGO_BITMAP_WIDTH, LOGO_BITMAP_HEIGHT, SSD1306_WHITE);
+  }
+
+  // Draws the flash-contact status icon in the bottom status row.
+  void _drawFlashContactIcon(int x, int y) {
+    _display.drawBitmap(x, y, FLASH_ICON_BITMAP, FLASH_ICON_WIDTH, FLASH_ICON_HEIGHT, SSD1306_WHITE);
   }
 
   // Draws the shutter measurement mode icon inside a fixed frame.

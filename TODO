@@ -1,4 +1,0 @@
-7. neuer messfehler: sensorreihenfolge durcheinander. also S1-s3-s2-s0 kann nicht sein und wenn die schließrichtung andersrum als die öffnungsrichtung ist. das ist ein fehlertyp der die messung wie bei 4. ungültig macht.
-9. die berechnung der noten für die zeiten und die kamerascores sollten angepasst werden anhand von realen messdaten
-10. die daten in der exportierten csv datei sind nicht leicht verständlich. eventuell ändern zu (oder ergänzen): "kamera messergebnis html", eine standalone seite die wie eine urkunde wirkt und die daten aus dem projekt enthält.
-11. messungen im projekt nach zielzeit/ neueste sortieren

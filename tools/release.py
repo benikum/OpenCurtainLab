@@ -265,7 +265,7 @@ def discover_app_version() -> str:
             return match.group(1)
     except OSError:
         pass
-    return '0.1.0'
+    return '0.1.1'
 
 
 def script_tag(script_id: str, mime_type: str, content: str) -> str:
@@ -336,7 +336,7 @@ def remove_dev_assets(markup: str) -> str:
     return markup
 
 
-def webui_paths() -> tuple[Path, Path, list[Path], Path, Path]:
+def webui_paths() -> tuple[Path, Path, list[Path], Path, Path, Path]:
     js_files = [
         WEB / 'js' / 'i18n.js',
         WEB / 'js' / 'utils.js',
@@ -347,19 +347,21 @@ def webui_paths() -> tuple[Path, Path, list[Path], Path, Path]:
         WEB / 'js' / 'project-analysis.js',
         WEB / 'js' / 'charts.js',
         WEB / 'js' / 'backup-export.js',
+        WEB / 'js' / 'report-export.js',
         WEB / 'app.js',
     ]
-    return WEB / 'index.html', WEB / 'app.css', js_files, WEB / 'i18n', WEB / 'tutorial'
+    return WEB / 'index.html', WEB / 'app.css', js_files, WEB / 'i18n', WEB / 'tutorial', WEB / 'report-template.html'
 
 
 def validate_webui_sources(debug: bool = False) -> None:
-    index_path, css_path, js_files, i18n_dir, tutorial_dir = webui_paths()
+    index_path, css_path, js_files, i18n_dir, tutorial_dir, report_template_path = webui_paths()
     required: list[tuple[Path, str]] = [
         (index_path, 'WebUI template'),
         (css_path, 'WebUI CSS'),
         *[(path, f'JavaScript source {rel(path)}') for path in js_files],
         *[(i18n_dir / f'{lang}.json', f'i18n bundle {lang}') for lang in LANGS],
         *[(tutorial_dir / f'{lang}.html', f'tutorial fragment {lang}') for lang in LANGS],
+        (report_template_path, 'HTML report template'),
     ]
     for path, label in required:
         debug_print(debug, f'{label}: {path} [{"ok" if path.is_file() else "missing"}]')
@@ -379,7 +381,7 @@ def build_webui(
         out_path = WEB / 'compiled' / f'compiled-v{discover_app_version()}.html'
     out_path = resolve_project_path(out_path)
 
-    index_path, css_path, js_files, i18n_dir, tutorial_dir = webui_paths()
+    index_path, css_path, js_files, i18n_dir, tutorial_dir, report_template_path = webui_paths()
     debug_print(debug, f'webui default language: {default_lang}')
     debug_print(debug, f'webui output: {out_path}')
 
@@ -401,12 +403,13 @@ def build_webui(
     html_out = html_out.replace('<!-- OCL_INLINE_CSS -->', '<style>\n' + css + '\n</style>')
     html_out = html_out.replace('<!-- OCL_INLINE_I18N -->', script_tag('ocl-i18n-all', 'application/json', i18n_blob))
     html_out = html_out.replace('<!-- OCL_INLINE_TUTORIALS -->', '\n'.join(tutorials))
+    html_out = html_out.replace('<!-- OCL_INLINE_REPORT_TEMPLATE -->', script_tag('ocl-report-template', 'text/html', read_text(report_template_path)))
     html_out = html_out.replace('<!-- OCL_INLINE_JS -->', '<script>\n' + js.replace('</script', '<\\/script') + '\n</script>')
 
     missing = [
         marker for marker in (
             'OCL_INLINE_CSS', 'OCL_INLINE_I18N', 'OCL_INLINE_TUTORIALS',
-            'OCL_INLINE_JS'
+            'OCL_INLINE_REPORT_TEMPLATE', 'OCL_INLINE_JS'
         ) if marker in html_out
     ]
     if missing:

@@ -272,13 +272,13 @@ public:
     else if (!_connected) WiFi.mode(WIFI_STA);
     const int n = WiFi.scanNetworks(false, true);
 
-    DynamicJsonDocument doc(256 + (n > 0 ? n : 0) * 128);
+    JsonDocument doc;
     doc["ok"] = true;
-    JsonArray networks = doc.createNestedArray("networks");
+    JsonArray networks = doc["networks"].to<JsonArray>();
 
     // Return only the fields the setup page needs.
     for (int i = 0; i < n; i++) {
-      JsonObject net = networks.createNestedObject();
+      JsonObject net = networks.add<JsonObject>();
       net["ssid"] = WiFi.SSID(i);
       net["rssi"] = WiFi.RSSI(i);
       net["secure"] = WiFi.encryptionType(i) != WIFI_AUTH_OPEN;

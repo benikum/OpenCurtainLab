@@ -1,4 +1,4 @@
-// Notes, backup/import, CSV export, modal helpers, toasts, and developer test-data injection.
+// Project notes, backup/import, CSV export, modal helpers, toasts, and developer test-data injection.
 
 // ════════════════════════════════════════════
    // NOTE FIELD HELPERS
@@ -6,11 +6,6 @@
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
-}
-// Save the note for a selected measurement.
-function saveNote(entryId, text) {
-  const e = S.history.find(h => h.id === entryId);
-  if (e) { e.note = text; saveAppData(); }
 }
 // Save the note for the active project.
 function saveProjNote(projId, text) {
@@ -201,13 +196,9 @@ function normalizeImportedBackup(data) {
     const avgSec = durations.reduce((sum, value) => sum + value, 0) / durations.length;
     const minSec = Math.min(...durations);
     const maxSec = Math.max(...durations);
-    const hint = normalizeHint(raw);
-    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: raw.valid !== false, count: active.length });
-    if (projectInvalid && hint.hint === 'none' && active.length > 0 && active.length < MIN_VALID_SENSOR_COUNT) {
-      hint.hint = 'too_few_sensors';
-      hint.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
-      hint.hasHint = true;
-    }
+    const flash = normalizeImportedFlash(raw.flash, baseUs);
+    const hint = evaluateMeasurementHintFromData({ sensors, flash });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length });
     const geometry = currentMeasurementGeometry();
     const x = Number(raw.sensorDistanceXmm);
     const y = Number(raw.sensorDistanceYmm);
@@ -220,7 +211,7 @@ function normalizeImportedBackup(data) {
       ts: Number.isFinite(Number(raw.ts)) ? Number(raw.ts) : Date.now(),
       valid: !projectInvalid,
       sensors,
-      flash: normalizeImportedFlash(raw.flash, baseUs),
+      flash,
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 ? Math.log2(avgSec / targetSec) : 0,

@@ -1,5 +1,5 @@
 /*
- * Defines measurement modes, raw sensor readings, flash readings, device status, network hints, measurement hints, and result summary structs.
+ * Defines measurement modes, raw sensor readings, flash readings, device status, network hints, and result summary structs.
  */
 
 #pragma once
@@ -172,51 +172,13 @@ static inline const char* networkHintKey(NetworkHint hint) {
 static inline const char* networkHintText(NetworkHint hint) {
   switch (hint) {
     case NetworkHint::None: return "";
-    case NetworkHint::NoCredentials: return "No saved WiFi credentials";
+    case NetworkHint::NoCredentials: return "Connect to a network through the setup";
     case NetworkHint::AccessPointActive: return "Setup access point is active";
     case NetworkHint::ConnectionFailed: return "WiFi connection failed";
     case NetworkHint::Reconnecting: return "WiFi reconnecting";
     case NetworkHint::MdnsFailed: return "mDNS responder failed";
   }
   return "Unknown network hint";
-}
-
-enum class MeasurementHint : uint8_t {
-  None,
-  SensorAlreadyActiveAtStart,
-  FlashAlreadyActiveAtStart,
-  FlashWithoutSensor,
-  TimeoutWithData,
-  IncompleteSensorCoverage,
-  TooFewSensors
-};
-
-// Converts a measurement hint to its API key.
-static inline const char* measurementHintKey(MeasurementHint hint) {
-  switch (hint) {
-    case MeasurementHint::None: return "none";
-    case MeasurementHint::SensorAlreadyActiveAtStart: return "sensor_already_active_at_start";
-    case MeasurementHint::FlashAlreadyActiveAtStart: return "flash_already_active_at_start";
-    case MeasurementHint::FlashWithoutSensor: return "flash_without_sensor";
-    case MeasurementHint::TimeoutWithData: return "timeout_with_data";
-    case MeasurementHint::IncompleteSensorCoverage: return "incomplete_sensor_coverage";
-    case MeasurementHint::TooFewSensors: return "too_few_sensors";
-  }
-  return "unknown";
-}
-
-// Converts a measurement hint to display text.
-static inline const char* measurementHintText(MeasurementHint hint) {
-  switch (hint) {
-    case MeasurementHint::None: return "";
-    case MeasurementHint::SensorAlreadyActiveAtStart: return "Sensor already active at start";
-    case MeasurementHint::FlashAlreadyActiveAtStart: return "Flash contact already active at start";
-    case MeasurementHint::FlashWithoutSensor: return "Flash contact triggered, but no sensor activated";
-    case MeasurementHint::TimeoutWithData: return "Timeout: measurement finished with available raw data";
-    case MeasurementHint::IncompleteSensorCoverage: return "Incomplete measurement: not all sensors were covered";
-    case MeasurementHint::TooFewSensors: return "Too few sensors covered for a valid measurement";
-  }
-  return "Unknown measurement hint";
 }
 
 struct SensorDisplaySummary {
@@ -261,9 +223,7 @@ struct MeasurementResult {
   SensorReading sensors[SENSOR_COUNT];
   FlashReading flash;
   MeasurementMode mode = MeasurementMode::HORIZONTAL;
-  MeasurementHint hint = MeasurementHint::None;
-
-  // Clears the raw measurement result, including all sensors, flash data, mode, and hint.
+  // Clears the raw measurement result, including all sensors, flash data, and mode.
   void reset() {
     valid = false;
     activatedCount = 0;
@@ -271,6 +231,5 @@ struct MeasurementResult {
     for (int i = 0; i < SENSOR_COUNT; i++) sensors[i].reset();
     flash.reset();
     mode = MeasurementMode::HORIZONTAL;
-    hint = MeasurementHint::None;
   }
 };

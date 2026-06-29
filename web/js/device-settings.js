@@ -79,7 +79,6 @@ async function initDeviceConnection(showMessages = true, hostOnly = false) {
       saveDeviceConfigLocal();
       applyDeviceConfig(cfg);
       await fetchDeviceStatus(true);
-      await checkAppVersion();
       S.connectionProblem = null;
       setConnState('connected');
       if (showMessages) toast(tf('toast.deviceConnected', 'Device connected: {host}', {host: S.deviceHost}), 'success');
@@ -177,11 +176,57 @@ function setDeviceAddressError(message = '') {
   if (input) input.classList.toggle('invalid', !!message);
 }
 
-// Normalize firmware hint strings into known codes.
+// Build a normalized WebUI-side measurement hint object.
+function makeMeasurementHint(hint = 'none', fallbackTitle = '') {
+  const key = String(hint || 'none');
+  const title = key === 'none' ? '' : tx('measurementHints.' + key + '.title', fallbackTitle || key);
+  return { hint: key, hintText: title, hasHint: key !== 'none' };
+}
+
+// Return true when the raw timing pattern looks like a firmware capture timeout.
+function isTimeoutMeasurementPattern(activeSensors) {
+  if (!Array.isArray(activeSensors) || !activeSensors.length) return false;
+  const closeMs = activeSensors.map(s => Number(s.closeMs)).filter(v => Number.isFinite(v) && v > 0);
+  if (!closeMs.length) return false;
+  const maxCloseMs = Math.max(...closeMs);
+  if (maxCloseMs < (WEB_MEASUREMENT_TIMEOUT_MS - WEB_MEASUREMENT_TIMEOUT_MARGIN_MS)) return false;
+
+  // Timeout closing is produced by one forced timestamp, so repeated closeUs values are a strong signal.
+  const closeUsValues = activeSensors.map(s => Number(s.closeUs)).filter(v => Number.isFinite(v) && v > 0);
+  const roundedCounts = new Map();
+  closeUsValues.forEach(v => {
+    const k = Math.round(v / 1000); // millisecond bucket is enough for browser-side diagnostics.
+    roundedCounts.set(k, (roundedCounts.get(k) || 0) + 1);
+  });
+  const repeatedForcedClose = Array.from(roundedCounts.values()).some(count => count >= 2);
+  return repeatedForcedClose || activeSensors.length === 1;
+}
+
+// Derive measurement hints in the WebUI from raw sensor and flash data.
+function evaluateMeasurementHintFromData(data = {}) {
+  const sensors = Array.isArray(data.sensors) ? data.sensors : [];
+  const activeSensors = sensors.filter(s => s && s.activated && Number(s.openUs) > 0 && Number(s.closeUs) > Number(s.openUs));
+  const flash = data.flash || null;
+  const flashDetected = !!(flash && flash.detected && Number(flash.triggerUs) > 0);
+
+  if (activeSensors.length && isTimeoutMeasurementPattern(activeSensors)) {
+    return makeMeasurementHint('timeout_with_data', 'Timeout measurement');
+  }
+  if (!activeSensors.length && flashDetected) {
+    return makeMeasurementHint('flash_without_sensor', 'Flash without shutter sensor');
+  }
+  if (activeSensors.length > 0 && activeSensors.length < MIN_VALID_SENSOR_COUNT) {
+    return makeMeasurementHint('too_few_sensors', 'Too few sensors were covered');
+  }
+  if (activeSensors.length > 0 && activeSensors.length < 5) {
+    return makeMeasurementHint('incomplete_sensor_coverage', 'Incomplete sensor coverage');
+  }
+  return makeMeasurementHint('none');
+}
+
+// Compatibility wrapper: measurement hints are intentionally derived in the WebUI, not trusted from firmware packets.
 function normalizeHint(packet) {
-  const hint = packet && packet.hint ? String(packet.hint) : 'none';
-  const hintText = packet && packet.hintText ? String(packet.hintText) : '';
-  return { hint, hintText, hasHint: hint !== 'none' && hintText.length > 0 };
+  return evaluateMeasurementHintFromData(packet || {});
 }
 
 // Compare two dotted semantic-ish version strings.
@@ -427,18 +472,6 @@ function formatBatteryVoltageStatus(voltage) {
   return `${label}V - ${pct ?? 0}%`;
 }
 
-// Format seconds from /status as a compact uptime string.
-function formatSettingsUptime(seconds) {
-  const n = Number(seconds);
-  if (!Number.isFinite(n) || n < 0) return tx('settingsInfo.unavailable', '—');
-  const days = Math.floor(n / 86400);
-  const hours = Math.floor((n % 86400) / 3600);
-  const minutes = Math.floor((n % 3600) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
-
 // Render important /status details in the device settings card.
 function renderSettingsDeviceInfo() {
   const el = document.getElementById('settings-device-info');
@@ -449,14 +482,13 @@ function renderSettingsDeviceInfo() {
   const rt = S.deviceRuntime || {};
   const dash = tx('settingsInfo.unavailable', '—');
   const statusOk = !(dev.error && dev.error !== 'none');
-  const connected = !!(S.connected || net.connected);
+  const connected = !!S.connected;
   const statusValue = !connected
-    ? tx('settingsInfo.notConnected', 'not connected')
+    ? tx('settingsInfo.notConnected', 'disconnected')
     : statusOk ? tx('settingsInfo.ok', 'OK') : (dev.errorText || dev.error || tx('settingsInfo.problem', 'problem'));
   const rows = [
     { label: tx('settingsInfo.status', 'Status'), value: statusValue, cls: !connected ? 'warn' : (statusOk ? 'ok' : 'err') },
-    { label: tx('settingsInfo.ip', 'IP'), value: net.ip || cfg.ip || dash },
-    { label: tx('settingsInfo.uptime', 'Uptime'), value: formatSettingsUptime(rt.uptime) }
+    { label: tx('settingsInfo.ip', 'IP'), value: connected ? (net.ip || cfg.ip || dash) : dash }
   ];
   if (isBatteryVoltageEnabled()) {
     rows.push({ label: tx('settingsInfo.battery', 'Battery'), value: formatBatteryVoltageStatus(rt.batteryVoltage) });
@@ -566,6 +598,7 @@ function setPollingIntervalMs(value) {
   if (input) input.value = String(interval);
   startPollingLoop();
 }
+
 
 // Attach event handlers for settings controls once.
 function bindSettingsChangeHandlers() {
@@ -681,7 +714,6 @@ async function connectToDeviceAddress() {
     S.deviceHost = base.replace(/^https?:\/\//, '');
     applyDeviceConfig(cfg);
     await fetchDeviceStatus(true);
-    await checkAppVersion();
     saveDeviceConfigLocal();
     S.connectionProblem = null;
     setConnState('connected');

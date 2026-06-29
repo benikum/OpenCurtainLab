@@ -101,23 +101,28 @@ async function checkAppVersion() {
 // Update connection state indicators and warnings.
 function setConnState(state) {
   const normalized = state === 'connected' ? 'connected' : 'connecting';
+  const wasConnected = !!S.connected;
   const dot  = document.getElementById('cdot');
   const lbl  = document.getElementById('clabel');
   const pill = dot ? dot.closest('.conn-pill') : null;
-  if (!dot || !lbl) return;
 
   // The pill only reports API reachability. Diagnostics are displayed as popup notifications.
   if (pill) pill.className = 'conn-pill ' + normalized;
 
   if (normalized === 'connected') {
     S.connected = true;
-    dot.className = 'conn-dot on';
+    if (dot) dot.className = 'conn-dot on';
   } else {
     S.connected = false;
-    dot.className = 'conn-dot';
+    if (dot) dot.className = 'conn-dot';
+    if (S.networkStatus) S.networkStatus.connected = false;
   }
 
-  lbl.textContent = connectionLabelForState(normalized);
+  if (lbl) lbl.textContent = connectionLabelForState(normalized);
+  if (normalized === 'connected' && !wasConnected) {
+    checkAppVersion();
+  }
+  if (wasConnected !== !!S.connected) renderDeviceConfigSummary();
   renderEmptyStateIfNeeded();
 }
 
@@ -136,14 +141,12 @@ function notifyMeasurementHint(entry) {
 function ingestMeasurement(d) {
   if (!d || !d.id) return false;
 
-  const h = normalizeHint(d);
-  if (h.hasHint) notifyMeasurementHint({ id: d.id, hint: h.hint, hintText: h.hintText });
-
   // Store measurements with raw timing data even when they are invalid for camera projects.
   // They are kept in the default project for diagnostics and excluded from project scores.
   const previouslyActive = activeProject();
   const entry = buildEntryFromPacket(d);
   if (!entry) return false;
+  if (entry.hint && entry.hint !== 'none') notifyMeasurementHint(entry);
 
   const assignedToDefault = previouslyActive &&
     !isDefaultProject(previouslyActive) &&
@@ -221,13 +224,8 @@ function buildEntryFromPacket(d) {
       };
     }
 
-    const h = normalizeHint(d);
-    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: d.valid !== false, count: act.length });
-    if (projectInvalid && h.hint === 'none' && act.length > 0 && act.length < MIN_VALID_SENSOR_COUNT) {
-      h.hint = 'too_few_sensors';
-      h.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
-      h.hasHint = true;
-    }
+    const h = evaluateMeasurementHintFromData({ sensors, flash });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: h.hint === 'too_few_sensors' ? false : d.valid !== false, count: act.length });
     if (!act.length) return null;
     const geometry = currentMeasurementGeometry();
     const x = Number(d.sensorDistanceXmm);
@@ -308,9 +306,9 @@ function detectedTravelDirectionLabel(entry) {
 
 // Return a measurement-mode label with detected direction when available.
 function measurementModeSummary(entry) {
-  const base = modeLabel(entry && entry.mode);
   const direction = detectedTravelDirectionLabel(entry);
-  return direction ? `${base} · ${direction}` : base;
+  if (direction) return direction;
+  return modeLabel(entry && entry.mode);
 }
 
 function historyDirectionArrowHtml(entry) {
@@ -448,6 +446,15 @@ function renderProjList() {
   }).join('');
 }
 
+// Return the optional second history metadata line for measurement hints.
+function measurementHistoryHintLine(entry) {
+  if (!entry || !entry.hint || entry.hint === 'none') return '';
+  const h = typeof measurementHintHelp === 'function' ? measurementHintHelp(entry.hint, entry.hintText || entry.hint) : null;
+  const text = (h && h.title) || entry.hintText || entry.warning || entry.hint;
+  if (!text) return '';
+  return `<span class="h-meta-line h-meta-hint" title="${esc(text)}">${esc(text)}</span>`;
+}
+
 // ════════════════════════════════════════════
    // HISTORY LIST
 // ════════════════════════════════════════════
@@ -476,7 +483,7 @@ function renderHistList() {
       return `<div class="h-entry err" id="he-${e.id}">
         <div class="h-time" style="color:var(--red);">ERROR</div>
         <div class="h-dev pos">!</div>
-        <div class="h-meta"><span class="h-meta-line">${ts}</span><span class="h-meta-line">${esc(e.error || 'Unknown error')}</span></div>
+        <div class="h-meta"><span class="h-meta-line">${ts} · ${esc(e.error || 'Unknown error')}</span></div>
         <div class="h-mode h-mode-empty">—</div>
       </div>`;
     }
@@ -489,7 +496,7 @@ function renderHistList() {
     return `<div class="h-entry ${sel}" id="he-${e.id}" onclick="selectEntry('${e.id}')">
       <div class="h-time">1/${e.avgFrac}</div>
       <div class="h-dev ${dc}"><span>${ds}</span><span class="h-dev-unit">EV</span></div>
-      <div class="h-meta"><span class="h-meta-line">${ts}</span><span class="h-meta-line">${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.${e.warning ? ' · ' + tx('labels.warning', 'Warning') : ''}</span></div>
+      <div class="h-meta"><span class="h-meta-line">${ts} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.</span>${measurementHistoryHintLine(e)}</div>
       ${historyModeHtml(e)}
     </div>`;
   }).join('');
@@ -537,9 +544,6 @@ function renderDetailView(id) {
   // Single measurements remain a raw diagnostic view.
   // Curtain condition summaries are intentionally only shown in the project view,
   // where repeated measurements make the rating meaningful.
-
-  // Persist note
-  const noteKey = 'note_' + id;
 
   setSettingsNavActive(false);
   setContentEmptyView(false);
@@ -603,17 +607,6 @@ function renderDetailView(id) {
         <div class="tl-wrap"><canvas id="curtain-time-chart"></canvas></div>
       </div>
     </div>`}
-
-    <!-- Grade field -->
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">${tx('cards.note', 'Note')}</span></div>
-      <div class="card-body" style="padding:8px 10px;">
-        <textarea class="note-field" id="note-field"
-          placeholder="${esc(tx('placeholders.measurementNotes', 'Notes for this measurement…'))}"
-          oninput="autoResize(this);saveNote('${id}',this.value)"
-        >${esc(e.note||'')}</textarea>
-      </div>
-    </div>
 
   `;
 

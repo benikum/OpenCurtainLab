@@ -28,7 +28,7 @@
     "backupImported": "Backup-JSON importiert",
     "importFailed": "Import fehlgeschlagen: keine gültige JSON-Datei",
     "backupExported": "Backup-JSON exportiert",
-    "csvExported": "Kamera-Zusammenfassung als CSV exportiert — {count} Zielzeiten",
+    "csvExported": "Kamera-Attribute als CSV exportiert — {count} Zielzeiten",
     "projectNameExists": "Ein Projekt mit diesem Namen existiert bereits",
     "noTargetTimesSelected": "Bitte mindestens eine Zielzeit auswählen",
     "customTimesInvalid": "Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.",
@@ -42,7 +42,9 @@
     "measurementAssignedToDefaultIncompatible": "Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.",
     "deviceNotConnected": "Gerät nicht verbunden",
     "languageUnavailable": "Sprachdateien sind nicht verfügbar",
-    "batteryLow": "Batterie niedrig: {voltage} V ({percent}%)."
+    "batteryLow": "Batterie niedrig: {voltage} V ({percent}%).",
+    "reportExported": "HTML-Kamerabericht exportiert",
+    "reportExportFailed": "HTML-Kamerabericht konnte nicht exportiert werden"
   },
   "frame": {
     "tutorialTitle": "OpenCurtainLab Anleitung",
@@ -106,7 +108,6 @@
     "flashSync": "Blitz-Sync"
   },
   "placeholders": {
-    "measurementNotes": "Notizen zu dieser Messung…",
     "projectNotes": "Notizen zu diesem Projekt…"
   },
   "condition": {
@@ -133,10 +134,10 @@
   "flash": {
     "within": "Blitz innerhalb der totalen Öffnung",
     "outside": "Blitz außerhalb der totalen Öffnung",
+    "late": "Blitz in den letzten 2 ms der totalen Öffnung",
     "none": "Kein Blitz erkannt"
   },
   "project": {
-    "distributionTitle": "Verteilung der wiederholten Messungen",
     "overallRating": "Kamera — Gesamtbewertung",
     "condition": "Zustand",
     "measurements": "Messungen",
@@ -149,22 +150,17 @@
     "fromLocalCurtainSpeeds": "aus lokaler Vorhanggeschwindigkeit",
     "parallelism": "Parallelität",
     "fromSlitWidth": "aus Schlitzbreite je Sensor",
-    "curtainsSummary": "Vorhänge — Geschwindigkeitsübersicht",
-    "openingCurtain": "Öffnender Vorhang",
-    "closingCurtain": "Schließender Vorhang",
     "zeroMeas": "0 Mess.",
     "measShort": "Mess.",
     "series": "Messreihe",
     "defaultName": "Standardprojekt",
     "deleteProject": "Projekt löschen",
     "deleteProjectHelp": "Löscht das Projekt. Die Messungen werden ins Standardprojekt verschoben.",
-    "delete": "LÖSCHEN",
-    "localSpeedVariation": "lokale Geschwindigkeitsabweichung"
+    "delete": "LÖSCHEN"
   },
   "table": {
     "target": "Zielzeit",
     "avgMeasurement": "Ø Messung",
-    "distribution": "Verteilung",
     "grade": "Note",
     "flash": "Blitz",
     "curtainSpeed": "Vorhanggeschwindigkeit"
@@ -285,7 +281,7 @@
     "projects": "Projekte",
     "newProject": "Neues Projekt",
     "projectMeasurements": "Projektmessungen",
-    "webUiVersion": "WebUI v0.1.0",
+    "webUiVersion": "WebUI v0.1.1",
     "device": "Gerät",
     "deviceAddress": "Geräteadresse",
     "connect": "Verbinden",
@@ -332,12 +328,11 @@
   "settingsInfo": {
     "connection": "Verbindung",
     "connected": "verbunden",
-    "notConnected": "nicht verbunden",
+    "notConnected": "Verbindung getrennt",
     "ip": "IP",
     "hostname": "Hostname",
     "wifi": "WLAN",
     "signal": "Signal",
-    "uptime": "Laufzeit",
     "measurements": "Messungen",
     "status": "Status",
     "ok": "OK",
@@ -351,5 +346,54 @@
     "rightLeft": "rechts → links",
     "topDown": "oben → unten",
     "bottomTop": "unten → oben"
-  }
+  },
+  "report": {
+    "title": "Kamera-Messbericht",
+    "notRated": "Nicht bewertet",
+    "excellent": "Sehr gut",
+    "good": "Gut",
+    "usable": "Brauchbar",
+    "needsServiceSoon": "Service sinnvoll",
+    "serviceRecommended": "Service empfohlen",
+    "flashRecommendedMeasured": "Maximale gemessene Blitzzeit",
+    "noSafeFlashSync": "Keine sichere Blitzzeit gemessen",
+    "flashNotMeasured": "Blitzsynchronzeit nicht gemessen",
+    "allMeasuredFlashFailed": "Alle gemessenen Blitzzeiten hatten Fehler",
+    "noFlashData": "Keine Blitzdaten in diesem Projekt",
+    "notMeasured": "Nicht gemessen",
+    "projectNote": "Projektnotiz",
+    "accuracyBody": "Bewertet tatsächliche Belichtungszeiten und Spread über das Bild. Spread wird höher gewichtet als Offset, weil ungleichmäßige Belichtung schwerer auszugleichen ist.",
+    "reliabilityBody": "Bewertet Unterschiede zwischen wiederholten Messungen derselben Zielzeiten. Einzelmessungen werden angezeigt, reichen aber nicht für Zuverlässigkeit.",
+    "curtainBody": "Bewertet gleichmäßige lokale Vorhanggeschwindigkeit und Parallelität zwischen öffnendem und schließendem Vorhang.",
+    "measurements": "Messungen",
+    "targetTimes": "Zielzeiten",
+    "mode": "Modus",
+    "overall": "Gesamt",
+    "recommendedFlash": "Maximale Blitzzeit",
+    "accuracy": "Genauigkeit",
+    "reliability": "Zuverlässigkeit",
+    "curtainCondition": "Vorhangzustand",
+    "exposureOffsets": "Belichtungsoffsets",
+    "resultsTable": "Ergebnistabelle",
+    "measured": "Gemessen",
+    "time": "Zeit",
+    "offset": "Offset",
+    "spread": "Spread",
+    "repeatability": "Wiederholbarkeit",
+    "maximumFlashTime": "Maximale Blitzzeit",
+    "evScale": "Offset in EV, Fehlerindikator zeigt Spread",
+    "validProjectMeasurements": "gültige Projektmessungen",
+    "measuredTargets": "gemessene Zielzeiten",
+    "sensorDistance": "Sensorabstand",
+    "sensorDistanceSub": "X × Y Abstand",
+    "accuracyBodyShort": "Belichtungszeiten und Spread",
+    "reliabilityBodyShort": "Wiederholungsmessungen",
+    "curtainBodyShort": "Gleichmäßigkeit und Parallelität"
+  },
+  "report.scoresTitle": "Bewertung",
+  "report.scoresIntro": "Die Bewertung trennt Belichtungsgenauigkeit, Wiederholbarkeit und Vorhanglauf. Alte mechanische Kameras werden mit toleranten Grenzwerten bewertet.",
+  "report.dataTitle": "Kameradaten",
+  "report.exposureOffsetsExplanation": "Die horizontale Skala ist in EV angegeben. Balken links von 0 EV sind schneller als die eingestellte Zeit, Balken rechts davon langsamer.",
+  "report.exposureBarLegend": "Balken: mittlere Zeitabweichung",
+  "report.exposureErrorLegend": "Fehlerlinie: Streuung über das Bild"
 }

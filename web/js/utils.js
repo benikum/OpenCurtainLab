@@ -9,7 +9,7 @@
 // - keep the browser-side application state in `S`
 // - poll the OpenCurtainLab device API
 // - convert raw timing packets into user-facing measurements
-// - manage projects, notes, backup/import and CSV export
+// - manage projects, project notes, backup/import and CSV export
 // - draw timelines and curtain diagnostics on canvas
 
 // Shared formatting and download helpers used throughout the UI.

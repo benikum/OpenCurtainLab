@@ -1,43 +1,18 @@
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editors / IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Python
+# Python/cache artefacts
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Local Python environments
 .venv/
 venv/
 
-# PlatformIO, falls später genutzt
-.pio/
-.pioenvs/
-.piolibdeps/
-.clang_complete
-.gcc-flags.json
+# OS/editor artefacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
-# Arduino / build output
-build/
-*.elf
-*.bin
-*.hex
-*.map
-
-# Logs / temporary files
-*.log
+# Build/temp files
 *.tmp
-tmp_*
-temp_*
-
-# Node, falls später Tools dazukommen
-node_modules/
-npm-debug.log*
-
-# Local environment files
-.env
-.env.local
+*.bak
+docs/example_data/

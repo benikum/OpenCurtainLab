@@ -1,19 +1,21 @@
 # OpenCurtainLab Firmware API
 
-This document describes the current firmware HTTP API. All endpoints are served by the ESP32 on the local network.
+This document describes the current OpenCurtainLab firmware HTTP API for firmware `0.1.1`. All endpoints are served by the ESP32 on the local network.
 
-## Security warning
+The API exposes raw device state and raw measurement data. Exposure analysis, charting, reports, and measurement hints are calculated in the WebUI.
 
-OpenCurtainLab is designed for trusted local networks only. The firmware API is intentionally lightweight and does not provide user accounts, API tokens, HTTPS, request signing, or permission checks. The setup access point and local API should therefore be treated as physically local maintenance interfaces, not as internet-facing services.
+## Security model
 
-Do not expose the device to the public internet, port-forward it from a router, place it on an untrusted guest network, or rely on it as a secure remote-control endpoint. Anyone who can reach the device on the network may be able to read status data, change runtime settings, access live sensor diagnostics, or start WiFi setup actions where available.
+OpenCurtainLab is designed for trusted local networks only. The firmware API does not provide user accounts, API tokens, HTTPS, request signing, or per-user permissions.
+
+Do not expose the device to the public internet, do not port-forward it from a router, and do not place it on an untrusted guest network. Anyone who can reach the device on the network can read status data, change runtime settings, access live sensor diagnostics, and use setup endpoints when available.
 
 Recommended use:
 
-- connect the device only to a private LAN you control
-- keep it behind your router/firewall
-- avoid public, shared, or guest WiFi networks
-- disconnect or power down the device when it is not needed in an untrusted environment
+- Use a private LAN you control.
+- Keep the device behind your router or firewall.
+- Avoid public, shared, or guest WiFi networks.
+- Power down or disconnect the device when it is not needed in an untrusted environment.
 
 ## Base URLs
 
@@ -48,6 +50,21 @@ API responses are JSON unless the endpoint description says otherwise. CORS pref
 | `GET` | `/wifi/scan` | JSON | Nearby WiFi networks for the setup portal. |
 | `POST` | `/wifi` | JSON | Test and store WiFi credentials while AP mode is active. |
 
+## Current firmware constants exposed by the API
+
+These values come from `src/Config.h` in this release.
+
+| Field | Value |
+|---|---:|
+| `version` | `0.1.1` |
+| `sensorCount` | `5` |
+| `sensorDistanceXmm` | `7.62` |
+| `sensorDistanceYmm` | `5.08` |
+| `maxTargetTime` | `2000` |
+| `displayRotation` | `0` |
+| `batteryEmptyVoltage` | `7.0` |
+| `batteryFullVoltage` | `9.3` |
+
 ## Error response format
 
 Most error responses use this compact format:
@@ -59,7 +76,7 @@ Most error responses use this compact format:
 }
 ```
 
-Known error strings include:
+Known error strings:
 
 | Error | Meaning |
 |---|---|
@@ -81,7 +98,7 @@ Content-Disposition: attachment; filename="opencurtainlab.html"
 Content-Type: text/html; charset=utf-8
 ```
 
-The full WebUI is not embedded in firmware. The embedded firmware only contains the small setup portal.
+The full WebUI is not embedded in firmware. The embedded firmware only contains the setup portal.
 
 ## `GET /status`
 
@@ -96,7 +113,7 @@ Example response:
 ```json
 {
   "device": "OpenCurtainLab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "uptime": 1234,
   "measCount": 7,
   "batteryVoltage": 8.62,
@@ -123,7 +140,7 @@ Example response:
 }
 ```
 
-Fields:
+Top-level fields:
 
 | Field | Type | Description |
 |---|---|---|
@@ -178,11 +195,11 @@ Example response:
 ```json
 {
   "device": "OpenCurtainLab",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "ip": "192.168.178.42",
   "mdnsName": "opencurtainlab",
-  "sensorDistanceXmm": 13.17,
-  "sensorDistanceYmm": 7.67,
+  "sensorDistanceXmm": 7.62,
+  "sensorDistanceYmm": 5.08,
   "displayRotation": 0,
   "sensorCount": 5,
   "maxTargetTime": 2000,
@@ -221,8 +238,8 @@ Capability fields:
 
 | Field | Type | Description |
 |---|---|---|
-| `sensorDistanceXmm` | number | Physical sensor spacing for horizontal travel mode. |
-| `sensorDistanceYmm` | number | Physical sensor spacing for vertical travel mode. |
+| `sensorDistanceXmm` | number | Physical sensor spacing for horizontal-travel analysis. Current value: `7.62`. |
+| `sensorDistanceYmm` | number | Physical sensor spacing for vertical-travel analysis. Current value: `5.08`. |
 | `displayRotation` | integer | OLED rotation from firmware config. |
 | `sensorCount` | integer | Number of sensor channels. |
 | `maxTargetTime` | integer | Maximum accepted target denominator. |
@@ -258,7 +275,7 @@ curl -X POST http://opencurtainlab.local/config \
   -d '{"sensorSensitivity":"high","defaultTargetTime":250}'
 ```
 
-Accepted fields:
+Accepted public fields:
 
 | Field | Type | Values |
 |---|---|---|
@@ -294,6 +311,7 @@ Notes:
 - Invalid enum values fall back to firmware defaults during sanitization.
 - Custom target times are sorted, de-duplicated, capped by firmware limits, and filtered against `maxTargetTime`.
 - If the request body is syntactically valid JSON but contains no effective change, `changed` is `false`.
+- Only the fields documented above are part of the public settings schema for this release.
 
 ## `GET /data`
 
@@ -310,11 +328,9 @@ Before the first measurement:
   "measCount": 0,
   "mode": "horizontal",
   "target": 500,
-  "sensorDistanceXmm": 13.17,
-  "sensorDistanceYmm": 7.67,
-  "valid": false,
-  "hint": "none",
-  "hintText": ""
+  "sensorDistanceXmm": 7.62,
+  "sensorDistanceYmm": 5.08,
+  "valid": false
 }
 ```
 
@@ -325,8 +341,8 @@ Example valid measurement:
   "measCount": 7,
   "mode": "horizontal",
   "target": 500,
-  "sensorDistanceXmm": 13.17,
-  "sensorDistanceYmm": 7.67,
+  "sensorDistanceXmm": 7.62,
+  "sensorDistanceYmm": 5.08,
   "valid": true,
   "id": "m_123456_7",
   "baseUs": 987654321,
@@ -337,8 +353,6 @@ Example valid measurement:
     { "id": 3, "activated": true, "raw": 410, "openUs": 987654750, "closeUs": 987656830 },
     { "id": 4, "activated": true, "raw": 405, "openUs": 987654900, "closeUs": 987656980 }
   ],
-  "hint": "none",
-  "hintText": "",
   "flash": {
     "detected": true,
     "raw": 0,
@@ -354,14 +368,12 @@ Top-level fields:
 | `measCount` | integer | Measurement counter since boot. |
 | `mode` | string | Measurement mode used for the packet. |
 | `target` | integer | Target shutter denominator. |
-| `sensorDistanceXmm` | number | Horizontal sensor spacing used by the WebUI. |
-| `sensorDistanceYmm` | number | Vertical sensor spacing used by the WebUI. |
+| `sensorDistanceXmm` | number | Horizontal spacing used by the WebUI. |
+| `sensorDistanceYmm` | number | Vertical spacing used by the WebUI. |
 | `valid` | boolean | Whether the packet contains a measurement result. |
 | `id` | string | Measurement id. Present only after a result exists. |
 | `baseUs` | integer | Base timestamp in microseconds. Present only after a result exists. |
 | `sensors` | array | Raw per-sensor result objects. Present only after a result exists. |
-| `hint` | string | Measurement hint key. |
-| `hintText` | string | Human-readable hint text. |
 | `flash` | object | Flash-sync result. Present only after a result exists. |
 
 Sensor result fields:
@@ -382,17 +394,7 @@ Flash result fields:
 | `raw` | integer | Last raw digital input value. |
 | `triggerUs` | integer | Trigger timestamp in microseconds. |
 
-Measurement hint keys:
-
-| Key | Meaning |
-|---|---|
-| `none` | No measurement hint. |
-| `sensor_already_active_at_start` | A sensor was already active while arming. |
-| `flash_already_active_at_start` | Flash input was already active while arming. |
-| `flash_without_sensor` | Flash input fired but no sensor was covered. |
-| `timeout_with_data` | Measurement timed out after partial data. |
-| `incomplete_sensor_coverage` | Not all five sensors were covered. |
-| `too_few_sensors` | Fewer than three sensors were covered; the measurement is diagnostic only. |
+Measurement hints such as timeout, incomplete sensor coverage, and too few sensors are derived by the WebUI from the raw timestamps. The firmware does not emit measurement hint keys in `/data`.
 
 ## `GET /sensors`
 
@@ -436,7 +438,24 @@ Example response:
 }
 ```
 
-In the WebUI developer console, `oclSensors()` prints the sensor diagnostics as a table when developer helpers are enabled.
+Sensor diagnostics fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `timeUs` | integer | ESP32 timestamp in microseconds. |
+| `sensorCount` | integer | Number of configured sensors. |
+| `onThresholdRaw` | integer | Current activation threshold. |
+| `offThresholdRaw` | integer | Current release threshold. |
+| `sensors[].pin` | integer | ESP32 GPIO for the sensor. |
+| `sensors[].raw` | integer | Current raw ADC value. |
+| `sensors[].active` | boolean | Current diagnostic active state from the raw value. |
+| `sensors[].trackedActive` | boolean | Measurement engine tracked state. |
+| `sensors[].wasActivated` | boolean | Whether the sensor was activated during the current/last measurement window. |
+| `flash.pin` | integer | ESP32 GPIO for flash sync. |
+| `flash.raw` | integer | Current raw digital value. |
+| `flash.active` | boolean | Current diagnostic active state. |
+
+In the WebUI developer console, `oclSensors()` prints the diagnostics as a table when developer helpers are enabled.
 
 ## `GET /version`
 
@@ -454,7 +473,7 @@ Content-Type: text/plain; charset=utf-8
 X-OpenCurtainLab-Version-Source: manifest
 X-OpenCurtainLab-WebUI-Match: 0.1.x
 
-0.1.0
+0.1.1
 ```
 
 If manifest lookup fails, the firmware returns the local firmware version with:
@@ -525,7 +544,7 @@ curl -X POST http://192.168.4.1/wifi \
 
 Form-style fields are also accepted by the firmware.
 
-Successful or failed connection test response uses the same shape as `/wifi/status`. On failed connection, `ok` is `false` and `error` is set:
+Successful or failed connection test responses use the same shape as `/wifi/status`. On failed connection, `ok` is `false` and `error` is set:
 
 ```json
 {
@@ -563,17 +582,17 @@ The WebUI compatibility database is stored in:
 web/manifest.json
 ```
 
-Example:
+Current manifest shape:
 
 ```json
 {
   "schema": "opencurtainlab-web-manifest-v1",
-  "projectVersion": "0.1.0",
+  "projectVersion": "0.1.1",
   "entries": [
     {
       "match": "0.1.x",
-      "version": "0.1.0",
-      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.0.html"
+      "version": "0.1.1",
+      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.1.html"
     }
   ]
 }
@@ -582,7 +601,7 @@ Example:
 Selection rules:
 
 - `projectVersion` is the canonical project version used by `tools/release.py`.
-- `match` is the firmware compatibility pattern, such as `0.1.x`.
+- `match` is the firmware compatibility pattern, for example `0.1.x`.
 - `version` is the WebUI release selected for compatible firmware.
 - The middle version number is treated as the API version.
 - If multiple entries match, the firmware selects the highest patch version.

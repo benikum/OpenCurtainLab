@@ -7,7 +7,7 @@
 
 // Project / URLs
 #define DEVICE_NAME                 "OpenCurtainLab"
-#define FIRMWARE_VERSION            "0.1.2"
+#define FIRMWARE_VERSION            "0.1.1"
 #define MDNS_NAME                   "opencurtainlab"
 #define GITHUB_PROJECT_URL          "https://github.com/benikum/OpenCurtainLab"
 #define WEB_MANIFEST_URL            "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/manifest.json"

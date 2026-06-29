@@ -11,23 +11,6 @@ OpenCurtainLab is intended for camera repair, calibration work, repeatable shutt
   <img src="docs/images/webui-overview.jpg" alt="OpenCurtainLab WebUI" width="48%">
 </p>
 
-## Current hardware baseline
-
-The firmware configuration in `src/Config.h` is the source of truth for this release.
-
-| Area | Current value |
-|---|---|
-| Firmware version | `0.1.1` |
-| Device name | `OpenCurtainLab` |
-| mDNS name | `opencurtainlab.local` |
-| Sensor channels | 5 |
-| Sensor spacing X | `7.62 mm` (`3 × 2.54 mm`) |
-| Sensor spacing Y | `5.08 mm` (`2 × 2.54 mm`) |
-| Default mode | `horizontal` |
-| Flash-sync input | GPIO14, active low |
-| Buttons | Up GPIO27, Down GPIO26, Select GPIO25 |
-| OLED | SSD1306 128×64 over I2C, address `0x3C`, SDA GPIO21, SCL GPIO22 |
-
 ## Features
 
 ### Measurement hardware

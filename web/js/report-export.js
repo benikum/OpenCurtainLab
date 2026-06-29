@@ -1,7 +1,7 @@
 // CSV camera-attribute export and standalone HTML camera report generation.
 
 // ════════════════════════════════════════════
-   // EXPORT SCORING HELPERS
+// EXPORT SCORING HELPERS
 // ════════════════════════════════════════════
 const REPORT_EXPORT_CONFIG = Object.freeze({
   // Spread is weighted higher than simple offset because uneven exposure across the frame is harder to compensate.
@@ -95,6 +95,7 @@ function targetRowsForProject(project) {
         measurementCount: 0,
       };
     }
+
     const offsetScore = scoreFromTolerance(Math.abs(agg.avgDev), 0.15, 0.75, 25);
     const spreadScore = scoreFromTolerance(agg.avgSpread, 0.10, 0.55, 20);
     const reliabilityScore = agg.n >= 2 ? scoreFromTolerance(agg.sigmaEv, 0.05, 0.35, 30) : null;
@@ -103,6 +104,7 @@ function targetRowsForProject(project) {
       { score: offsetScore, weight: cfg.accuracyOffsetWeight },
       { score: spreadScore, weight: cfg.accuracySpreadWeight },
     ]);
+
     return {
       targetFrac: target,
       targetSec: 1 / target,
@@ -137,18 +139,19 @@ function velocityCv(values) {
 function curtainConditionForEntry(entry) {
   const profile = curtainSpeedProfile(entry);
   if (!profile || (!profile.open.length && !profile.close.length)) return null;
+
   const openCv = velocityCv(profile.open.map(p => p.v));
   const closeCv = velocityCv(profile.close.map(p => p.v));
   const uniformityCv = average([openCv, closeCv].filter(Number.isFinite));
-
   const pairs = [];
   const closeByX = new Map(profile.close.map(p => [p.x.toFixed(3), p.v]));
+
   profile.open.forEach(p => {
     const cv = closeByX.get(p.x.toFixed(3));
     if (Number.isFinite(cv) && cv > 0 && p.v > 0) pairs.push(Math.abs(Math.log2(p.v / cv)));
   });
-  const parallelEv = average(pairs);
 
+  const parallelEv = average(pairs);
   return {
     openCv,
     closeCv,
@@ -170,11 +173,13 @@ function curtainConditionForProject(entries) {
     openAvg: null,
     closeAvg: null,
   };
+
   const cfg = exportConfig();
   const uniformityCv = average(items.map(x => x.uniformityCv).filter(Number.isFinite));
   const parallelEv = average(items.map(x => x.parallelEv).filter(Number.isFinite));
   const uniformityScore = scoreFromTolerance(uniformityCv, 0.08, 0.35, 25);
   const parallelScore = scoreFromTolerance(parallelEv, 0.08, 0.45, 25);
+
   return {
     uniformityCv,
     parallelEv,
@@ -193,6 +198,7 @@ function recommendedFlashSync(targetRows) {
   const candidates = targetRows
     .filter(row => row.measured && row.flashDetected > 0 && row.flashOk > 0 && row.flashBad === 0)
     .sort((a, b) => b.targetFrac - a.targetFrac);
+
   if (candidates.length) {
     const best = candidates[0];
     return {
@@ -201,6 +207,7 @@ function recommendedFlashSync(targetRows) {
       status: tx('report.flashRecommendedMeasured', 'Maximum measured flash sync time'),
     };
   }
+
   const anyFlash = targetRows.some(row => row.measured && row.flashDetected > 0);
   return {
     targetFrac: null,
@@ -228,7 +235,7 @@ function projectScoreModel(project) {
 }
 
 // ════════════════════════════════════════════
-   // ENHANCED CSV EXPORT
+// ENHANCED CSV EXPORT
 // ════════════════════════════════════════════
 function csvCell(value) {
   const text = String(value ?? '');
@@ -253,6 +260,7 @@ function csvBool(value) {
 function exportProjCSV(projId) {
   const p = S.projects.find(x => x.id === projId);
   if (!p || isDefaultProject(p)) return;
+
   const model = projectScoreModel(p);
   const lines = [];
   const now = new Date();
@@ -275,6 +283,7 @@ function exportProjCSV(projId) {
     'RecordType','Target','Target_s','Measured_fraction','Measured_s','Measured_ms','Offset_EV','Abs_offset_EV','Spread_EV','Repeatability_sigma_EV',
     'Accuracy_score','Reliability_score','Opening_speed_m_s','Closing_speed_m_s','Flash_ok','Flash_late','Flash_bad','Flash_detected','Measurements','Grade'
   ]));
+
   model.targetRows.forEach(row => {
     lines.push(csvLine([
       'TARGET', targetLabel(row.targetFrac), csvNumber(row.targetSec, 6), row.measured ? ('1/' + row.avgFrac) : '', csvNumber(row.avgSec, 6), csvNumber(row.avgMs, 3),
@@ -283,12 +292,13 @@ function exportProjCSV(projId) {
       row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, row.measured ? reportGrade(row.accuracyScore) : ''
     ]));
   });
-  lines.push('');
 
+  lines.push('');
   lines.push(csvLine([
     'RecordType','Measurement_ID','Timestamp','Project','Mode','Target','Measured_fraction','Measured_s','Measured_ms','Offset_EV','Spread_EV','Sensor_count',
     'Opening_speed_m_s','Closing_speed_m_s','Flash_detected','Flash_sync_ok','Flash_sync_state','Hint'
   ]));
+
   model.entries.forEach(entry => {
     const curtain = calcCurtain(entry) || {};
     lines.push(csvLine([
@@ -297,11 +307,12 @@ function exportProjCSV(projId) {
       csvNumber(curtain.v1, 4), csvNumber(curtain.v2, 4), csvBool(entry.flash && entry.flash.detected), csvBool(isFlashSyncOk(entry)), typeof flashSyncState === 'function' ? flashSyncState(entry) : '', entry.hint || ''
     ]));
   });
-  lines.push('');
 
+  lines.push('');
   lines.push(csvLine([
     'RecordType','Measurement_ID','Sensor','Activated','Open_ms','Close_ms','Exposure_ms','Measured_fraction','Offset_EV','Raw'
   ]));
+
   model.entries.forEach(entry => {
     (entry.sensors || []).forEach(sensor => {
       lines.push(csvLine([
@@ -317,7 +328,7 @@ function exportProjCSV(projId) {
 }
 
 // ════════════════════════════════════════════
-   // STANDALONE HTML CAMERA REPORT
+// STANDALONE HTML CAMERA REPORT
 // ════════════════════════════════════════════
 function reportScoreCard(title, score, body) {
   const pct = pctScore(score);
@@ -357,11 +368,13 @@ function evChartTickStep(limit) {
 function targetBarsSvg(rows) {
   const measured = rows.filter(r => r.measured);
   if (!measured.length) return '';
+
   const bounds = measured.flatMap(row => {
     const spread = Math.max(0, Number(row.avgSpread) || 0);
     const halfSpread = spread / 2;
     return [row.avgDev - halfSpread, row.avgDev + halfSpread, row.avgDev];
   }).filter(Number.isFinite);
+
   const rawLimit = Math.max(0.5, ...bounds.map(v => Math.abs(v)));
   const tickStep = evChartTickStep(rawLimit);
   const limit = Math.ceil(rawLimit / tickStep) * tickStep;
@@ -375,17 +388,17 @@ function targetBarsSvg(rows) {
   const height = top + bottom + measured.length * rowH;
   const zeroX = left + plotW / 2;
   const xFor = ev => left + ((ev + limit) / (2 * limit)) * plotW;
+
   const ticks = [];
-  for (let v = -limit; v <= limit + tickStep / 10; v += tickStep) {
-    const fixed = Number(v.toFixed(3));
-    ticks.push(fixed);
-  }
+  for (let v = -limit; v <= limit + tickStep / 10; v += tickStep) ticks.push(Number(v.toFixed(3)));
+
   const axis = ticks.map(tick => {
     const x = xFor(tick);
     const label = (tick > 0 ? '+' : '') + tick.toFixed(tickStep < 1 ? 2 : 0).replace(/\.00$/, '').replace(/\.0$/, '') + ' EV';
     const cls = Math.abs(tick) < 0.0001 ? 'zero' : 'grid';
     return `<line class="${cls}" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 14}" y2="${height - bottom + 5}"></line><text class="tick" x="${x.toFixed(1)}" y="${height - 10}" text-anchor="middle">${esc(label)}</text>`;
   }).join('');
+
   const items = measured.map((row, i) => {
     const y = top + i * rowH;
     const dx = Number(row.avgDev) || 0;
@@ -405,7 +418,84 @@ function targetBarsSvg(rows) {
       `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 8}" y2="${y + 6}"></line>` +
       `<text class="value" x="${valueX.toFixed(1)}" y="${y + 4}" text-anchor="${dx >= 0 ? 'start' : 'end'}">${esc(signedEv(row.avgDev))}</text>`;
   }).join('');
+
   return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Exposure offset by target time">${axis}${items}</svg>`;
+}
+
+function niceSpeedMax(maxValue) {
+  const raw = Math.max(1, Number(maxValue) || 1);
+  const exp = Math.pow(10, Math.floor(Math.log10(raw)));
+  const scaled = raw / exp;
+  const nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+  return nice * exp;
+}
+
+function curtainSpeedSvg(project, rows) {
+  if (project && typeof normalizeMeasurementMode === 'function' && normalizeMeasurementMode(project.mode) === 'central') return '';
+
+  const measured = rows
+    .filter(r => r.measured && (Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed)))
+    .sort((a, b) => a.targetFrac - b.targetFrac);
+
+  if (!measured.length) return '';
+
+  const width = 820;
+  const height = 318;
+  const left = 70;
+  const right = 34;
+  const top = 34;
+  const bottom = 76;
+  const plotW = width - left - right;
+  const plotH = height - top - bottom;
+  const allSpeeds = measured.flatMap(row => [row.openingSpeed, row.closingSpeed]).filter(v => Number.isFinite(v) && v > 0);
+  const maxV = niceSpeedMax(Math.max(...allSpeeds) * 1.18);
+  const xFor = index => left + (measured.length === 1 ? plotW / 2 : (index / (measured.length - 1)) * plotW);
+  const yFor = value => top + plotH * (1 - Math.max(0, value) / maxV);
+
+  const grid = [];
+  const gridSteps = 4;
+  for (let i = 0; i <= gridSteps; i++) {
+    const value = maxV * (1 - i / gridSteps);
+    const y = top + plotH * (i / gridSteps);
+    grid.push(`<line class="grid" x1="${left}" x2="${width - right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"></line>`);
+    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(value.toFixed(maxV < 10 ? 1 : 0))}</text>`);
+  }
+
+  const xAxis = measured.map((row, i) => {
+    const x = xFor(i);
+    return `<line class="grid soft" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${top + plotH}"></line>` +
+      `<text class="tick target" x="${x.toFixed(1)}" y="${height - 36}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>`;
+  }).join('');
+
+  function lineFor(key, cls) {
+    const points = measured.map((row, i) => {
+      const v = row[key];
+      return Number.isFinite(v) && v > 0 ? { x: xFor(i), y: yFor(v), v, row } : null;
+    }).filter(Boolean);
+    if (!points.length) return '';
+    const pointString = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const circles = points.map(p => `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${esc(targetLabel(p.row.targetFrac) + ': ' + p.v.toFixed(2) + ' m/s')}</title></circle>`).join('');
+    return `<polyline class="curtain-line ${cls}" points="${pointString}"></polyline>${circles}`;
+  }
+
+  const axis = `<line class="axis" x1="${left}" x2="${left}" y1="${top}" y2="${top + plotH}"></line>` +
+    `<line class="axis" x1="${left}" x2="${width - right}" y1="${top + plotH}" y2="${top + plotH}"></line>` +
+    `<text class="axis-label y" x="16" y="${top + plotH / 2}" transform="rotate(-90 16 ${top + plotH / 2})" text-anchor="middle">m/s</text>` +
+    `<text class="axis-label x" x="${left + plotW / 2}" y="${height - 13}" text-anchor="middle">${esc(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'))}</text>`;
+
+  return `<svg class="curtain-speed-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}">` +
+    grid.join('') + xAxis + axis + lineFor('openingSpeed', 'opening') + lineFor('closingSpeed', 'closing') +
+    `</svg>`;
+}
+
+function curtainSpeedReportSection(project, rows) {
+  const chart = curtainSpeedSvg(project, rows);
+  if (!chart) return '';
+  return `<section class="chart-section curtain-speed-section"><h2>${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}</h2>` +
+    `<div class="chart-explainer"><p>${esc(tx('report.curtainSpeedExplanation', 'Average opening and closing curtain speed for each measured target time.'))}</p>` +
+    `<div class="chart-legend"><div><span class="legend-line opening"></span><span>${esc(tx('charts.openingSpeed', 'Opening speed'))}</span></div>` +
+    `<div><span class="legend-line closing"></span><span>${esc(tx('charts.closingSpeed', 'Closing speed'))}</span></div></div></div>` +
+    chart + `</section>`;
 }
 
 function reportDataFieldsHtml(project, model, measuredCount, measuredTargets) {
@@ -469,6 +559,7 @@ async function standaloneReportHtml(project, model) {
     EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average exposure offset')),
     EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: spread across the image')),
     OFFSET_CHART: targetBarsSvg(model.targetRows),
+    CURTAIN_SPEED_SECTION: curtainSpeedReportSection(project, model.targetRows),
     DATA_FIELDS: reportDataFieldsHtml(project, model, measuredCount, measuredTargets),
     PROJECT_NOTE: note,
   });
@@ -477,6 +568,7 @@ async function standaloneReportHtml(project, model) {
 async function exportProjectReportHtml(projId) {
   const project = S.projects.find(x => x.id === projId);
   if (!project || isDefaultProject(project)) return;
+
   try {
     const model = projectScoreModel(project);
     const html = await standaloneReportHtml(project, model);

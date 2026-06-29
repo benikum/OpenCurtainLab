@@ -1475,7 +1475,7 @@ canvas#tl {
                 <button class="btn btn-amber btn-sm" data-i18n="html.saveSettings" id="save-device-settings-btn" onclick="saveDeviceSettings()">SAVE SETTINGS</button>
               </div>
               <div class="settings-page-footer">
-                <div class="settings-version-summary" id="settings-version-summary"><span>WebUI v0.1.1</span><span>Device unknown</span><span class="version-unknown">Update unknown</span></div>
+                <div class="settings-version-summary" id="settings-version-summary"><span>WebUI v0.1.2</span><span>Device unknown</span><span class="version-unknown">Update unknown</span></div>
               </div>
             </div>
           </div>
@@ -1534,7 +1534,7 @@ canvas#tl {
     </div>
     <div id="toast"></div>
     <!-- ══ JAVASCRIPT ══════════════════════════════ -->
-<script id="ocl-i18n-all" type="application/json">{"de":{"locale":"de-DE","modes":{"vertical":"Vertikal","horizontal":"Horizontal","central":"Zentralverschluss"},"resultDisplay":{"none":"gar nicht","untilButton":"bis Tastendruck"},"config":{"none":"Keine Config geladen","address":"Adresse","series":"Messreihe","resultDisplay":"Ergebnisanzeige"},"toast":{"deviceConnected":"Gerät verbunden: {host}","deviceNotFoundHost":"Kein OpenCurtainLab unter dieser Adresse gefunden.","deviceNotFoundDefault":"Kein OpenCurtainLab unter opencurtainlab.local gefunden.","customTimesEmpty":"Custom-Zielzeiten sind leer","settingsSaved":"Einstellungen gespeichert","settingsSaveFailed":"Einstellungen konnten nicht gespeichert werden","newWebUi":"Neue Web-UI verfügbar. Lade die aktuelle HTML vom GitHub-Projekt herunter.","enterProjectName":"Bitte Projektnamen eingeben","projectCreated":"Projekt \"{name}\" erstellt","backupImported":"Backup-JSON importiert","importFailed":"Import fehlgeschlagen: keine gültige JSON-Datei","backupExported":"Backup-JSON exportiert","csvExported":"Kamera-Attribute als CSV exportiert — {count} Zielzeiten","projectNameExists":"Ein Projekt mit diesem Namen existiert bereits","noTargetTimesSelected":"Bitte mindestens eine Zielzeit auswählen","customTimesInvalid":"Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.","customTimesDuplicate":"Custom-Zielzeiten enthalten doppelte Werte","customTimesTooMany":"Maximal 16 Custom-Zielzeiten erlaubt","customTimesInvalidWithMax":"Custom-Zielzeiten ungültig. Nutze positive Zahlen bis 1/{max}, getrennt mit Komma.","customTimesDefaulted":"Standardzeiten geladen","localDataReset":"Lokale WebUI-Daten zurückgesetzt","defaultProjectKept":"Das Standardprojekt kann nicht gelöscht werden","measurementMovedToDefault":"Messung ins Standardprojekt verschoben","measurementAssignedToDefaultIncompatible":"Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.","deviceNotConnected":"Gerät nicht verbunden","languageUnavailable":"Sprachdateien sind nicht verfügbar","batteryLow":"Batterie niedrig: {voltage} V ({percent}%).","reportExported":"HTML-Kamerabericht exportiert","reportExportFailed":"HTML-Kamerabericht konnte nicht exportiert werden"},"frame":{"tutorialTitle":"OpenCurtainLab Anleitung","tutorialLoadFailed":"Die Anleitung konnte nicht geladen werden."},"connection":{"connected":"VERBUNDEN","connecting":"VERBINDE…","networkHint":"Netzwerkproblem"},"errors":{"unknown":"Unbekannter Fehler","invalidBackup":"Ungültiges Backup","unsupportedMeasurementPacket":"Nicht unterstütztes Messdatenpaket"},"confirm":{"deleteProject":"Projekt löschen?","importBackup":"Backup-JSON importieren? Aktuelle Projekte und Verlauf werden ersetzt.","resetLocalData":"Lokale WebUI-Daten zurücksetzen? Dadurch werden Projekte, Messungen und zwischengespeicherte Geräteeinstellungen gelöscht."},"empty":{"noProjectYet":"Noch kein Projekt","noMeasurements":"Keine Messungen","waitingForRelease":"Warte auf Kameraauslösung","connectDevice":"Verbinde das Gerät","connectDeviceSub":"Gib die Geräteadresse in den Einstellungen ein oder nutze opencurtainlab.local.","createFirstProject":"Erstelle dein erstes Projekt","createFirstProjectSub":"Erstelle ein Kameraprojekt für passende Messungen. Andere Messungen bleiben im Standardprojekt.","readyMeasure":"Bereit zum Messen","readyMeasureSub":"Löse den Verschluss aus.","deviceError":"Gerätefehler","createProjectAction":"Projekt erstellen","noMeasurementsYet":"Noch keine Messungen","noMeasurementsYetSub":"Löse den Kameraverschluss aus. Neue Messungen erscheinen automatisch.","selectMeasurement":"Messung auswählen","selectMeasurementSub":"Wähle einen Eintrag aus dem Verlauf, um die Messdetails zu prüfen.","waitingForProjectMeasurement":"Warte auf Messungen in {project}"},"labels":{"speeds":"Zeiten","measurements":"Messungen","noProject":"kein Projekt","target":"Ziel","warning":"Hinweis","sensorsActive":"Sensoren aktiv","noFlashDetected":"kein Blitz erkannt","inactive":"inaktiv"},"cards":{"measurement":"Messung","timelineOpening":"Zeitstrahl — Verschlussöffnung","timelineSpeed":"Vorhanggeschwindigkeit nach Sensorposition","note":"Notiz","curtainCurve":"Vorhanggeschwindigkeit nach Zielzeit","projectNote":"Projekt-Notiz"},"metrics":{"avgExposure":"Ø Belichtungszeit","avgDeviation":"Abweichung Ø","totalOpenTime":"Totale Öffnungsdauer","flashSync":"Blitz-Sync"},"placeholders":{"projectNotes":"Notizen zu diesem Projekt…"},"condition":{"notRated":"Nicht bewertet","veryGood":"Sehr gut","good":"Gut","checkService":"Service prüfen","serviceRecommended":"Service empfohlen"},"charts":{"notEnoughCurtain":"Nicht genug Sensorpunkte für Vorhangdiagramm","openingCurtain":"ÖFFNENDER VORHANG","closingCurtain":"SCHLIEẞENDER VORHANG","v1Speed":"Öffnungsgeschwindigkeit","v2Speed":"Schließgeschwindigkeit","openingSpeed":"Öffnungsvorhang","closingSpeed":"Schließvorhang","positionAxis":"POSITION (mm)","speedAxis":"GESCHWINDIGKEIT (m/s)","targetSpeedAxis":"Zielzeit (1/x s)","noCurtainMeasurements":"Noch keine Messungen mit Vorhanggeschwindigkeit","timeRelative":"ZEIT (ms, relativ zur ersten Öffnung)"},"flash":{"within":"Blitz innerhalb der totalen Öffnung","outside":"Blitz außerhalb der totalen Öffnung","late":"Blitz in den letzten 2 ms der totalen Öffnung","none":"Kein Blitz erkannt"},"project":{"overallRating":"Kamera — Gesamtbewertung","condition":"Zustand","measurements":"Messungen","targetSpeedsMeasured":"Zielzeiten gemessen","avgDeviation":"Ø Abweichung","absoluteAcrossRuns":"Betrag, über alle Messreihen","avgScatter":"Ø Streuung σ","repeatability":"Wiederholung","linearity":"Gleichmäßigkeit","fromLocalCurtainSpeeds":"aus lokaler Vorhanggeschwindigkeit","parallelism":"Parallelität","fromSlitWidth":"aus Schlitzbreite je Sensor","zeroMeas":"0 Mess.","measShort":"Mess.","series":"Messreihe","defaultName":"Standardprojekt","deleteProject":"Projekt löschen","deleteProjectHelp":"Löscht das Projekt. Die Messungen werden ins Standardprojekt verschoben.","delete":"LÖSCHEN"},"table":{"target":"Zielzeit","avgMeasurement":"Ø Messung","grade":"Note","flash":"Blitz","curtainSpeed":"Vorhanggeschwindigkeit"},"csv":{"note":"Notiz","project":"Projekt","exported":"Exportiert"},"settings":{"customTimesHelp":"Nenner bis 1/{max}, durch Kommas getrennt. Leer lassen, um die Standardzeiten zu laden.","save":"EINSTELLUNGEN SPEICHERN","saving":"SPEICHERN...","saved":"GESPEICHERT","unsaved":"Ungespeicherte Änderungen","savingLabel":"Speichern..."},"quickStart":{"title":"Schnellstart","help":"Messungen werden nach jedem Verschlusstest automatisch empfangen.","steps":["Mit dem Gerät verbinden.","Projekt erstellen oder auswählen.","Zielzeit am Gerät oder in der WebUI einstellen.","Kameraverschluss auslösen.","Messung auswerten."]},"connectionHelp":{"title":"Verbindung zu OpenCurtainLab nicht möglich","steps":["Prüfe, ob das Gerät eingeschaltet ist.","Nutze opencurtainlab.local oder die IP vom OLED.","Prüfe, ob dieser Computer im gleichen WLAN ist.","Wenn der Setup-Modus aktiv ist: mit dem OpenCurtainLab-WLAN verbinden und 192.168.4.1 öffnen."]},"measurementHints":{"generic":{"action":"Prüfe den Kameraaufbau und wiederhole die Messung."},"sensor_already_active_at_start":{"title":"Sensor bereits aktiv","body":"Ein Sensor war bereits abgedeckt, als das Gerät die Messung scharf schalten wollte.","action":"Öffne den Verschlussweg, prüfe die Ausrichtung und versuche es erneut."},"flash_without_sensor":{"title":"Blitz ohne Sensorabdeckung","body":"Der Blitzkontakt wurde ausgelöst, aber kein Phototransistor hat eine Verschlussbewegung erkannt.","action":"Prüfe Blitz-Sync-Kabel, Kameramodus und Sensorausrichtung."},"timeout_with_data":{"title":"Messung abgelaufen","body":"Es wurden Sensordaten erfasst, aber der Verschlussablauf wurde nicht rechtzeitig beendet.","action":"Prüfe, ob der Verschluss hängen bleibt oder der Testaufbau passt."},"incomplete_sensor_coverage":{"title":"Unvollständige Sensorabdeckung","body":"Nicht alle fünf Sensoren wurden während dieser Messung abgedeckt.","action":"Prüfe Kameraausrichtung, Vorhangweg oder ob der Schlitz die gesamte Sensorreihe abdeckt."},"flash_already_active_at_start":{"title":"Blitzkontakt bereits aktiv","body":"Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.","action":"Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."},"too_few_sensors":{"title":"Zu wenige Sensoren wurden abgedeckt","body":"Die Messung hat weniger als drei Sensoren verwendet und bleibt nur im Standardprojekt.","action":"Kameraausrichtung prüfen und die Messung wiederholen."}},"deviceErrors":{"generic":{"action":"Prüfe das Gerät und verbinde erneut, wenn der Fehler behoben ist."},"network_access_point_failed":{"title":"Setup-Access-Point fehlgeschlagen","body":"Das Gerät konnte sein Setup-WLAN nicht starten.","action":"Starte das Gerät neu. Wenn der Fehler bleibt, Firmware neu flashen oder ESP32-Board prüfen."},"display_init_failed":{"title":"Display konnte nicht initialisiert werden","body":"Das OLED-Display konnte nicht initialisiert werden.","action":"Prüfe I2C-Verdrahtung, Display-Adresse und Stromversorgung."}},"firmware":{"title":"Versionskonflikt","warning":"Firmware {actual} und WebUI {expected}.x passen möglicherweise nicht zusammen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version."},"measurement":{"moveToDefault":"Ins Standardprojekt verschieben"},"versions":{"title":"Versionsunterschied","unknown":"unbekannt","webUiLabel":"WebUI {version}","publishedLabel":"veröffentlicht {version}","firmwareWebUiMismatch":"Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.","webUiOutdated":"Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.","cdnMismatch":"Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.","deviceCdnMismatch":"Firmware {firmware} und die im Manifest gewählte WebUI {cdn} nutzen unterschiedliche API-Versionen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version.","mismatchTitle":"Versionsunterschied","updateAvailable":"Update verfügbar","updateAvailableWithVersion":"Update verfügbar {version}","mismatchAction":"Nutze Firmware und WebUI-Dateien aus demselben Release.","updateAction":"Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.","deviceLabel":"Gerät {version}","upToDate":"Software auf neuestem Stand","updateUnknown":"Update unbekannt"},"html":{"menuButtonLabel":"Menü","connecting":"Verbinde…","projects":"Projekte","newProject":"Neues Projekt","projectMeasurements":"Projektmessungen","webUiVersion":"WebUI v0.1.1","device":"Gerät","deviceAddress":"Geräteadresse","connect":"Verbinden","measurement":"Messung","targetSeries":"Messreihe","customTargetTimes":"Benutzerdefinierte Zeiten","sensitivity":"Empfindlichkeit","sensitivityLow":"niedrig","sensitivityMedium":"mittel","sensitivityHigh":"hoch","display":"Anzeige","results":"Ergebnisse","untilButtonPress":"bis Tastendruck","oledSleep":"OLED Schlaf","afterOneMinute":"nach 1 min","afterFiveMinutes":"nach 5 min","afterTenMinutes":"nach 10 min","afterThirtyMinutes":"nach 30 min","interpolateCharts":"Diagramme interpolieren","saveSettings":"EINSTELLUNGEN SPEICHERN","localData":"Lokale Daten","exportWorkspaceBackup":"Exportieren","importWorkspaceBackup":"Importieren","resetLocalWebUiData":"Zurücksetzen","guide":"Anleitung","settings":"Einstellungen","connectDeviceTitle":"Verbinde das Gerät","connectDeviceSubtitle":"Verbinde OpenCurtainLab mit deinem Netzwerk.","cameraProjectName":"Kamera / Projektname","cameraProjectNamePlaceholder":"z.B. Leica M3, Canon AE-1 …","measurementMode":"Messmodus","timeSeries":"Messreihe","supportedShutterSpeeds":"Unterstützte Belichtungszeiten (1/x s)","cancel":"Abbrechen","create":"Erstellen","resultDisplayOff":"gar nicht","oledSleepOff":"aus","pollIntervalMs":"Polling-Intervall (ms)"},"targetSeries":{"standard":"Standard","custom":"Benutzerdefiniert"},"settingsInfo":{"connection":"Verbindung","connected":"verbunden","notConnected":"Verbindung getrennt","ip":"IP","hostname":"Hostname","wifi":"WLAN","signal":"Signal","measurements":"Messungen","status":"Status","ok":"OK","unavailable":"—","measurementId":"Measurement-ID","problem":"Problem","battery":"Batterie"},"directions":{"leftRight":"links → rechts","rightLeft":"rechts → links","topDown":"oben → unten","bottomTop":"unten → oben"},"report":{"title":"Kamera-Messbericht","notRated":"Nicht bewertet","excellent":"Sehr gut","good":"Gut","usable":"Brauchbar","needsServiceSoon":"Service sinnvoll","serviceRecommended":"Service empfohlen","flashRecommendedMeasured":"Maximale gemessene Blitzzeit","noSafeFlashSync":"Keine sichere Blitzzeit gemessen","flashNotMeasured":"Blitzsynchronzeit nicht gemessen","allMeasuredFlashFailed":"Alle gemessenen Blitzzeiten hatten Fehler","noFlashData":"Keine Blitzdaten in diesem Projekt","notMeasured":"Nicht gemessen","projectNote":"Projektnotiz","accuracyBody":"Bewertet tatsächliche Belichtungszeiten und Spread über das Bild. Spread wird höher gewichtet als Offset, weil ungleichmäßige Belichtung schwerer auszugleichen ist.","reliabilityBody":"Bewertet Unterschiede zwischen wiederholten Messungen derselben Zielzeiten. Einzelmessungen werden angezeigt, reichen aber nicht für Zuverlässigkeit.","curtainBody":"Bewertet gleichmäßige lokale Vorhanggeschwindigkeit und Parallelität zwischen öffnendem und schließendem Vorhang.","measurements":"Messungen","targetTimes":"Zielzeiten","mode":"Modus","overall":"Gesamt","recommendedFlash":"Maximale Blitzzeit","accuracy":"Genauigkeit","reliability":"Zuverlässigkeit","curtainCondition":"Vorhangzustand","exposureOffsets":"Belichtungsoffsets","resultsTable":"Ergebnistabelle","measured":"Gemessen","time":"Zeit","offset":"Offset","spread":"Spread","repeatability":"Wiederholbarkeit","maximumFlashTime":"Maximale Blitzzeit","evScale":"Offset in EV, Fehlerindikator zeigt Spread","validProjectMeasurements":"gültige Projektmessungen","measuredTargets":"gemessene Zielzeiten","sensorDistance":"Sensorabstand","sensorDistanceSub":"X × Y Abstand","accuracyBodyShort":"Belichtungszeiten und Spread","reliabilityBodyShort":"Wiederholungsmessungen","curtainBodyShort":"Gleichmäßigkeit und Parallelität"},"report.scoresTitle":"Bewertung","report.scoresIntro":"Die Bewertung trennt Belichtungsgenauigkeit, Wiederholbarkeit und Vorhanglauf. Alte mechanische Kameras werden mit toleranten Grenzwerten bewertet.","report.dataTitle":"Kameradaten","report.exposureOffsetsExplanation":"Die horizontale Skala ist in EV angegeben. Balken links von 0 EV sind schneller als die eingestellte Zeit, Balken rechts davon langsamer.","report.exposureBarLegend":"Balken: mittlere Zeitabweichung","report.exposureErrorLegend":"Fehlerlinie: Streuung über das Bild"},"en":{"locale":"en-GB","modes":{"vertical":"vertical","horizontal":"horizontal","central":"central shutter"},"resultDisplay":{"none":"off","untilButton":"until button"},"config":{"none":"No config loaded","address":"Address","series":"Series","resultDisplay":"Result display"},"toast":{"deviceConnected":"Device connected: {host}","deviceNotFoundHost":"No OpenCurtainLab found at this address.","deviceNotFoundDefault":"No OpenCurtainLab found at opencurtainlab.local.","customTimesEmpty":"Custom target times are empty","settingsSaved":"Settings saved","settingsSaveFailed":"Settings could not be saved","newWebUi":"New Web UI available. Download the current HTML from the GitHub project.","enterProjectName":"Please enter a project name","projectCreated":"Project \"{name}\" created","backupImported":"Backup JSON imported","importFailed":"Import failed: no valid JSON file","backupExported":"Backup JSON exported","csvExported":"Camera attributes CSV exported — {count} target times","projectNameExists":"A project with this name already exists","noTargetTimesSelected":"Select at least one target time","customTimesInvalid":"Invalid custom target times. Use positive numbers separated by commas.","customTimesDuplicate":"Custom target times contain duplicates","customTimesTooMany":"Maximum 16 custom target times allowed","customTimesInvalidWithMax":"Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.","customTimesDefaulted":"Standard target times loaded","localDataReset":"Local WebUI data reset","defaultProjectKept":"The default project cannot be deleted","measurementMovedToDefault":"Measurement moved to the default project","measurementAssignedToDefaultIncompatible":"Measurement assigned to the default project because it does not match the selected project.","deviceNotConnected":"Device not connected","languageUnavailable":"Language resources are not available","batteryLow":"Battery low: {voltage} V ({percent}%).","reportExported":"HTML camera report exported","reportExportFailed":"HTML camera report could not be exported"},"frame":{"tutorialTitle":"OpenCurtainLab Guide","tutorialLoadFailed":"The guide could not be loaded."},"connection":{"connected":"CONNECTED","connecting":"CONNECTING…","networkHint":"Network issue"},"errors":{"unknown":"Unknown error","invalidBackup":"Invalid backup","unsupportedMeasurementPacket":"Unsupported measurement packet"},"confirm":{"deleteProject":"Delete project?","importBackup":"Import backup JSON? Current projects and history will be replaced.","resetLocalData":"Reset all local WebUI data? This removes projects, measurements and cached device settings."},"empty":{"noProjectYet":"No project yet","noMeasurements":"No measurements","waitingForRelease":"Waiting for camera release","connectDevice":"Connect the device","connectDeviceSub":"Enter the device address in Settings or use opencurtainlab.local.","createFirstProject":"Create your first project","createFirstProjectSub":"Create a camera project to collect compatible measurements. Other measurements stay in the default project.","readyMeasure":"Ready to measure","readyMeasureSub":"Release the shutter.","deviceError":"Device error","createProjectAction":"Create project","noMeasurementsYet":"No measurements yet","noMeasurementsYetSub":"Trigger the camera shutter. New measurements will appear automatically.","selectMeasurement":"Select a measurement","selectMeasurementSub":"Choose an entry from the history to inspect timing details.","waitingForProjectMeasurement":"Waiting for measurements in {project}"},"labels":{"speeds":"speeds","measurements":"measurements","noProject":"no project","target":"Target","warning":"Warning","sensorsActive":"sensors active","noFlashDetected":"no flash detected","inactive":"inactive"},"cards":{"measurement":"Measurement","timelineOpening":"Timeline — shutter opening","timelineSpeed":"Curtain speed by sensor position","note":"Note","curtainCurve":"Curtain speed by target","projectNote":"Project note"},"metrics":{"avgExposure":"Avg exposure time","avgDeviation":"Avg deviation","totalOpenTime":"Total open time","flashSync":"Flash sync"},"placeholders":{"projectNotes":"Notes for this project…"},"condition":{"notRated":"Not rated","veryGood":"Very good","good":"Good","checkService":"Check service","serviceRecommended":"Service recommended"},"charts":{"notEnoughCurtain":"Not enough sensor points for curtain chart","openingCurtain":"OPENING CURTAIN","closingCurtain":"CLOSING CURTAIN","v1Speed":"Opening speed","v2Speed":"Closing speed","openingSpeed":"Opening speed","closingSpeed":"Closing speed","positionAxis":"POSITION (mm)","speedAxis":"SPEED (m/s)","targetSpeedAxis":"Target speed (1/x s)","noCurtainMeasurements":"No measurements with curtain speed data yet","timeRelative":"TIME (ms, relative to first opening)"},"flash":{"within":"Flash within total opening","outside":"Flash outside total opening","late":"Flash in the last 2 ms of total opening","none":"No flash detected"},"project":{"overallRating":"Camera — overall rating","condition":"Condition","measurements":"Measurements","targetSpeedsMeasured":"target speeds measured","avgDeviation":"Avg deviation","absoluteAcrossRuns":"absolute, across all runs","avgScatter":"Avg scatter σ","repeatability":"repeatability","linearity":"Linearity","fromLocalCurtainSpeeds":"from local curtain speeds","parallelism":"Parallelism","fromSlitWidth":"from slit width at each sensor","zeroMeas":"0 meas.","measShort":"meas.","series":"Time series","defaultName":"Default project","deleteProject":"Delete project","deleteProjectHelp":"Deletes the project. Its measurements move to the default project.","delete":"DELETE"},"table":{"target":"Target","avgMeasurement":"Avg measurement","grade":"Grade","flash":"Flash","curtainSpeed":"Curtain speed"},"csv":{"note":"Note","project":"Project","exported":"Exported"},"settings":{"customTimesHelp":"Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.","save":"SAVE SETTINGS","saving":"SAVING...","saved":"SAVED","unsaved":"Unsaved changes","savingLabel":"Saving..."},"quickStart":{"title":"Quick start","help":"Measurements are received automatically after each shutter test.","steps":["Connect to the device.","Create or select a project.","Set the target time on the device or in the Web UI.","Fire the camera shutter.","Review the measurement."]},"connectionHelp":{"title":"Could not connect to OpenCurtainLab","steps":["Make sure the device is powered on.","Use opencurtainlab.local or the IP shown on the OLED.","Make sure this computer is on the same Wi-Fi network.","If setup mode is active, connect to the OpenCurtainLab Wi-Fi and open 192.168.4.1."]},"measurementHints":{"generic":{"action":"Check the camera setup and repeat the measurement."},"sensor_already_active_at_start":{"title":"Sensor already active","body":"A sensor was already covered when the device tried to arm the measurement.","action":"Open the shutter path, check alignment, then try again."},"flash_without_sensor":{"title":"Flash without sensor coverage","body":"The flash input fired, but no phototransistor detected shutter movement.","action":"Check the flash sync cable, camera mode, and sensor alignment."},"timeout_with_data":{"title":"Measurement timed out","body":"Some sensor data was captured, but the shutter sequence did not finish in time.","action":"Check whether the shutter got stuck or the selected test setup is correct."},"incomplete_sensor_coverage":{"title":"Incomplete sensor coverage","body":"Not all five sensors were covered during this measurement.","action":"Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."},"flash_already_active_at_start":{"title":"Flash contact already active","body":"The flash contact was already closed when the device tried to arm the measurement.","action":"Check the flash sync cable and camera contact. The input must be open before release."},"too_few_sensors":{"title":"Too few sensors were covered","body":"The measurement used fewer than three sensors and is kept only in the default project.","action":"Check camera alignment and repeat the measurement."}},"deviceErrors":{"generic":{"action":"Check the device and reconnect when the problem is fixed."},"network_access_point_failed":{"title":"Setup access point failed","body":"The device could not start its setup Wi-Fi network.","action":"Restart the device. If this persists, reflash the firmware or check the ESP32 board."},"display_init_failed":{"title":"Display initialization failed","body":"The OLED display could not be initialized.","action":"Check the I2C wiring, display address, and power supply."}},"firmware":{"title":"Version mismatch","warning":"Firmware {actual} and Web UI {expected}.x may not match.","action":"Use firmware and a manifest-compatible Web UI release."},"measurement":{"moveToDefault":"Move to default project"},"versions":{"title":"version mismatch","unknown":"unknown","webUiLabel":"WebUI {version}","publishedLabel":"published {version}","firmwareWebUiMismatch":"Firmware {firmware} and Web UI {webui} use different API versions.","webUiOutdated":"This Web UI is outdated. Loaded {webui}, published {cdn}.","cdnMismatch":"The loaded Web UI {webui} and manifest-selected Web UI {cdn} do not match.","deviceCdnMismatch":"Firmware {firmware} and manifest-selected Web UI {cdn} use different API versions.","action":"Use firmware and a manifest-compatible Web UI release.","mismatchTitle":"Version mismatch","updateAvailable":"Update available","updateAvailableWithVersion":"Update available {version}","mismatchAction":"Use firmware and Web UI files from the same release.","updateAction":"Download the current Web UI files from the project release.","deviceLabel":"Device {version}","upToDate":"Software up to date","updateUnknown":"Update unknown"},"html":{"menuButtonLabel":"Menu","connecting":"Connecting…","projects":"Projects","newProject":"New project","projectMeasurements":"Project measurements","webUiVersion":"Web UI v0.1.1","device":"Device","deviceAddress":"Device address","connect":"Connect","measurement":"Measurement","targetSeries":"Target series","customTargetTimes":"Custom target times","sensitivity":"Sensitivity","sensitivityLow":"low","sensitivityMedium":"medium","sensitivityHigh":"high","display":"Display","results":"Results","untilButtonPress":"until button press","oledSleep":"OLED sleep","afterOneMinute":"after 1 min","afterFiveMinutes":"after 5 min","afterTenMinutes":"after 10 min","afterThirtyMinutes":"after 30 min","interpolateCharts":"Interpolate charts","saveSettings":"SAVE SETTINGS","localData":"Local data","exportWorkspaceBackup":"Export","importWorkspaceBackup":"Import","resetLocalWebUiData":"Reset","guide":"Guide","settings":"Settings","connectDeviceTitle":"Connect the device","connectDeviceSubtitle":"Connect OpenCurtainLab to your network.","cameraProjectName":"Camera / project name","cameraProjectNamePlaceholder":"e.g. Leica M3, Canon AE-1 …","measurementMode":"Measurement mode","timeSeries":"Time series","supportedShutterSpeeds":"Supported shutter speeds (1/x s)","cancel":"Cancel","create":"Create","resultDisplayOff":"off","oledSleepOff":"off","pollIntervalMs":"Polling interval (ms)"},"targetSeries":{"standard":"Standard","custom":"Custom"},"settingsInfo":{"connection":"Connection","connected":"connected","notConnected":"disconnected","ip":"IP","hostname":"Hostname","wifi":"Wi-Fi","signal":"Signal","measurements":"Measurements","status":"Status","ok":"OK","unavailable":"—","measurementId":"Measurement ID","problem":"problem","battery":"Battery"},"directions":{"leftRight":"left → right","rightLeft":"right → left","topDown":"top → bottom","bottomTop":"bottom → top"},"report":{"title":"Camera measurement report","notRated":"Not rated","excellent":"Excellent","good":"Good","usable":"Usable","needsServiceSoon":"Service useful","serviceRecommended":"Service recommended","flashRecommendedMeasured":"Maximum measured flash time","noSafeFlashSync":"No safe flash time measured","flashNotMeasured":"Flash sync not measured","allMeasuredFlashFailed":"Every measured flash time had failures","noFlashData":"No flash data in this project","notMeasured":"Not measured","projectNote":"Project note","accuracyBody":"Based on measured exposure times and image-position spread. Spread is weighted higher than offset because uneven exposure is harder to compensate.","reliabilityBody":"Based on differences between repeated measurements of the same target times. Single measurements are listed but not enough for reliability.","curtainBody":"Based on local curtain-speed uniformity and the parallelism between opening and closing curtain speeds.","measurements":"Measurements","targetTimes":"Target times","mode":"Mode","overall":"Overall","recommendedFlash":"Maximum flash time","accuracy":"Accuracy","reliability":"Reliability","curtainCondition":"Curtain condition","exposureOffsets":"Exposure offsets","resultsTable":"Results table","measured":"Measured","time":"Time","offset":"Offset","spread":"Spread","repeatability":"Repeatability","maximumFlashTime":"Maximum flash time","evScale":"Offset in EV, error indicator shows spread","validProjectMeasurements":"valid project measurements","measuredTargets":"measured target times","sensorDistance":"Sensor distance","sensorDistanceSub":"X × Y spacing","accuracyBodyShort":"Exposure times and spread","reliabilityBodyShort":"Repeat measurements","curtainBodyShort":"Uniformity and parallelism"},"report.scoresTitle":"Assessment","report.scoresIntro":"The rating separates exposure accuracy, repeatability and curtain travel. Old mechanical cameras are rated with tolerant thresholds.","report.dataTitle":"Camera data","report.exposureOffsetsExplanation":"The horizontal scale is measured in EV. Bars to the left of 0 EV are faster than the selected time, bars to the right are slower.","report.exposureBarLegend":"Bar: average exposure offset","report.exposureErrorLegend":"Whisker: spread across the image"}}</script>
+<script id="ocl-i18n-all" type="application/json">{"de":{"locale":"de-DE","modes":{"vertical":"Vertikal","horizontal":"Horizontal","central":"Zentralverschluss"},"resultDisplay":{"none":"gar nicht","untilButton":"bis Tastendruck"},"config":{"none":"Keine Config geladen","address":"Adresse","series":"Messreihe","resultDisplay":"Ergebnisanzeige"},"toast":{"deviceConnected":"Gerät verbunden: {host}","deviceNotFoundHost":"Kein OpenCurtainLab unter dieser Adresse gefunden.","deviceNotFoundDefault":"Kein OpenCurtainLab unter opencurtainlab.local gefunden.","customTimesEmpty":"Custom-Zielzeiten sind leer","settingsSaved":"Einstellungen gespeichert","settingsSaveFailed":"Einstellungen konnten nicht gespeichert werden","enterProjectName":"Bitte Projektnamen eingeben","projectCreated":"Projekt \"{name}\" erstellt","backupImported":"Backup-JSON importiert","importFailed":"Import fehlgeschlagen: keine gültige JSON-Datei","backupExported":"Backup-JSON exportiert","csvExported":"Kamera-Attribute als CSV exportiert — {count} Zielzeiten","projectNameExists":"Ein Projekt mit diesem Namen existiert bereits","noTargetTimesSelected":"Bitte mindestens eine Zielzeit auswählen","customTimesInvalid":"Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.","customTimesDuplicate":"Custom-Zielzeiten enthalten doppelte Werte","customTimesTooMany":"Maximal 16 Custom-Zielzeiten erlaubt","customTimesInvalidWithMax":"Custom-Zielzeiten ungültig. Nutze positive Zahlen bis 1/{max}, getrennt mit Komma.","customTimesDefaulted":"Standardzeiten geladen","localDataReset":"Lokale WebUI-Daten zurückgesetzt","defaultProjectKept":"Das Standardprojekt kann nicht gelöscht werden","measurementMovedToDefault":"Messung ins Standardprojekt verschoben","measurementAssignedToDefaultIncompatible":"Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.","deviceNotConnected":"Gerät nicht verbunden","languageUnavailable":"Sprachdateien sind nicht verfügbar","batteryLow":"Batterie niedrig: {voltage} V ({percent}%).","reportExported":"HTML-Kamerabericht exportiert","reportExportFailed":"HTML-Kamerabericht konnte nicht exportiert werden"},"frame":{"tutorialTitle":"OpenCurtainLab Anleitung","tutorialLoadFailed":"Die Anleitung konnte nicht geladen werden."},"connection":{"connected":"VERBUNDEN","connecting":"VERBINDE…","networkHint":"Netzwerkproblem"},"errors":{"unknown":"Unbekannter Fehler","invalidBackup":"Ungültiges Backup","unsupportedMeasurementPacket":"Nicht unterstütztes Messdatenpaket"},"confirm":{"deleteProject":"Projekt löschen?","importBackup":"Backup-JSON importieren? Aktuelle Projekte und Verlauf werden ersetzt.","resetLocalData":"Lokale WebUI-Daten zurücksetzen? Dadurch werden Projekte, Messungen und zwischengespeicherte Geräteeinstellungen gelöscht."},"empty":{"noProjectYet":"Noch kein Projekt","noMeasurements":"Keine Messungen","waitingForRelease":"Warte auf Kameraauslösung","connectDevice":"Verbinde das Gerät","connectDeviceSub":"Gib die Geräteadresse in den Einstellungen ein oder nutze opencurtainlab.local.","createFirstProject":"Erstelle dein erstes Projekt","createFirstProjectSub":"Erstelle ein Kameraprojekt für passende Messungen. Andere Messungen bleiben im Standardprojekt.","readyMeasure":"Bereit zum Messen","readyMeasureSub":"Löse den Verschluss aus.","deviceError":"Gerätefehler","createProjectAction":"Projekt erstellen","noMeasurementsYet":"Noch keine Messungen","noMeasurementsYetSub":"Löse den Kameraverschluss aus. Neue Messungen erscheinen automatisch.","selectMeasurement":"Messung auswählen","selectMeasurementSub":"Wähle einen Eintrag aus dem Verlauf, um die Messdetails zu prüfen.","waitingForProjectMeasurement":"Warte auf Messungen in {project}"},"labels":{"speeds":"Zeiten","measurements":"Messungen","noProject":"kein Projekt","target":"Ziel","warning":"Hinweis","sensorsActive":"Sensoren aktiv","noFlashDetected":"kein Blitz erkannt","inactive":"inaktiv"},"cards":{"measurement":"Messung","timelineOpening":"Zeitstrahl — Verschlussöffnung","timelineSpeed":"Vorhanggeschwindigkeit nach Sensorposition","note":"Notiz","curtainCurve":"Vorhanggeschwindigkeit nach Zielzeit","projectNote":"Projekt-Notiz"},"metrics":{"avgExposure":"Ø Belichtungszeit","avgDeviation":"Abweichung Ø","totalOpenTime":"Totale Öffnungsdauer","flashSync":"Blitz-Sync"},"placeholders":{"projectNotes":"Notizen zu diesem Projekt…"},"condition":{"notRated":"Nicht bewertet","veryGood":"Sehr gut","good":"Gut","checkService":"Service prüfen","serviceRecommended":"Service empfohlen"},"charts":{"notEnoughCurtain":"Nicht genug Sensorpunkte für Vorhangdiagramm","openingCurtain":"ÖFFNENDER VORHANG","closingCurtain":"SCHLIEẞENDER VORHANG","v1Speed":"Öffnungsgeschwindigkeit","v2Speed":"Schließgeschwindigkeit","openingSpeed":"Öffnungsvorhang","closingSpeed":"Schließvorhang","positionAxis":"POSITION (mm)","speedAxis":"GESCHWINDIGKEIT (m/s)","targetSpeedAxis":"Zielzeit (1/x s)","noCurtainMeasurements":"Noch keine Messungen mit Vorhanggeschwindigkeit","timeRelative":"ZEIT (ms, relativ zur ersten Öffnung)"},"flash":{"within":"Blitz innerhalb der totalen Öffnung","outside":"Blitz außerhalb der totalen Öffnung","late":"Blitz in den letzten 2 ms der totalen Öffnung","none":"Kein Blitz erkannt"},"project":{"overallRating":"Kamera — Gesamtbewertung","condition":"Zustand","measurements":"Messungen","targetSpeedsMeasured":"Zielzeiten gemessen","avgDeviation":"Ø Abweichung","absoluteAcrossRuns":"Betrag, über alle Messreihen","avgScatter":"Ø Streuung σ","repeatability":"Wiederholung","linearity":"Gleichmäßigkeit","fromLocalCurtainSpeeds":"aus lokaler Vorhanggeschwindigkeit","parallelism":"Parallelität","fromSlitWidth":"aus Schlitzbreite je Sensor","zeroMeas":"0 Mess.","measShort":"Mess.","series":"Messreihe","defaultName":"Standardprojekt","deleteProject":"Projekt löschen","deleteProjectHelp":"Löscht das Projekt. Die Messungen werden ins Standardprojekt verschoben.","delete":"LÖSCHEN"},"table":{"target":"Zielzeit","avgMeasurement":"Ø Messung","grade":"Note","flash":"Blitz","curtainSpeed":"Vorhanggeschwindigkeit"},"csv":{"note":"Notiz","project":"Projekt","exported":"Exportiert"},"settings":{"customTimesHelp":"Nenner bis 1/{max}, durch Kommas getrennt. Leer lassen, um die Standardzeiten zu laden.","save":"EINSTELLUNGEN SPEICHERN","saving":"SPEICHERN...","saved":"GESPEICHERT","unsaved":"Ungespeicherte Änderungen","savingLabel":"Speichern..."},"quickStart":{"title":"Schnellstart","help":"Messungen werden nach jedem Verschlusstest automatisch empfangen.","steps":["Mit dem Gerät verbinden.","Projekt erstellen oder auswählen.","Zielzeit am Gerät oder in der WebUI einstellen.","Kameraverschluss auslösen.","Messung auswerten."]},"connectionHelp":{"title":"Verbindung zu OpenCurtainLab nicht möglich","steps":["Prüfe, ob das Gerät eingeschaltet ist.","Nutze opencurtainlab.local oder die IP vom OLED.","Prüfe, ob dieser Computer im gleichen WLAN ist.","Wenn der Setup-Modus aktiv ist: mit dem OpenCurtainLab-WLAN verbinden und 192.168.4.1 öffnen."]},"measurementHints":{"generic":{"action":"Prüfe den Kameraaufbau und wiederhole die Messung."},"sensor_already_active_at_start":{"title":"Sensor bereits aktiv","body":"Ein Sensor war bereits abgedeckt, als das Gerät die Messung scharf schalten wollte.","action":"Öffne den Verschlussweg, prüfe die Ausrichtung und versuche es erneut."},"flash_without_sensor":{"title":"Blitz ohne Sensorabdeckung","body":"Der Blitzkontakt wurde ausgelöst, aber kein Phototransistor hat eine Verschlussbewegung erkannt.","action":"Prüfe Blitz-Sync-Kabel, Kameramodus und Sensorausrichtung."},"timeout_with_data":{"title":"Messung abgelaufen","body":"Es wurden Sensordaten erfasst, aber der Verschlussablauf wurde nicht rechtzeitig beendet.","action":"Prüfe, ob der Verschluss hängen bleibt oder der Testaufbau passt."},"incomplete_sensor_coverage":{"title":"Unvollständige Sensorabdeckung","body":"Nicht alle fünf Sensoren wurden während dieser Messung abgedeckt.","action":"Prüfe Kameraausrichtung, Vorhangweg oder ob der Schlitz die gesamte Sensorreihe abdeckt."},"flash_already_active_at_start":{"title":"Blitzkontakt bereits aktiv","body":"Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.","action":"Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."},"too_few_sensors":{"title":"Zu wenige Sensoren wurden abgedeckt","body":"Die Messung hat weniger als drei Sensoren verwendet und bleibt nur im Standardprojekt.","action":"Kameraausrichtung prüfen und die Messung wiederholen."}},"deviceErrors":{"generic":{"action":"Prüfe das Gerät und verbinde erneut, wenn der Fehler behoben ist."},"network_access_point_failed":{"title":"Setup-Access-Point fehlgeschlagen","body":"Das Gerät konnte sein Setup-WLAN nicht starten.","action":"Starte das Gerät neu. Wenn der Fehler bleibt, Firmware neu flashen oder ESP32-Board prüfen."},"display_init_failed":{"title":"Display konnte nicht initialisiert werden","body":"Das OLED-Display konnte nicht initialisiert werden.","action":"Prüfe I2C-Verdrahtung, Display-Adresse und Stromversorgung."}},"firmware":{"title":"Versionskonflikt","warning":"Firmware {actual} und WebUI {expected}.x passen möglicherweise nicht zusammen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version."},"measurement":{"moveToDefault":"Ins Standardprojekt verschieben"},"versions":{"title":"Versionsunterschied","unknown":"unbekannt","webUiLabel":"WebUI {version}","publishedLabel":"veröffentlicht {version}","firmwareWebUiMismatch":"Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.","webUiOutdated":"Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.","cdnMismatch":"Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.","deviceCdnMismatch":"Firmware {firmware} und die im Manifest gewählte WebUI {cdn} nutzen unterschiedliche API-Versionen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version.","mismatchTitle":"Versionsunterschied","updateAvailable":"Update verfügbar","updateAvailableWithVersion":"Update verfügbar {version}","mismatchAction":"Nutze Firmware und WebUI-Dateien aus demselben Release.","updateAction":"Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.","deviceLabel":"Gerät {version}","upToDate":"Software auf neuestem Stand","updateUnknown":"Update unbekannt","newWebUiAvailableTitle":"Neue WebUI-Version verfügbar","newFirmwareAvailableTitle":"Neue Firmware-Version verfügbar","newWebUiAvailable":"Neue WebUI-Version verfügbar {version}","newFirmwareAvailable":"Neue Firmware-Version verfügbar {version}","multipleUpdatesAvailable":"Updates verfügbar","webUiUpdateAction":"Lade die aktuelle WebUI über das Gerät oder aus dem Projekt-Release herunter.","firmwareUpdateAction":"Installiere die aktuelle Firmware aus dem Projekt-Release."},"html":{"menuButtonLabel":"Menü","connecting":"Verbinde…","projects":"Projekte","newProject":"Neues Projekt","projectMeasurements":"Projektmessungen","webUiVersion":"WebUI v0.1.2","device":"Gerät","deviceAddress":"Geräteadresse","connect":"Verbinden","measurement":"Messung","targetSeries":"Messreihe","customTargetTimes":"Benutzerdefinierte Zeiten","sensitivity":"Empfindlichkeit","sensitivityLow":"niedrig","sensitivityMedium":"mittel","sensitivityHigh":"hoch","display":"Anzeige","results":"Ergebnisse","untilButtonPress":"bis Tastendruck","oledSleep":"OLED Schlaf","afterOneMinute":"nach 1 min","afterFiveMinutes":"nach 5 min","afterTenMinutes":"nach 10 min","afterThirtyMinutes":"nach 30 min","interpolateCharts":"Diagramme interpolieren","saveSettings":"EINSTELLUNGEN SPEICHERN","localData":"Lokale Daten","exportWorkspaceBackup":"Exportieren","importWorkspaceBackup":"Importieren","resetLocalWebUiData":"Zurücksetzen","guide":"Anleitung","settings":"Einstellungen","connectDeviceTitle":"Verbinde das Gerät","connectDeviceSubtitle":"Verbinde OpenCurtainLab mit deinem Netzwerk.","cameraProjectName":"Kamera / Projektname","cameraProjectNamePlaceholder":"z.B. Leica M3, Canon AE-1 …","measurementMode":"Messmodus","timeSeries":"Messreihe","supportedShutterSpeeds":"Unterstützte Belichtungszeiten (1/x s)","cancel":"Abbrechen","create":"Erstellen","resultDisplayOff":"gar nicht","oledSleepOff":"aus","pollIntervalMs":"Polling-Intervall (ms)"},"targetSeries":{"standard":"Standard","custom":"Benutzerdefiniert"},"settingsInfo":{"connection":"Verbindung","connected":"verbunden","notConnected":"Verbindung getrennt","ip":"IP","hostname":"Hostname","wifi":"WLAN","signal":"Signal","measurements":"Messungen","status":"Status","ok":"OK","unavailable":"—","measurementId":"Measurement-ID","problem":"Problem","battery":"Batterie"},"directions":{"leftRight":"links → rechts","rightLeft":"rechts → links","topDown":"oben → unten","bottomTop":"unten → oben"},"report":{"title":"Kamera-Messbericht","notRated":"Nicht bewertet","excellent":"Sehr gut","good":"Gut","usable":"Brauchbar","needsServiceSoon":"Service sinnvoll","serviceRecommended":"Service empfohlen","flashRecommendedMeasured":"Maximale gemessene Blitzzeit","noSafeFlashSync":"Keine sichere Blitzzeit gemessen","flashNotMeasured":"Blitzsynchronzeit nicht gemessen","allMeasuredFlashFailed":"Alle gemessenen Blitzzeiten hatten Fehler","noFlashData":"Keine Blitzdaten in diesem Projekt","notMeasured":"Nicht gemessen","projectNote":"Projektnotiz","accuracyBody":"Bewertet tatsächliche Belichtungszeiten und Spread über das Bild. Spread wird höher gewichtet als Offset, weil ungleichmäßige Belichtung schwerer auszugleichen ist.","reliabilityBody":"Bewertet Unterschiede zwischen wiederholten Messungen derselben Zielzeiten. Einzelmessungen werden angezeigt, reichen aber nicht für Zuverlässigkeit.","curtainBody":"Bewertet gleichmäßige lokale Vorhanggeschwindigkeit und Parallelität zwischen öffnendem und schließendem Vorhang.","measurements":"Messungen","targetTimes":"Zielzeiten","mode":"Modus","overall":"Gesamt","recommendedFlash":"Maximale Blitzzeit","accuracy":"Genauigkeit","reliability":"Zuverlässigkeit","curtainCondition":"Vorhangzustand","exposureOffsets":"Belichtungsoffsets","resultsTable":"Ergebnistabelle","measured":"Gemessen","time":"Zeit","offset":"Offset","spread":"Spread","repeatability":"Wiederholbarkeit","maximumFlashTime":"Maximale Blitzzeit","evScale":"Offset in EV, Fehlerindikator zeigt Spread","validProjectMeasurements":"gültige Projektmessungen","measuredTargets":"gemessene Zielzeiten","sensorDistance":"Sensorabstand","sensorDistanceSub":"X × Y Abstand","accuracyBodyShort":"Belichtungszeiten und Spread","reliabilityBodyShort":"Wiederholungsmessungen","curtainBodyShort":"Gleichmäßigkeit und Parallelität"},"report.scoresTitle":"Bewertung","report.scoresIntro":"Die Bewertung trennt Belichtungsgenauigkeit, Wiederholbarkeit und Vorhanglauf. Alte mechanische Kameras werden mit toleranten Grenzwerten bewertet.","report.dataTitle":"Kameradaten","report.exposureOffsetsExplanation":"Die horizontale Skala ist in EV angegeben. Balken links von 0 EV sind schneller als die eingestellte Zeit, Balken rechts davon langsamer.","report.exposureBarLegend":"Balken: mittlere Zeitabweichung","report.exposureErrorLegend":"Fehlerlinie: Streuung über das Bild"},"en":{"locale":"en-GB","modes":{"vertical":"vertical","horizontal":"horizontal","central":"central shutter"},"resultDisplay":{"none":"off","untilButton":"until button"},"config":{"none":"No config loaded","address":"Address","series":"Series","resultDisplay":"Result display"},"toast":{"deviceConnected":"Device connected: {host}","deviceNotFoundHost":"No OpenCurtainLab found at this address.","deviceNotFoundDefault":"No OpenCurtainLab found at opencurtainlab.local.","customTimesEmpty":"Custom target times are empty","settingsSaved":"Settings saved","settingsSaveFailed":"Settings could not be saved","enterProjectName":"Please enter a project name","projectCreated":"Project \"{name}\" created","backupImported":"Backup JSON imported","importFailed":"Import failed: no valid JSON file","backupExported":"Backup JSON exported","csvExported":"Camera attributes CSV exported — {count} target times","projectNameExists":"A project with this name already exists","noTargetTimesSelected":"Select at least one target time","customTimesInvalid":"Invalid custom target times. Use positive numbers separated by commas.","customTimesDuplicate":"Custom target times contain duplicates","customTimesTooMany":"Maximum 16 custom target times allowed","customTimesInvalidWithMax":"Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.","customTimesDefaulted":"Standard target times loaded","localDataReset":"Local WebUI data reset","defaultProjectKept":"The default project cannot be deleted","measurementMovedToDefault":"Measurement moved to the default project","measurementAssignedToDefaultIncompatible":"Measurement assigned to the default project because it does not match the selected project.","deviceNotConnected":"Device not connected","languageUnavailable":"Language resources are not available","batteryLow":"Battery low: {voltage} V ({percent}%).","reportExported":"HTML camera report exported","reportExportFailed":"HTML camera report could not be exported"},"frame":{"tutorialTitle":"OpenCurtainLab Guide","tutorialLoadFailed":"The guide could not be loaded."},"connection":{"connected":"CONNECTED","connecting":"CONNECTING…","networkHint":"Network issue"},"errors":{"unknown":"Unknown error","invalidBackup":"Invalid backup","unsupportedMeasurementPacket":"Unsupported measurement packet"},"confirm":{"deleteProject":"Delete project?","importBackup":"Import backup JSON? Current projects and history will be replaced.","resetLocalData":"Reset all local WebUI data? This removes projects, measurements and cached device settings."},"empty":{"noProjectYet":"No project yet","noMeasurements":"No measurements","waitingForRelease":"Waiting for camera release","connectDevice":"Connect the device","connectDeviceSub":"Enter the device address in Settings or use opencurtainlab.local.","createFirstProject":"Create your first project","createFirstProjectSub":"Create a camera project to collect compatible measurements. Other measurements stay in the default project.","readyMeasure":"Ready to measure","readyMeasureSub":"Release the shutter.","deviceError":"Device error","createProjectAction":"Create project","noMeasurementsYet":"No measurements yet","noMeasurementsYetSub":"Trigger the camera shutter. New measurements will appear automatically.","selectMeasurement":"Select a measurement","selectMeasurementSub":"Choose an entry from the history to inspect timing details.","waitingForProjectMeasurement":"Waiting for measurements in {project}"},"labels":{"speeds":"speeds","measurements":"measurements","noProject":"no project","target":"Target","warning":"Warning","sensorsActive":"sensors active","noFlashDetected":"no flash detected","inactive":"inactive"},"cards":{"measurement":"Measurement","timelineOpening":"Timeline — shutter opening","timelineSpeed":"Curtain speed by sensor position","note":"Note","curtainCurve":"Curtain speed by target","projectNote":"Project note"},"metrics":{"avgExposure":"Avg exposure time","avgDeviation":"Avg deviation","totalOpenTime":"Total open time","flashSync":"Flash sync"},"placeholders":{"projectNotes":"Notes for this project…"},"condition":{"notRated":"Not rated","veryGood":"Very good","good":"Good","checkService":"Check service","serviceRecommended":"Service recommended"},"charts":{"notEnoughCurtain":"Not enough sensor points for curtain chart","openingCurtain":"OPENING CURTAIN","closingCurtain":"CLOSING CURTAIN","v1Speed":"Opening speed","v2Speed":"Closing speed","openingSpeed":"Opening speed","closingSpeed":"Closing speed","positionAxis":"POSITION (mm)","speedAxis":"SPEED (m/s)","targetSpeedAxis":"Target speed (1/x s)","noCurtainMeasurements":"No measurements with curtain speed data yet","timeRelative":"TIME (ms, relative to first opening)"},"flash":{"within":"Flash within total opening","outside":"Flash outside total opening","late":"Flash in the last 2 ms of total opening","none":"No flash detected"},"project":{"overallRating":"Camera — overall rating","condition":"Condition","measurements":"Measurements","targetSpeedsMeasured":"target speeds measured","avgDeviation":"Avg deviation","absoluteAcrossRuns":"absolute, across all runs","avgScatter":"Avg scatter σ","repeatability":"repeatability","linearity":"Linearity","fromLocalCurtainSpeeds":"from local curtain speeds","parallelism":"Parallelism","fromSlitWidth":"from slit width at each sensor","zeroMeas":"0 meas.","measShort":"meas.","series":"Time series","defaultName":"Default project","deleteProject":"Delete project","deleteProjectHelp":"Deletes the project. Its measurements move to the default project.","delete":"DELETE"},"table":{"target":"Target","avgMeasurement":"Avg measurement","grade":"Grade","flash":"Flash","curtainSpeed":"Curtain speed"},"csv":{"note":"Note","project":"Project","exported":"Exported"},"settings":{"customTimesHelp":"Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.","save":"SAVE SETTINGS","saving":"SAVING...","saved":"SAVED","unsaved":"Unsaved changes","savingLabel":"Saving..."},"quickStart":{"title":"Quick start","help":"Measurements are received automatically after each shutter test.","steps":["Connect to the device.","Create or select a project.","Set the target time on the device or in the Web UI.","Fire the camera shutter.","Review the measurement."]},"connectionHelp":{"title":"Could not connect to OpenCurtainLab","steps":["Make sure the device is powered on.","Use opencurtainlab.local or the IP shown on the OLED.","Make sure this computer is on the same Wi-Fi network.","If setup mode is active, connect to the OpenCurtainLab Wi-Fi and open 192.168.4.1."]},"measurementHints":{"generic":{"action":"Check the camera setup and repeat the measurement."},"sensor_already_active_at_start":{"title":"Sensor already active","body":"A sensor was already covered when the device tried to arm the measurement.","action":"Open the shutter path, check alignment, then try again."},"flash_without_sensor":{"title":"Flash without sensor coverage","body":"The flash input fired, but no phototransistor detected shutter movement.","action":"Check the flash sync cable, camera mode, and sensor alignment."},"timeout_with_data":{"title":"Measurement timed out","body":"Some sensor data was captured, but the shutter sequence did not finish in time.","action":"Check whether the shutter got stuck or the selected test setup is correct."},"incomplete_sensor_coverage":{"title":"Incomplete sensor coverage","body":"Not all five sensors were covered during this measurement.","action":"Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."},"flash_already_active_at_start":{"title":"Flash contact already active","body":"The flash contact was already closed when the device tried to arm the measurement.","action":"Check the flash sync cable and camera contact. The input must be open before release."},"too_few_sensors":{"title":"Too few sensors were covered","body":"The measurement used fewer than three sensors and is kept only in the default project.","action":"Check camera alignment and repeat the measurement."}},"deviceErrors":{"generic":{"action":"Check the device and reconnect when the problem is fixed."},"network_access_point_failed":{"title":"Setup access point failed","body":"The device could not start its setup Wi-Fi network.","action":"Restart the device. If this persists, reflash the firmware or check the ESP32 board."},"display_init_failed":{"title":"Display initialization failed","body":"The OLED display could not be initialized.","action":"Check the I2C wiring, display address, and power supply."}},"firmware":{"title":"Version mismatch","warning":"Firmware {actual} and Web UI {expected}.x may not match.","action":"Use firmware and a manifest-compatible Web UI release."},"measurement":{"moveToDefault":"Move to default project"},"versions":{"title":"version mismatch","unknown":"unknown","webUiLabel":"WebUI {version}","publishedLabel":"published {version}","firmwareWebUiMismatch":"Firmware {firmware} and Web UI {webui} use different API versions.","webUiOutdated":"This Web UI is outdated. Loaded {webui}, published {cdn}.","cdnMismatch":"The loaded Web UI {webui} and manifest-selected Web UI {cdn} do not match.","deviceCdnMismatch":"Firmware {firmware} and manifest-selected Web UI {cdn} use different API versions.","action":"Use firmware and a manifest-compatible Web UI release.","mismatchTitle":"Version mismatch","updateAvailable":"Update available","updateAvailableWithVersion":"Update available {version}","mismatchAction":"Use firmware and Web UI files from the same release.","updateAction":"Download the current Web UI files from the project release.","deviceLabel":"Device {version}","upToDate":"Software up to date","updateUnknown":"Update unknown","newWebUiAvailableTitle":"New Web UI version available","newFirmwareAvailableTitle":"New firmware version available","newWebUiAvailable":"New Web UI version available {version}","newFirmwareAvailable":"New firmware version available {version}","multipleUpdatesAvailable":"Updates available","webUiUpdateAction":"Download the current Web UI through the device or from the project release.","firmwareUpdateAction":"Install the current firmware from the project release."},"html":{"menuButtonLabel":"Menu","connecting":"Connecting…","projects":"Projects","newProject":"New project","projectMeasurements":"Project measurements","webUiVersion":"Web UI v0.1.2","device":"Device","deviceAddress":"Device address","connect":"Connect","measurement":"Measurement","targetSeries":"Target series","customTargetTimes":"Custom target times","sensitivity":"Sensitivity","sensitivityLow":"low","sensitivityMedium":"medium","sensitivityHigh":"high","display":"Display","results":"Results","untilButtonPress":"until button press","oledSleep":"OLED sleep","afterOneMinute":"after 1 min","afterFiveMinutes":"after 5 min","afterTenMinutes":"after 10 min","afterThirtyMinutes":"after 30 min","interpolateCharts":"Interpolate charts","saveSettings":"SAVE SETTINGS","localData":"Local data","exportWorkspaceBackup":"Export","importWorkspaceBackup":"Import","resetLocalWebUiData":"Reset","guide":"Guide","settings":"Settings","connectDeviceTitle":"Connect the device","connectDeviceSubtitle":"Connect OpenCurtainLab to your network.","cameraProjectName":"Camera / project name","cameraProjectNamePlaceholder":"e.g. Leica M3, Canon AE-1 …","measurementMode":"Measurement mode","timeSeries":"Time series","supportedShutterSpeeds":"Supported shutter speeds (1/x s)","cancel":"Cancel","create":"Create","resultDisplayOff":"off","oledSleepOff":"off","pollIntervalMs":"Polling interval (ms)"},"targetSeries":{"standard":"Standard","custom":"Custom"},"settingsInfo":{"connection":"Connection","connected":"connected","notConnected":"disconnected","ip":"IP","hostname":"Hostname","wifi":"Wi-Fi","signal":"Signal","measurements":"Measurements","status":"Status","ok":"OK","unavailable":"—","measurementId":"Measurement ID","problem":"problem","battery":"Battery"},"directions":{"leftRight":"left → right","rightLeft":"right → left","topDown":"top → bottom","bottomTop":"bottom → top"},"report":{"title":"Camera measurement report","notRated":"Not rated","excellent":"Excellent","good":"Good","usable":"Usable","needsServiceSoon":"Service useful","serviceRecommended":"Service recommended","flashRecommendedMeasured":"Maximum measured flash time","noSafeFlashSync":"No safe flash time measured","flashNotMeasured":"Flash sync not measured","allMeasuredFlashFailed":"Every measured flash time had failures","noFlashData":"No flash data in this project","notMeasured":"Not measured","projectNote":"Project note","accuracyBody":"Based on measured exposure times and image-position spread. Spread is weighted higher than offset because uneven exposure is harder to compensate.","reliabilityBody":"Based on differences between repeated measurements of the same target times. Single measurements are listed but not enough for reliability.","curtainBody":"Based on local curtain-speed uniformity and the parallelism between opening and closing curtain speeds.","measurements":"Measurements","targetTimes":"Target times","mode":"Mode","overall":"Overall","recommendedFlash":"Maximum flash time","accuracy":"Accuracy","reliability":"Reliability","curtainCondition":"Curtain condition","exposureOffsets":"Exposure offsets","resultsTable":"Results table","measured":"Measured","time":"Time","offset":"Offset","spread":"Spread","repeatability":"Repeatability","maximumFlashTime":"Maximum flash time","evScale":"Offset in EV, error indicator shows spread","validProjectMeasurements":"valid project measurements","measuredTargets":"measured target times","sensorDistance":"Sensor distance","sensorDistanceSub":"X × Y spacing","accuracyBodyShort":"Exposure times and spread","reliabilityBodyShort":"Repeat measurements","curtainBodyShort":"Uniformity and parallelism"},"report.scoresTitle":"Assessment","report.scoresIntro":"The rating separates exposure accuracy, repeatability and curtain travel. Old mechanical cameras are rated with tolerant thresholds.","report.dataTitle":"Camera data","report.exposureOffsetsExplanation":"The horizontal scale is measured in EV. Bars to the left of 0 EV are faster than the selected time, bars to the right are slower.","report.exposureBarLegend":"Bar: average exposure offset","report.exposureErrorLegend":"Whisker: spread across the image"}}</script>
     <template id="ocl-tutorial-de"><article class="tutorial-page tutorial guide">
 <section class="hero">
 <div class="eyebrow">OpenCurtainLab Anleitung</div>
@@ -1842,6 +1842,7 @@ h2{font-size:16px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em;
 .legend-bar{width:22px;height:8px;border-radius:99px;background:var(--gold);display:inline-block}
 .legend-error{width:22px;height:0;border-top:1.5px solid #463d33;display:inline-block;position:relative}
 .legend-error:before,.legend-error:after{content:"";position:absolute;top:-5px;width:0;height:8px;border-left:1.5px solid #463d33}.legend-error:before{left:0}.legend-error:after{right:0}
+.legend-line{width:24px;height:0;border-top:2.2px solid var(--green);display:inline-block}.legend-line.closing{border-color:var(--blue)}
 h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#4a4034}
 header p{margin:8px 0 0;color:var(--muted);font-size:13px}
 .seal{width:120px;height:120px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;text-align:center;color:var(--gold);font-weight:800;letter-spacing:.08em;background:#fff8e8}
@@ -1865,72 +1866,78 @@ section{margin-top:16px}
 .data-field strong{display:block;margin-top:4px;font-size:16px}
 .data-field small{display:block;margin-top:2px;color:var(--muted);font-size:11px}
 .muted{color:var(--muted)}
-.offset-chart{width:100%;height:auto;background:var(--soft);border:1px solid var(--line);padding:8px;break-inside:avoid}
-.offset-chart .grid{stroke:#dfd3c1;stroke-width:1}
-.offset-chart .zero{stroke:#8f806c;stroke-width:1.4}
+.offset-chart,.curtain-speed-chart{width:100%;height:auto;background:var(--soft);border:1px solid var(--line);padding:8px;break-inside:avoid}
+.offset-chart .grid,.curtain-speed-chart .grid{stroke:#dfd3c1;stroke-width:1}
+.offset-chart .zero,.curtain-speed-chart .axis{stroke:#8f806c;stroke-width:1.4}
 .offset-chart rect{fill:var(--gold);opacity:.86}
 .offset-chart .error,.offset-chart .error-cap{stroke:#463d33;stroke-width:1.4}
-.offset-chart text{font-size:12px;fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-.offset-chart .target{font-weight:700;fill:#4a4034}
+.offset-chart text,.curtain-speed-chart text{font-size:12px;fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.offset-chart .target,.curtain-speed-chart .target{font-weight:700;fill:#4a4034}
 .offset-chart .value{fill:#4a4034}
-.offset-chart .axis-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;fill:#6c665d}
-.offset-chart .tick{font-size:11px}
+.offset-chart .axis-label,.curtain-speed-chart .axis-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;fill:#6c665d}
+.offset-chart .tick,.curtain-speed-chart .tick{font-size:11px}
+.curtain-speed-chart .soft{opacity:.62}
+.curtain-speed-chart .curtain-line{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.curtain-speed-chart .curtain-line.opening{stroke:var(--green)}
+.curtain-speed-chart .curtain-line.closing{stroke:var(--blue)}
+.curtain-speed-chart circle{stroke:#fff;stroke-width:1.6}.curtain-speed-chart circle.opening{fill:var(--green)}.curtain-speed-chart circle.closing{fill:var(--blue)}
 .note{background:var(--soft);border:1px solid var(--line);padding:12px 14px;margin:16px 0 0;break-inside:avoid}
 .note p{margin:0;color:#423b33;white-space:pre-line;font-size:12px}
 .footer{margin-top:16px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
 @page{size:A4;margin:10mm}
 @media print{
-  html,body{width:210mm;min-height:297mm;background:#ffffff}
-  body{font-size:12px;line-height:1.28;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .page{width:190mm;min-height:0;margin:0 auto;padding:0;box-shadow:none;border:0;background:#ffffff}
-  header{padding:8mm 8mm 7mm;gap:8mm;grid-template-columns:1fr auto;background:#ffffff}
-  .eyebrow{font-size:12px}
-  h1{font-size:28px}
-  h2{font-size:14px;margin-bottom:4px}
-  .section-intro{font-size:11px;margin:-2px 0 5px}
-  .chart-explainer{grid-template-columns:1.3fr 1fr;gap:5mm;font-size:11px;margin-bottom:2mm}
-  .chart-legend{gap:2px}
-  h3{font-size:12px}
-  header p{font-size:12px;margin-top:4px}
-  .seal{width:25mm;height:25mm}
-  .seal div{font-size:18px}
-  .seal small{font-size:12px}
-  .summary{grid-template-columns:repeat(3,1fr)!important;gap:5px;margin:5mm 0 4mm}
-  .metric{padding:6px 8px}
-  .metric span,.data-field span{font-size:11px}
-  .metric strong{font-size:15px}
-  .scores{grid-template-columns:repeat(3,1fr)!important;gap:5px;margin:4mm 0}
-  .score-card{padding:7px}
-  .score-card strong{font-size:13px}
-  .score-card p{font-size:12px;margin-top:5px}
-  .score-bar{height:5px;margin-top:6px}
-  section{margin-top:4mm}
-  .offset-chart{padding:4px;background:#ffffff}
-  .offset-chart text{font-size:11px}
-  .offset-chart .axis-label{font-size:11px}
-  .offset-chart .tick{font-size:11px}
-  .data-fields{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:5px;margin-top:4mm;break-inside:avoid}
-  .data-field{padding:6px 8px}
-  .data-field strong{font-size:14px}
-  .data-field small{font-size:11px}
-  .note{padding:6px 8px;margin:4mm 0 0}
-  .note p{font-size:12px;max-height:18mm;overflow:hidden}
-  .footer{font-size:11px;margin-top:4mm;padding-top:2mm}
+ html,body{width:210mm;min-height:297mm;background:#ffffff}
+ body{font-size:12px;line-height:1.28;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .page{width:190mm;min-height:0;margin:0 auto;padding:0;box-shadow:none;border:0;background:#ffffff}
+ header{padding:8mm 8mm 7mm;gap:8mm;grid-template-columns:1fr auto;background:#ffffff}
+ .eyebrow{font-size:12px}
+ h1{font-size:28px}
+ h2{font-size:14px;margin-bottom:4px}
+ .section-intro{font-size:11px;margin:-2px 0 5px}
+ .chart-explainer{grid-template-columns:1.3fr 1fr;gap:5mm;font-size:11px;margin-bottom:2mm}
+ .chart-legend{gap:2px}
+ h3{font-size:12px}
+ header p{font-size:12px;margin-top:4px}
+ .seal{width:25mm;height:25mm}
+ .seal div{font-size:18px}
+ .seal small{font-size:12px}
+ .summary{grid-template-columns:repeat(3,1fr)!important;gap:5px;margin:5mm 0 4mm}
+ .metric{padding:6px 8px}
+ .metric span,.data-field span{font-size:11px}
+ .metric strong{font-size:15px}
+ .scores{grid-template-columns:repeat(3,1fr)!important;gap:5px;margin:4mm 0}
+ .score-card{padding:7px}
+ .score-card strong{font-size:13px}
+ .score-card p{font-size:12px;margin-top:5px}
+ .score-bar{height:5px;margin-top:6px}
+ section{margin-top:4mm}
+ .offset-chart,.curtain-speed-chart{padding:4px;background:#ffffff}
+ .offset-chart text,.curtain-speed-chart text{font-size:11px}
+ .offset-chart .axis-label,.curtain-speed-chart .axis-label{font-size:11px}
+ .offset-chart .tick,.curtain-speed-chart .tick{font-size:11px}
+ .data-fields{display:grid;grid-template-columns:repeat(3,1fr)!important;gap:5px;margin-top:4mm;break-inside:avoid}
+ .data-field{padding:6px 8px}
+ .data-field strong{font-size:14px}
+ .data-field small{font-size:11px}
+ .note{padding:6px 8px;margin:4mm 0 0}
+ .note p{font-size:12px;max-height:18mm;overflow:hidden}
+ .footer{font-size:11px;margin-top:4mm;padding-top:2mm}
 }
 @media screen and (max-width:760px){.page{width:100%;margin:0;padding:18px}header,.summary,.scores,.data-fields{grid-template-columns:1fr}.seal{width:96px;height:96px}.seal div{font-size:20px}.seal small{font-size:12px}h1{font-size:30px}}</style>
 </head>
 <body>
 <main class="page">
 <header>
-  <div><div class="eyebrow">OpenCurtainLab v{{APP_VERSION}}</div><h1>{{PROJECT_NAME}}</h1><p>{{REPORT_TITLE}} · {{EXPORTED_AT}}</p></div>
-  <div class="seal"><div>{{OVERALL_GRADE}}<br><small>{{OVERALL_LABEL}}</small></div></div>
+ <div><div class="eyebrow">OpenCurtainLab v{{APP_VERSION}}</div><h1>{{PROJECT_NAME}}</h1><p>{{REPORT_TITLE}} · {{EXPORTED_AT}}</p></div>
+ <div class="seal"><div>{{OVERALL_GRADE}}<br><small>{{OVERALL_LABEL}}</small></div></div>
 </header>
 {{PROJECT_NOTE}}
 <section class="scores-section"><h2>{{SCORES_TITLE}}</h2><p class="section-intro">{{SCORES_INTRO}}</p><div class="scores">
-  {{SCORE_CARDS}}
+ {{SCORE_CARDS}}
 </div></section>
 <section class="data-section"><h2>{{DATA_TITLE}}</h2>{{DATA_FIELDS}}</section>
 <section class="chart-section"><h2>{{EXPOSURE_OFFSETS_TITLE}}</h2><div class="chart-explainer"><p>{{EXPOSURE_OFFSETS_EXPLANATION}}</p><div class="chart-legend"><div><span class="legend-bar"></span><span>{{EXPOSURE_BAR_LEGEND}}</span></div><div><span class="legend-error"></span><span>{{EXPOSURE_ERROR_LEGEND}}</span></div></div></div>{{OFFSET_CHART}}</section>
+{{CURTAIN_SPEED_SECTION}}
 <div class="footer"><span>OpenCurtainLab</span><span>{{EXPORTED_AT}}</span></div>
 </main>
 </body>
@@ -2031,7 +2038,7 @@ async function loadSourceI18n() {
     }
   }
 
-  console.warn('OpenCurtainLab i18n files could not be loaded. Serve web/ through a local HTTP server or build/open web/compiled/compiled-v0.1.1.html.', OCL_I18N_LOAD_ERROR);
+  console.warn('OpenCurtainLab i18n files could not be loaded. Serve web/ through a local HTTP server or build/open web/compiled/compiled-v0.1.2.html.', OCL_I18N_LOAD_ERROR);
   OCL_I18N_ALL = OCL_I18N_ALL || null;
   return false;
 }
@@ -2200,7 +2207,10 @@ let S = {
   versionWarning: '',
   versionMismatch: '',
   updateAvailable: '',
+  webUiUpdateAvailable: '',
+  firmwareUpdateAvailable: '',
   cdnVersion: '',
+  versionInfo: null,
   lastVersionNotice: '',
   settingsSnapshot: '',
   settingsDirty: false,
@@ -2722,10 +2732,41 @@ function versionLabel(value) {
   return v ? 'v' + v : tx('versions.unknown', 'unknown');
 }
 
+function parseVersionInfoResponse(value) {
+  const fallback = {
+    manifestAvailable: false,
+    currentFirmware: '',
+    projectVersion: '',
+    bugfixversion: ''
+  };
+
+  const raw = unwrapPreContent(value).trim();
+  if (!raw) return fallback;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        manifestAvailable: parsed.manifestAvailable === true,
+        currentFirmware: cleanVersion(parsed.currentFirmware),
+        projectVersion: cleanVersion(parsed.projectVersion),
+        bugfixversion: cleanVersion(parsed.bugfixversion)
+      };
+    }
+  } catch (e) {
+    return fallback;
+  }
+
+  return fallback;
+}
+
 function updateVersionWarnings(showToast = false) {
-  const firmware = cleanVersion(S.deviceConfig && S.deviceConfig.version);
+  const info = S.versionInfo || {};
+  const firmware = cleanVersion(info.currentFirmware || (S.deviceConfig && S.deviceConfig.version));
   const webui = cleanVersion(APP_VERSION);
-  const remote = cleanVersion(S.cdnVersion);
+  const compatibleWebui = cleanVersion(info.bugfixversion || S.cdnVersion);
+  const projectVersion = cleanVersion(info.projectVersion);
+  const manifestAvailable = info.manifestAvailable === true;
 
   S.versionMismatch = (firmware && webui && !sameApiVersion(firmware, webui))
     ? tf('versions.firmwareWebUiMismatch', 'Firmware {firmware} and Web UI {webui} use different API versions.', {
@@ -2734,19 +2775,24 @@ function updateVersionWarnings(showToast = false) {
       })
     : '';
 
-  S.updateAvailable = (remote && compareVersions(remote, webui) > 0)
-    ? tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remote) })
+  S.webUiUpdateAvailable = (manifestAvailable && compatibleWebui && compareVersions(compatibleWebui, webui) > 0)
+    ? tf('versions.newWebUiAvailable', 'New Web UI version available {version}', { version: versionLabel(compatibleWebui) })
     : '';
 
+  S.firmwareUpdateAvailable = (manifestAvailable && projectVersion && firmware && compareVersions(projectVersion, firmware) > 0)
+    ? tf('versions.newFirmwareAvailable', 'New firmware version available {version}', { version: versionLabel(projectVersion) })
+    : '';
+
+  S.updateAvailable = [S.webUiUpdateAvailable, S.firmwareUpdateAvailable].filter(Boolean).join(' ');
   S.versionWarning = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
   renderWebUiVersionSummary();
 
   if (!showToast) return;
-  const notice = S.versionMismatch || S.updateAvailable;
+  const notice = S.versionMismatch || S.webUiUpdateAvailable || S.firmwareUpdateAvailable;
   if (notice && notice !== S.lastVersionNotice) {
     S.lastVersionNotice = notice;
     if (S.versionMismatch) toast(tx('versions.mismatchTitle', 'Version mismatch') + ': ' + S.versionMismatch, 'warning');
-    else toast(S.updateAvailable, 'success');
+    else toast(notice, 'success');
   }
 }
 
@@ -2818,8 +2864,11 @@ function firmwareNoticeHtml() {
   if (S.versionMismatch) {
     notices.push(buildNoticeCard('error', tx('versions.mismatchTitle', 'Version mismatch'), S.versionMismatch, tx('versions.mismatchAction', 'Use firmware and Web UI files from the same release.')));
   }
-  if (S.updateAvailable) {
-    notices.push(buildNoticeCard('success', tx('versions.updateAvailable', 'Update available'), S.updateAvailable, tx('versions.updateAction', 'Download the current Web UI files from the project release.')));
+  if (S.webUiUpdateAvailable) {
+    notices.push(buildNoticeCard('success', tx('versions.newWebUiAvailableTitle', 'New Web UI version available'), S.webUiUpdateAvailable, tx('versions.webUiUpdateAction', 'Download the current Web UI files from the project release.')));
+  }
+  if (S.firmwareUpdateAvailable) {
+    notices.push(buildNoticeCard('success', tx('versions.newFirmwareAvailableTitle', 'New firmware version available'), S.firmwareUpdateAvailable, tx('versions.firmwareUpdateAction', 'Install the current firmware from the project release.')));
   }
   return notices.join('');
 }
@@ -2858,20 +2907,27 @@ function applyDeviceConfig(d) {
 function renderVersionSummary() {
   const el = document.getElementById('settings-version-summary');
   if (!el) return;
+  const info = S.versionInfo || {};
   const c = S.deviceConfig || {};
   const rt = S.deviceRuntime || {};
-  const deviceVersion = cleanVersion(rt.version || c.version);
-  const remoteVersion = cleanVersion(S.cdnVersion);
+  const deviceVersion = cleanVersion(info.currentFirmware || rt.version || c.version);
+  const manifestKnown = info.manifestAvailable === true || !!S.cdnVersion;
 
   let statusClass = 'version-ok';
   let statusText = tx('versions.upToDate', 'Software up to date');
   if (S.versionMismatch) {
     statusClass = 'version-mismatch';
     statusText = tx('versions.mismatchTitle', 'Version mismatch');
-  } else if (S.updateAvailable) {
+  } else if (S.webUiUpdateAvailable && S.firmwareUpdateAvailable) {
     statusClass = 'version-update';
-    statusText = tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remoteVersion) });
-  } else if (!remoteVersion) {
+    statusText = tx('versions.multipleUpdatesAvailable', 'Updates available');
+  } else if (S.webUiUpdateAvailable) {
+    statusClass = 'version-update';
+    statusText = S.webUiUpdateAvailable;
+  } else if (S.firmwareUpdateAvailable) {
+    statusClass = 'version-update';
+    statusText = S.firmwareUpdateAvailable;
+  } else if (!manifestKnown) {
     statusClass = 'version-unknown';
     statusText = tx('versions.updateUnknown', 'Update unknown');
   }
@@ -2883,7 +2939,7 @@ function renderVersionSummary() {
   ].join('');
   el.classList.toggle('has-version-mismatch', !!S.versionMismatch);
   el.classList.toggle('has-update-available', !!S.updateAvailable);
-  el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
+  el.title = [S.versionMismatch, S.webUiUpdateAvailable, S.firmwareUpdateAvailable].filter(Boolean).join(' ');
 }
 
 function formatBatteryVoltageStatus(voltage) {
@@ -3653,7 +3709,10 @@ async function checkAppVersion() {
     const url = base ? api('/version') : '/version';
     const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store', mode:'cors', signal: AbortSignal.timeout(2200) });
     if (!r.ok) return;
-    S.cdnVersion = cleanVersion(await r.text());
+    const body = await r.text();
+    const info = parseVersionInfoResponse(body);
+    S.versionInfo = info;
+    S.cdnVersion = cleanVersion(info.bugfixversion);
     updateVersionWarnings(true);
     renderDeviceConfigSummary();
   } catch(e) {
@@ -5815,6 +5874,7 @@ function targetRowsForProject(project) {
         measurementCount: 0,
       };
     }
+
     const offsetScore = scoreFromTolerance(Math.abs(agg.avgDev), 0.15, 0.75, 25);
     const spreadScore = scoreFromTolerance(agg.avgSpread, 0.10, 0.55, 20);
     const reliabilityScore = agg.n >= 2 ? scoreFromTolerance(agg.sigmaEv, 0.05, 0.35, 30) : null;
@@ -5823,6 +5883,7 @@ function targetRowsForProject(project) {
       { score: offsetScore, weight: cfg.accuracyOffsetWeight },
       { score: spreadScore, weight: cfg.accuracySpreadWeight },
     ]);
+
     return {
       targetFrac: target,
       targetSec: 1 / target,
@@ -5857,18 +5918,19 @@ function velocityCv(values) {
 function curtainConditionForEntry(entry) {
   const profile = curtainSpeedProfile(entry);
   if (!profile || (!profile.open.length && !profile.close.length)) return null;
+
   const openCv = velocityCv(profile.open.map(p => p.v));
   const closeCv = velocityCv(profile.close.map(p => p.v));
   const uniformityCv = average([openCv, closeCv].filter(Number.isFinite));
-
   const pairs = [];
   const closeByX = new Map(profile.close.map(p => [p.x.toFixed(3), p.v]));
+
   profile.open.forEach(p => {
     const cv = closeByX.get(p.x.toFixed(3));
     if (Number.isFinite(cv) && cv > 0 && p.v > 0) pairs.push(Math.abs(Math.log2(p.v / cv)));
   });
-  const parallelEv = average(pairs);
 
+  const parallelEv = average(pairs);
   return {
     openCv,
     closeCv,
@@ -5890,11 +5952,13 @@ function curtainConditionForProject(entries) {
     openAvg: null,
     closeAvg: null,
   };
+
   const cfg = exportConfig();
   const uniformityCv = average(items.map(x => x.uniformityCv).filter(Number.isFinite));
   const parallelEv = average(items.map(x => x.parallelEv).filter(Number.isFinite));
   const uniformityScore = scoreFromTolerance(uniformityCv, 0.08, 0.35, 25);
   const parallelScore = scoreFromTolerance(parallelEv, 0.08, 0.45, 25);
+
   return {
     uniformityCv,
     parallelEv,
@@ -5913,6 +5977,7 @@ function recommendedFlashSync(targetRows) {
   const candidates = targetRows
     .filter(row => row.measured && row.flashDetected > 0 && row.flashOk > 0 && row.flashBad === 0)
     .sort((a, b) => b.targetFrac - a.targetFrac);
+
   if (candidates.length) {
     const best = candidates[0];
     return {
@@ -5921,6 +5986,7 @@ function recommendedFlashSync(targetRows) {
       status: tx('report.flashRecommendedMeasured', 'Maximum measured flash sync time'),
     };
   }
+
   const anyFlash = targetRows.some(row => row.measured && row.flashDetected > 0);
   return {
     targetFrac: null,
@@ -5970,6 +6036,7 @@ function csvBool(value) {
 function exportProjCSV(projId) {
   const p = S.projects.find(x => x.id === projId);
   if (!p || isDefaultProject(p)) return;
+
   const model = projectScoreModel(p);
   const lines = [];
   const now = new Date();
@@ -5992,6 +6059,7 @@ function exportProjCSV(projId) {
     'RecordType','Target','Target_s','Measured_fraction','Measured_s','Measured_ms','Offset_EV','Abs_offset_EV','Spread_EV','Repeatability_sigma_EV',
     'Accuracy_score','Reliability_score','Opening_speed_m_s','Closing_speed_m_s','Flash_ok','Flash_late','Flash_bad','Flash_detected','Measurements','Grade'
   ]));
+
   model.targetRows.forEach(row => {
     lines.push(csvLine([
       'TARGET', targetLabel(row.targetFrac), csvNumber(row.targetSec, 6), row.measured ? ('1/' + row.avgFrac) : '', csvNumber(row.avgSec, 6), csvNumber(row.avgMs, 3),
@@ -6000,12 +6068,13 @@ function exportProjCSV(projId) {
       row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, row.measured ? reportGrade(row.accuracyScore) : ''
     ]));
   });
-  lines.push('');
 
+  lines.push('');
   lines.push(csvLine([
     'RecordType','Measurement_ID','Timestamp','Project','Mode','Target','Measured_fraction','Measured_s','Measured_ms','Offset_EV','Spread_EV','Sensor_count',
     'Opening_speed_m_s','Closing_speed_m_s','Flash_detected','Flash_sync_ok','Flash_sync_state','Hint'
   ]));
+
   model.entries.forEach(entry => {
     const curtain = calcCurtain(entry) || {};
     lines.push(csvLine([
@@ -6014,11 +6083,12 @@ function exportProjCSV(projId) {
       csvNumber(curtain.v1, 4), csvNumber(curtain.v2, 4), csvBool(entry.flash && entry.flash.detected), csvBool(isFlashSyncOk(entry)), typeof flashSyncState === 'function' ? flashSyncState(entry) : '', entry.hint || ''
     ]));
   });
-  lines.push('');
 
+  lines.push('');
   lines.push(csvLine([
     'RecordType','Measurement_ID','Sensor','Activated','Open_ms','Close_ms','Exposure_ms','Measured_fraction','Offset_EV','Raw'
   ]));
+
   model.entries.forEach(entry => {
     (entry.sensors || []).forEach(sensor => {
       lines.push(csvLine([
@@ -6071,11 +6141,13 @@ function evChartTickStep(limit) {
 function targetBarsSvg(rows) {
   const measured = rows.filter(r => r.measured);
   if (!measured.length) return '';
+
   const bounds = measured.flatMap(row => {
     const spread = Math.max(0, Number(row.avgSpread) || 0);
     const halfSpread = spread / 2;
     return [row.avgDev - halfSpread, row.avgDev + halfSpread, row.avgDev];
   }).filter(Number.isFinite);
+
   const rawLimit = Math.max(0.5, ...bounds.map(v => Math.abs(v)));
   const tickStep = evChartTickStep(rawLimit);
   const limit = Math.ceil(rawLimit / tickStep) * tickStep;
@@ -6089,17 +6161,17 @@ function targetBarsSvg(rows) {
   const height = top + bottom + measured.length * rowH;
   const zeroX = left + plotW / 2;
   const xFor = ev => left + ((ev + limit) / (2 * limit)) * plotW;
+
   const ticks = [];
-  for (let v = -limit; v <= limit + tickStep / 10; v += tickStep) {
-    const fixed = Number(v.toFixed(3));
-    ticks.push(fixed);
-  }
+  for (let v = -limit; v <= limit + tickStep / 10; v += tickStep) ticks.push(Number(v.toFixed(3)));
+
   const axis = ticks.map(tick => {
     const x = xFor(tick);
     const label = (tick > 0 ? '+' : '') + tick.toFixed(tickStep < 1 ? 2 : 0).replace(/\.00$/, '').replace(/\.0$/, '') + ' EV';
     const cls = Math.abs(tick) < 0.0001 ? 'zero' : 'grid';
     return `<line class="${cls}" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 14}" y2="${height - bottom + 5}"></line><text class="tick" x="${x.toFixed(1)}" y="${height - 10}" text-anchor="middle">${esc(label)}</text>`;
   }).join('');
+
   const items = measured.map((row, i) => {
     const y = top + i * rowH;
     const dx = Number(row.avgDev) || 0;
@@ -6119,7 +6191,84 @@ function targetBarsSvg(rows) {
       `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 8}" y2="${y + 6}"></line>` +
       `<text class="value" x="${valueX.toFixed(1)}" y="${y + 4}" text-anchor="${dx >= 0 ? 'start' : 'end'}">${esc(signedEv(row.avgDev))}</text>`;
   }).join('');
+
   return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Exposure offset by target time">${axis}${items}</svg>`;
+}
+
+function niceSpeedMax(maxValue) {
+  const raw = Math.max(1, Number(maxValue) || 1);
+  const exp = Math.pow(10, Math.floor(Math.log10(raw)));
+  const scaled = raw / exp;
+  const nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+  return nice * exp;
+}
+
+function curtainSpeedSvg(project, rows) {
+  if (project && typeof normalizeMeasurementMode === 'function' && normalizeMeasurementMode(project.mode) === 'central') return '';
+
+  const measured = rows
+    .filter(r => r.measured && (Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed)))
+    .sort((a, b) => a.targetFrac - b.targetFrac);
+
+  if (!measured.length) return '';
+
+  const width = 820;
+  const height = 318;
+  const left = 70;
+  const right = 34;
+  const top = 34;
+  const bottom = 76;
+  const plotW = width - left - right;
+  const plotH = height - top - bottom;
+  const allSpeeds = measured.flatMap(row => [row.openingSpeed, row.closingSpeed]).filter(v => Number.isFinite(v) && v > 0);
+  const maxV = niceSpeedMax(Math.max(...allSpeeds) * 1.18);
+  const xFor = index => left + (measured.length === 1 ? plotW / 2 : (index / (measured.length - 1)) * plotW);
+  const yFor = value => top + plotH * (1 - Math.max(0, value) / maxV);
+
+  const grid = [];
+  const gridSteps = 4;
+  for (let i = 0; i <= gridSteps; i++) {
+    const value = maxV * (1 - i / gridSteps);
+    const y = top + plotH * (i / gridSteps);
+    grid.push(`<line class="grid" x1="${left}" x2="${width - right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"></line>`);
+    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(value.toFixed(maxV < 10 ? 1 : 0))}</text>`);
+  }
+
+  const xAxis = measured.map((row, i) => {
+    const x = xFor(i);
+    return `<line class="grid soft" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${top + plotH}"></line>` +
+      `<text class="tick target" x="${x.toFixed(1)}" y="${height - 36}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>`;
+  }).join('');
+
+  function lineFor(key, cls) {
+    const points = measured.map((row, i) => {
+      const v = row[key];
+      return Number.isFinite(v) && v > 0 ? { x: xFor(i), y: yFor(v), v, row } : null;
+    }).filter(Boolean);
+    if (!points.length) return '';
+    const pointString = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const circles = points.map(p => `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${esc(targetLabel(p.row.targetFrac) + ': ' + p.v.toFixed(2) + ' m/s')}</title></circle>`).join('');
+    return `<polyline class="curtain-line ${cls}" points="${pointString}"></polyline>${circles}`;
+  }
+
+  const axis = `<line class="axis" x1="${left}" x2="${left}" y1="${top}" y2="${top + plotH}"></line>` +
+    `<line class="axis" x1="${left}" x2="${width - right}" y1="${top + plotH}" y2="${top + plotH}"></line>` +
+    `<text class="axis-label y" x="16" y="${top + plotH / 2}" transform="rotate(-90 16 ${top + plotH / 2})" text-anchor="middle">m/s</text>` +
+    `<text class="axis-label x" x="${left + plotW / 2}" y="${height - 13}" text-anchor="middle">${esc(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'))}</text>`;
+
+  return `<svg class="curtain-speed-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}">` +
+    grid.join('') + xAxis + axis + lineFor('openingSpeed', 'opening') + lineFor('closingSpeed', 'closing') +
+    `</svg>`;
+}
+
+function curtainSpeedReportSection(project, rows) {
+  const chart = curtainSpeedSvg(project, rows);
+  if (!chart) return '';
+  return `<section class="chart-section curtain-speed-section"><h2>${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}</h2>` +
+    `<div class="chart-explainer"><p>${esc(tx('report.curtainSpeedExplanation', 'Average opening and closing curtain speed for each measured target time.'))}</p>` +
+    `<div class="chart-legend"><div><span class="legend-line opening"></span><span>${esc(tx('charts.openingSpeed', 'Opening speed'))}</span></div>` +
+    `<div><span class="legend-line closing"></span><span>${esc(tx('charts.closingSpeed', 'Closing speed'))}</span></div></div></div>` +
+    chart + `</section>`;
 }
 
 function reportDataFieldsHtml(project, model, measuredCount, measuredTargets) {
@@ -6183,6 +6332,7 @@ async function standaloneReportHtml(project, model) {
     EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average exposure offset')),
     EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: spread across the image')),
     OFFSET_CHART: targetBarsSvg(model.targetRows),
+    CURTAIN_SPEED_SECTION: curtainSpeedReportSection(project, model.targetRows),
     DATA_FIELDS: reportDataFieldsHtml(project, model, measuredCount, measuredTargets),
     PROJECT_NOTE: note,
   });
@@ -6191,6 +6341,7 @@ async function standaloneReportHtml(project, model) {
 async function exportProjectReportHtml(projId) {
   const project = S.projects.find(x => x.id === projId);
   if (!project || isDefaultProject(project)) return;
+
   try {
     const model = projectScoreModel(project);
     const html = await standaloneReportHtml(project, model);
@@ -6209,7 +6360,7 @@ function showSourceI18nWarningIfNeeded() {
   const warning = document.createElement('div');
   warning.id = 'source-i18n-warning';
   warning.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;padding:12px 14px;border:1px solid rgba(245,176,48,.55);border-radius:12px;background:#1b1509;color:#f5e6c8;font:14px/1.4 system-ui, sans-serif;box-shadow:0 12px 36px rgba(0,0,0,.35)';
-  warning.innerHTML = '<b>OpenCurtainLab source mode:</b> i18n JSON could not be loaded. Start a local web server in <code>web/</code>, for example <code>python3 -m http.server 8000</code>, or open <code>web/compiled/compiled-v0.1.1.html</code>.';
+  warning.innerHTML = '<b>OpenCurtainLab source mode:</b> i18n JSON could not be loaded. Start a local web server in <code>web/</code>, for example <code>python3 -m http.server 8000</code>, or open <code>web/compiled/compiled-v0.1.2.html</code>.';
   document.body.appendChild(warning);
 }
 

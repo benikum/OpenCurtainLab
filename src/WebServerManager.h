@@ -178,12 +178,10 @@ private:
     _server.send(code, "text/plain; charset=utf-8", text);
   }
 
-  // Sends /version with CORS plus version-source metadata.
-  void sendVersionText(const char* source, const String& version, const String& match = String()) {
+  // Sends the structured /version response used by the WebUI update checks.
+  void sendVersionInfo(const String& json) {
     cors();
-    _server.sendHeader("X-OpenCurtainLab-Version-Source", source);
-    if (match.length()) _server.sendHeader("X-OpenCurtainLab-WebUI-Match", match);
-    _server.send(200, "text/plain; charset=utf-8", version);
+    _server.send(200, "application/json", json);
   }
 
   // Serves the embedded gzip-compressed WiFi setup portal HTML.
@@ -206,6 +204,8 @@ private:
     String match;
     String version;
     String url;
+    String projectVersion;
+    bool manifestAvailable = false;
     bool valid = false;
   };
 
@@ -279,6 +279,19 @@ private:
     return candidate.patch > current.patch;
   }
 
+  // Builds the /version payload. projectVersion is the newest project version from the manifest;
+  // bugfixversion is the newest manifest entry version whose match pattern fits the current firmware.
+  String versionInfoJson(const WebUiRelease& release) const {
+    JsonDocument doc;
+    doc["manifestAvailable"] = release.manifestAvailable;
+    doc["currentFirmware"] = FIRMWARE_VERSION;
+    doc["projectVersion"] = release.manifestAvailable ? release.projectVersion : String("");
+    doc["bugfixversion"] = (release.manifestAvailable && release.valid) ? release.version : String("");
+    String out;
+    serializeJson(doc, out);
+    return out;
+  }
+
   // Fetches web/manifest.json and selects the newest bugfix WebUI compatible with this firmware's API version.
   bool resolveWebUiRelease(WebUiRelease& selected) {
     selected = WebUiRelease();
@@ -317,6 +330,10 @@ private:
       return false;
     }
 
+    selected.manifestAvailable = true;
+    selected.projectVersion = String(doc["projectVersion"] | "");
+    if (!selected.projectVersion.length()) selected.projectVersion = String(doc["version"] | "");
+
     JsonArray entries = doc["entries"].as<JsonArray>();
     if (entries.isNull()) {
       Serial.println(F("[Web] Manifest has no entries array."));
@@ -330,6 +347,8 @@ private:
     }
 
     WebUiRelease best;
+    best.manifestAvailable = true;
+    best.projectVersion = selected.projectVersion;
     OclVersionParts bestVersion;
 
     for (JsonObject entry : entries) {
@@ -365,16 +384,11 @@ private:
     return true;
   }
 
-  // Returns the selected remote WebUI version as plain text. Used by the WebUI update check.
-  // This endpoint is called by standalone WebUIs, so it must include CORS headers like the JSON API.
+  // Returns manifest availability, the current firmware, the newest project version, and the best compatible WebUI bugfix version.
   void serveVersion() {
     WebUiRelease release;
-    if (resolveWebUiRelease(release)) {
-      sendVersionText("manifest", release.version, release.match);
-      return;
-    }
-
-    sendVersionText("local-fallback", FIRMWARE_VERSION);
+    resolveWebUiRelease(release);
+    sendVersionInfo(versionInfoJson(release));
   }
 
   // Streams the selected compatible WebUI release through the ESP32 as a browser download.

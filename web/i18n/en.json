@@ -22,7 +22,6 @@
     "customTimesEmpty": "Custom target times are empty",
     "settingsSaved": "Settings saved",
     "settingsSaveFailed": "Settings could not be saved",
-    "newWebUi": "New Web UI available. Download the current HTML from the GitHub project.",
     "enterProjectName": "Please enter a project name",
     "projectCreated": "Project \"{name}\" created",
     "backupImported": "Backup JSON imported",
@@ -273,7 +272,14 @@
     "updateAction": "Download the current Web UI files from the project release.",
     "deviceLabel": "Device {version}",
     "upToDate": "Software up to date",
-    "updateUnknown": "Update unknown"
+    "updateUnknown": "Update unknown",
+    "newWebUiAvailableTitle": "New Web UI version available",
+    "newFirmwareAvailableTitle": "New firmware version available",
+    "newWebUiAvailable": "New Web UI version available {version}",
+    "newFirmwareAvailable": "New firmware version available {version}",
+    "multipleUpdatesAvailable": "Updates available",
+    "webUiUpdateAction": "Download the current Web UI through the device or from the project release.",
+    "firmwareUpdateAction": "Install the current firmware from the project release."
   },
   "html": {
     "menuButtonLabel": "Menu",
@@ -281,7 +287,7 @@
     "projects": "Projects",
     "newProject": "New project",
     "projectMeasurements": "Project measurements",
-    "webUiVersion": "Web UI v0.1.1",
+    "webUiVersion": "Web UI v0.1.2",
     "device": "Device",
     "deviceAddress": "Device address",
     "connect": "Connect",

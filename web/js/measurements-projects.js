@@ -82,14 +82,17 @@ function connectionLabelForState(state) {
   return tx('connection.connecting', 'CONNECTING...');
 }
 
-// Check the manifest-selected compatible WebUI version through the device proxy.
+// Check the manifest-selected compatible WebUI and newest project version through the device proxy.
 async function checkAppVersion() {
   try {
     const base = S.deviceBase || '';
     const url = base ? api('/version') : '/version';
     const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store', mode:'cors', signal: AbortSignal.timeout(2200) });
     if (!r.ok) return;
-    S.cdnVersion = cleanVersion(await r.text());
+    const body = await r.text();
+    const info = parseVersionInfoResponse(body);
+    S.versionInfo = info;
+    S.cdnVersion = cleanVersion(info.bugfixversion);
     updateVersionWarnings(true);
     renderDeviceConfigSummary();
   } catch(e) {

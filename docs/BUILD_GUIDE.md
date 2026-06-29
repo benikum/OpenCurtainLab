@@ -1,6 +1,6 @@
 # OpenCurtainLab Build Guide
 
-This guide describes the current OpenCurtainLab hardware and firmware baseline. The firmware configuration in `src/Config.h` is the source of truth for pins, timing constants, sensor geometry, and factory defaults.
+This guide describes the current OpenCurtainLab hardware and firmware baseline.
 
 ![OpenCurtainLab device overview](images/device-overview.jpg)
 
@@ -12,34 +12,31 @@ Do not connect unknown battery voltages directly to an ESP32 development board. 
 
 ## 2. Parts
 
-The example sources are not required sources. Use parts with equivalent electrical ratings and dimensions.
+Use parts with equivalent electrical ratings and dimensions.
 
 | Qty | Part | Purpose | Notes |
 |---:|---|---|---|
-| 1 | ESP-WROOM-32 / ESP32 development board | Main controller | Must expose GPIO36, GPIO39, GPIO34, GPIO35, GPIO32, GPIO33, GPIO14, GPIO21, GPIO22, GPIO25, GPIO26, and GPIO27. |
-| 5 | NPN phototransistor, for example PT2046C | Optical shutter sensors | One phototransistor per sensor channel. |
+| 1 | ESP-WROOM-32 / ESP32 development board | Main controller | Recommended to use a USB Type-C version. |
+| 5 | NPN phototransistor, for example PT2046C | Optical shutter sensors | Must have 3mm diameter. |
 | 5 | 10 kΩ resistor | Sensor pull-up resistors | One resistor per sensor channel. |
-| 1 | SSD1306 OLED display, 128×64 | Local display | I2C display, address `0x3C`. |
+| 1 | SSD1306 OLED display, 128×64 | Local display | Available in different colors. |
 | 3 | Momentary push button | Local controls | Active-low buttons wired to GND. |
-| 1 | 3.5 mm jack socket or matching sync connector | Flash-sync input | Active-low contact input. |
-| 1 | Flash-sync cable or hot-shoe adapter | Camera connection | Match the camera body under test. |
-| 1 | 3.3 V regulator or suitable ESP32 power path | Power supply | Required when the selected battery/input voltage is not safe for the ESP32 board. |
-| 1 | Perfboard, custom PCB, or two-board assembly | Electronics carrier | Main/control board plus sensor board is recommended. |
+| 1 | 3.5 mm jack socket or matching sync connector | Flash-sync input | Use 2 or 3 poles version. |
+| 1 | Flash-sync cable or hot-shoe adapter | Camera connection | Needed to measure flash timing. |
+| 1 | 3.3 V regulator or suitable ESP32 power path | Power supply | Required to use with a 9v battery. Or use USB power. |
 | 1 | 330 kΩ resistor | Battery divider high side | Optional battery monitor. |
 | 1 | 100 kΩ resistor | Battery divider low side | Optional battery monitor. |
-| as needed | Headers, wires, connectors, screws, spacers, inserts, strain relief | Assembly | Select parts that fit the enclosure and sensor holder. |
-| as needed | Sensor holder and enclosure | Mechanical assembly | Must position the sensor board repeatably at the camera film gate. |
+| as needed | Perfboard | Electronics carrier | Boards for sensors, buttons and power distributor. |
+| as needed | Headers, wires, connectors | Assembly | Select parts that fit the enclosure and sensor holder. |
+| as needed | 3d printed case | Mechanical assembly | Designed to use two filament colors. Use black and some other. |
 
 ## 3. Tools
 
 - Soldering iron and solder
 - Wire stripper and side cutter
 - Multimeter
-- Computer with Arduino IDE 2.x or Arduino CLI
-- USB cable for the ESP32 board
-- Stable light source for testing
-- Camera body or test shutter
-- 3D printer or manufactured mechanical parts, if using a printed enclosure or sensor holder
+- Computer with Arduino IDE 2.x or Arduino CLIer
+- 3D printer or cnc service
 
 ## 4. Firmware baseline
 
@@ -48,14 +45,8 @@ The example sources are not required sources. Use parts with equivalent electric
 | Firmware version | `0.1.1` |
 | Device name | `OpenCurtainLab` |
 | mDNS host | `opencurtainlab.local` |
-| Sensor count | `5` |
 | Sensor spacing X | `7.62 mm` (`3 × 2.54 mm`) |
 | Sensor spacing Y | `5.08 mm` (`2 × 2.54 mm`) |
-| Default measurement mode | `horizontal` |
-| Default target time | `500` (`1/500 s`) |
-| Default sensor sensitivity | `medium` |
-| OLED address | `0x3C` |
-| OLED size | `128 × 64` |
 
 ## 5. ESP32 pinout
 
@@ -76,7 +67,7 @@ The default pinout is defined in `src/Config.h`.
 | OLED SDA | `I2C_SDA` | 21 |
 | OLED SCL | `I2C_SCL` | 22 |
 
-GPIO36, GPIO39, GPIO34, and GPIO35 are input-only pins on common ESP32 modules. That is suitable for the sensor channels.
+GPIO36, GPIO39, GPIO34, and GPIO35 are input-only pins on common ESP32 modules. Do not use ADC2 because of WiFi errors.
 
 ## 6. Sensor board
 
@@ -99,8 +90,6 @@ Recommended circuit per sensor:
 GND -----------------+
 ```
 
-In this arrangement, the ADC value is high in darkness and lower when light reaches the phototransistor.
-
 Current threshold presets:
 
 | Sensitivity | Active when raw is at or below | Released when raw is at or above |
@@ -108,8 +97,6 @@ Current threshold presets:
 | Low | 1100 | 1250 |
 | Medium | 2100 | 2250 |
 | High | 3100 | 3250 |
-
-Use `/sensors` or the WebUI developer helper `oclSensors()` to check raw values before making camera measurements.
 
 ![Sensor wiring](images/wiring-sensors.jpg)
 
@@ -121,8 +108,6 @@ The flash-sync input is active-low and uses the ESP32 internal pull-up.
 3.5 mm jack tip    ---- GPIO14 / PIN_FLASH_SENSOR
 3.5 mm jack sleeve ---- GND
 ```
-
-When the camera closes the flash-sync contact, GPIO14 is pulled to GND and the firmware records `flash.triggerUs`.
 
 ## 8. OLED display
 
@@ -154,13 +139,6 @@ GPIO26 -- Down button --- GND
 GPIO25 -- Select button - GND
 ```
 
-The firmware enables internal pull-ups and applies debounce timing.
-
-```cpp
-#define DEBOUNCE_MS  50UL
-#define MODE_HOLD_MS 1000UL
-```
-
 ## 10. Battery monitor
 
 Battery monitoring is enabled by default:
@@ -179,12 +157,6 @@ Battery + ---- 330 kΩ ----+---- GPIO33 / PIN_BATTERY_ADC
 GND ----------------------+
 ```
 
-Recommended filter capacitor:
-
-```text
-GPIO33 ---- 100 nF ---- GND
-```
-
 The current firmware values are:
 
 ```cpp
@@ -194,26 +166,11 @@ The current firmware values are:
 #define BATTERY_FULL_VOLTAGE       9.3f
 ```
 
-For better accuracy, measure the installed resistors and enter the measured values in `src/Config.h`.
+For better accuracy, measure the installed resistors and enter the actual values in `src/Config.h`.
 
 ![Power wiring](images/wiring-power.jpg)
 
 ## 11. Board and enclosure layout
-
-OpenCurtainLab can be built on perfboard or custom PCBs. A practical layout uses two assemblies:
-
-1. Main/control board with ESP32, OLED connector, buttons, flash-sync jack, power input, and battery divider.
-2. Sensor board with five phototransistors, five pull-up resistors, fixed sensor spacing, and a connector to the main board.
-
-Recommended layout checks:
-
-- Keep sensor traces short and similarly routed.
-- Add a common ground reference near the sensor connector.
-- Label every connector with signal name and orientation.
-- Keep switching regulators away from ADC sensor traces and the battery divider node.
-- Add test pads for 3.3 V, GND, every sensor ADC channel, battery ADC, and flash sync.
-- Ensure the sensor holder cannot touch shutter curtains, film rails, or pressure-plate surfaces.
-- Use matte dark material or internal shielding to reduce reflections and ambient-light leakage.
 
 ![Control board layout](images/pcb-control-layout.jpg)
 
@@ -303,31 +260,6 @@ https://espressif.github.io/arduino-esp32/package_esp32_index.json
 9. Select your ESP32 board and port.
 10. Compile and upload.
 
-### 13.3 Arduino CLI setup
-
-Example commands:
-
-```bash
-arduino-cli config init
-arduino-cli config set board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-arduino-cli core update-index
-arduino-cli core install esp32:esp32@3.3.10
-
-arduino-cli lib install "ArduinoJson@7.4.3"
-arduino-cli lib install "Adafruit GFX Library@1.12.6"
-arduino-cli lib install "Adafruit SSD1306@2.5.17"
-arduino-cli lib install "Adafruit BusIO@1.17.4"
-```
-
-Compile and upload, replacing the FQBN and serial port with the values for your board:
-
-```bash
-arduino-cli compile --fqbn esp32:esp32:esp32 .
-arduino-cli upload  --fqbn esp32:esp32:esp32 -p /dev/ttyUSB0 .
-```
-
-On macOS the port often looks like `/dev/cu.usbserial-*`. On Windows it usually looks like `COM3`, `COM4`, or similar.
-
 ## 14. Runtime configuration
 
 Open `src/Config.h` when adapting the build to different hardware.
@@ -341,20 +273,11 @@ Common values to adjust:
 | `BATTERY_EMPTY_VOLTAGE` / `BATTERY_FULL_VOLTAGE` | Voltage range used for battery percentage. |
 | `SENSOR_DISTANCE_X_MM` / `SENSOR_DISTANCE_Y_MM` | Physical spacing between neighboring sensors. |
 | `SENSOR_ON_THRESHOLD_*` / `SENSOR_OFF_THRESHOLD_*` | Raw ADC hysteresis thresholds for light detection. |
-| `DEFAULT_MEASUREMENT_MODE` | Startup measurement mode. |
-| `DEFAULT_TARGET_TIME` | Startup target denominator. |
-| `DEFAULT_SENSOR_SENSITIVITY` | Startup threshold preset. |
 
 After changing firmware constants or WebUI files, run the release helper before publishing generated files:
 
 ```bash
 python3 tools/release.py
-```
-
-For local development without checking the remote manifest:
-
-```bash
-python3 tools/release.py --skip-manifest-check
 ```
 
 ## 15. First checks

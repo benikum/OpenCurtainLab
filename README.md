@@ -64,7 +64,6 @@ web/compiled/               Generated standalone WebUI release file
 tools/                      Release and development helper scripts
 docs/BUILD_GUIDE.md         Hardware, firmware, and upload guide
 docs/API.md                 Firmware HTTP API reference
-docs/example_data/          Example WebUI backup data
 LICENSE                     Project license
 ```
 
@@ -153,16 +152,6 @@ GET  /wifi/status
 GET  /wifi/scan
 POST /wifi
 ```
-
-## Release workflow
-
-When firmware, setup portal, WebUI, or manifest files change, run:
-
-```bash
-python3 tools/release.py
-```
-
-The release helper validates the project version, rebuilds embedded/generated WebUI files, and checks the manifest unless explicitly skipped for local work.
 
 ## AI usage transparency
 

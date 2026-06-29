@@ -286,11 +286,42 @@ function versionLabel(value) {
   return v ? 'v' + v : tx('versions.unknown', 'unknown');
 }
 
+function parseVersionInfoResponse(value) {
+  const fallback = {
+    manifestAvailable: false,
+    currentFirmware: '',
+    projectVersion: '',
+    bugfixversion: ''
+  };
+
+  const raw = unwrapPreContent(value).trim();
+  if (!raw) return fallback;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        manifestAvailable: parsed.manifestAvailable === true,
+        currentFirmware: cleanVersion(parsed.currentFirmware),
+        projectVersion: cleanVersion(parsed.projectVersion),
+        bugfixversion: cleanVersion(parsed.bugfixversion)
+      };
+    }
+  } catch (e) {
+    return fallback;
+  }
+
+  return fallback;
+}
+
 // Update visible warnings about WebUI and firmware version mismatches.
 function updateVersionWarnings(showToast = false) {
-  const firmware = cleanVersion(S.deviceConfig && S.deviceConfig.version);
+  const info = S.versionInfo || {};
+  const firmware = cleanVersion(info.currentFirmware || (S.deviceConfig && S.deviceConfig.version));
   const webui = cleanVersion(APP_VERSION);
-  const remote = cleanVersion(S.cdnVersion);
+  const compatibleWebui = cleanVersion(info.bugfixversion || S.cdnVersion);
+  const projectVersion = cleanVersion(info.projectVersion);
+  const manifestAvailable = info.manifestAvailable === true;
 
   // Release/API mismatches are compatibility warnings. Bugfix-only differences are allowed.
   S.versionMismatch = (firmware && webui && !sameApiVersion(firmware, webui))
@@ -300,19 +331,24 @@ function updateVersionWarnings(showToast = false) {
       })
     : '';
 
-  S.updateAvailable = (remote && compareVersions(remote, webui) > 0)
-    ? tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remote) })
+  S.webUiUpdateAvailable = (manifestAvailable && compatibleWebui && compareVersions(compatibleWebui, webui) > 0)
+    ? tf('versions.newWebUiAvailable', 'New Web UI version available {version}', { version: versionLabel(compatibleWebui) })
     : '';
 
+  S.firmwareUpdateAvailable = (manifestAvailable && projectVersion && firmware && compareVersions(projectVersion, firmware) > 0)
+    ? tf('versions.newFirmwareAvailable', 'New firmware version available {version}', { version: versionLabel(projectVersion) })
+    : '';
+
+  S.updateAvailable = [S.webUiUpdateAvailable, S.firmwareUpdateAvailable].filter(Boolean).join(' ');
   S.versionWarning = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
   renderWebUiVersionSummary();
 
   if (!showToast) return;
-  const notice = S.versionMismatch || S.updateAvailable;
+  const notice = S.versionMismatch || S.webUiUpdateAvailable || S.firmwareUpdateAvailable;
   if (notice && notice !== S.lastVersionNotice) {
     S.lastVersionNotice = notice;
     if (S.versionMismatch) toast(tx('versions.mismatchTitle', 'Version mismatch') + ': ' + S.versionMismatch, 'warning');
-    else toast(S.updateAvailable, 'success');
+    else toast(notice, 'success');
   }
 }
 
@@ -392,8 +428,11 @@ function firmwareNoticeHtml() {
   if (S.versionMismatch) {
     notices.push(buildNoticeCard('error', tx('versions.mismatchTitle', 'Version mismatch'), S.versionMismatch, tx('versions.mismatchAction', 'Use firmware and Web UI files from the same release.')));
   }
-  if (S.updateAvailable) {
-    notices.push(buildNoticeCard('success', tx('versions.updateAvailable', 'Update available'), S.updateAvailable, tx('versions.updateAction', 'Download the current Web UI files from the project release.')));
+  if (S.webUiUpdateAvailable) {
+    notices.push(buildNoticeCard('success', tx('versions.newWebUiAvailableTitle', 'New Web UI version available'), S.webUiUpdateAvailable, tx('versions.webUiUpdateAction', 'Download the current Web UI files from the project release.')));
+  }
+  if (S.firmwareUpdateAvailable) {
+    notices.push(buildNoticeCard('success', tx('versions.newFirmwareAvailableTitle', 'New firmware version available'), S.firmwareUpdateAvailable, tx('versions.firmwareUpdateAction', 'Install the current firmware from the project release.')));
   }
   return notices.join('');
 }
@@ -435,20 +474,27 @@ function applyDeviceConfig(d) {
 function renderVersionSummary() {
   const el = document.getElementById('settings-version-summary');
   if (!el) return;
+  const info = S.versionInfo || {};
   const c = S.deviceConfig || {};
   const rt = S.deviceRuntime || {};
-  const deviceVersion = cleanVersion(rt.version || c.version);
-  const remoteVersion = cleanVersion(S.cdnVersion);
+  const deviceVersion = cleanVersion(info.currentFirmware || rt.version || c.version);
+  const manifestKnown = info.manifestAvailable === true || !!S.cdnVersion;
 
   let statusClass = 'version-ok';
   let statusText = tx('versions.upToDate', 'Software up to date');
   if (S.versionMismatch) {
     statusClass = 'version-mismatch';
     statusText = tx('versions.mismatchTitle', 'Version mismatch');
-  } else if (S.updateAvailable) {
+  } else if (S.webUiUpdateAvailable && S.firmwareUpdateAvailable) {
     statusClass = 'version-update';
-    statusText = tf('versions.updateAvailableWithVersion', 'Update available {version}', { version: versionLabel(remoteVersion) });
-  } else if (!remoteVersion) {
+    statusText = tx('versions.multipleUpdatesAvailable', 'Updates available');
+  } else if (S.webUiUpdateAvailable) {
+    statusClass = 'version-update';
+    statusText = S.webUiUpdateAvailable;
+  } else if (S.firmwareUpdateAvailable) {
+    statusClass = 'version-update';
+    statusText = S.firmwareUpdateAvailable;
+  } else if (!manifestKnown) {
     statusClass = 'version-unknown';
     statusText = tx('versions.updateUnknown', 'Update unknown');
   }
@@ -460,7 +506,7 @@ function renderVersionSummary() {
   ].join('');
   el.classList.toggle('has-version-mismatch', !!S.versionMismatch);
   el.classList.toggle('has-update-available', !!S.updateAvailable);
-  el.title = [S.versionMismatch, S.updateAvailable].filter(Boolean).join(' ');
+  el.title = [S.versionMismatch, S.webUiUpdateAvailable, S.firmwareUpdateAvailable].filter(Boolean).join(' ');
 }
 
 // Format the battery voltage from /status as voltage and percentage.

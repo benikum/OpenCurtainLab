@@ -22,7 +22,6 @@
     "customTimesEmpty": "Custom-Zielzeiten sind leer",
     "settingsSaved": "Einstellungen gespeichert",
     "settingsSaveFailed": "Einstellungen konnten nicht gespeichert werden",
-    "newWebUi": "Neue Web-UI verfügbar. Lade die aktuelle HTML vom GitHub-Projekt herunter.",
     "enterProjectName": "Bitte Projektnamen eingeben",
     "projectCreated": "Projekt \"{name}\" erstellt",
     "backupImported": "Backup-JSON importiert",
@@ -273,7 +272,14 @@
     "updateAction": "Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.",
     "deviceLabel": "Gerät {version}",
     "upToDate": "Software auf neuestem Stand",
-    "updateUnknown": "Update unbekannt"
+    "updateUnknown": "Update unbekannt",
+    "newWebUiAvailableTitle": "Neue WebUI-Version verfügbar",
+    "newFirmwareAvailableTitle": "Neue Firmware-Version verfügbar",
+    "newWebUiAvailable": "Neue WebUI-Version verfügbar {version}",
+    "newFirmwareAvailable": "Neue Firmware-Version verfügbar {version}",
+    "multipleUpdatesAvailable": "Updates verfügbar",
+    "webUiUpdateAction": "Lade die aktuelle WebUI über das Gerät oder aus dem Projekt-Release herunter.",
+    "firmwareUpdateAction": "Installiere die aktuelle Firmware aus dem Projekt-Release."
   },
   "html": {
     "menuButtonLabel": "Menü",
@@ -281,7 +287,7 @@
     "projects": "Projekte",
     "newProject": "Neues Projekt",
     "projectMeasurements": "Projektmessungen",
-    "webUiVersion": "WebUI v0.1.1",
+    "webUiVersion": "WebUI v0.1.2",
     "device": "Gerät",
     "deviceAddress": "Geräteadresse",
     "connect": "Verbinden",

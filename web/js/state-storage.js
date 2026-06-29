@@ -23,7 +23,7 @@ const LS_PROJECTS_KEY = 'ocl_projects_v1';
 const LS_DEVICE_KEY = 'ocl_device_config_v1';
 const LS_UI_KEY = 'ocl_ui_settings_v1';
 const DEFAULT_PROJECT_ID = 'p_default';
-const APP_VERSION = '0.1.1';
+const APP_VERSION = '0.1.2';
 const BATTERY_LOW_NOTICE_PERCENT = 20;
 const GITHUB_URL = 'https://github.com/benikum/OpenCurtainLab';
 const DEFAULT_DEVICE_HOST = 'opencurtainlab.local';
@@ -87,7 +87,10 @@ let S = {
   versionWarning: '',
   versionMismatch: '',
   updateAvailable: '',
+  webUiUpdateAvailable: '',
+  firmwareUpdateAvailable: '',
   cdnVersion: '',
+  versionInfo: null,
   lastVersionNotice: '',
   settingsSnapshot: '',
   settingsDirty: false,

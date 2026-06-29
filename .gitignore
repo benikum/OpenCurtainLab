@@ -15,4 +15,5 @@ Thumbs.db
 # Build/temp files
 *.tmp
 *.bak
+
 docs/example_data/

@@ -1,6 +1,6 @@
 # OpenCurtainLab Firmware API
 
-This document describes the current OpenCurtainLab firmware HTTP API for firmware `0.1.1`. All endpoints are served by the ESP32 on the local network.
+This document describes the current OpenCurtainLab firmware HTTP API for firmware `0.1.2`. All endpoints are served by the ESP32 on the local network.
 
 The API exposes raw device state and raw measurement data. Exposure analysis, charting, reports, and measurement hints are calculated in the WebUI.
 
@@ -45,7 +45,7 @@ API responses are JSON unless the endpoint description says otherwise. CORS pref
 | `POST` | `/config` | JSON | Partial runtime settings update. |
 | `GET` | `/data` | JSON | Latest raw measurement packet. |
 | `GET` | `/sensors` | JSON | Live sensor and flash diagnostics. |
-| `GET` | `/version` | Plain text | Compatible WebUI version selected from the manifest. |
+| `GET` | `/version` | JSON | Manifest availability, current firmware, newest project version, and compatible WebUI bugfix version. |
 | `GET` | `/wifi/status` | JSON | WiFi provisioning state for the setup portal. |
 | `GET` | `/wifi/scan` | JSON | Nearby WiFi networks for the setup portal. |
 | `POST` | `/wifi` | JSON | Test and store WiFi credentials while AP mode is active. |
@@ -56,7 +56,7 @@ These values come from `src/Config.h` in this release.
 
 | Field | Value |
 |---|---:|
-| `version` | `0.1.1` |
+| `version` | `0.1.2` |
 | `sensorCount` | `5` |
 | `sensorDistanceXmm` | `7.62` |
 | `sensorDistanceYmm` | `5.08` |
@@ -113,7 +113,7 @@ Example response:
 ```json
 {
   "device": "OpenCurtainLab",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "uptime": 1234,
   "measCount": 7,
   "batteryVoltage": 8.62,
@@ -195,7 +195,7 @@ Example response:
 ```json
 {
   "device": "OpenCurtainLab",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "ip": "192.168.178.42",
   "mdnsName": "opencurtainlab",
   "sensorDistanceXmm": 7.62,
@@ -459,28 +459,42 @@ In the WebUI developer console, `oclSensors()` prints the diagnostics as a table
 
 ## `GET /version`
 
-Returns the compatible WebUI version as plain text.
+Returns update information from the remote WebUI manifest. The WebUI uses this to show firmware and WebUI updates separately.
 
 ```bash
-curl -i http://opencurtainlab.local/version
+curl http://opencurtainlab.local/version
 ```
 
-Example success response:
+Example response when the manifest is available:
 
-```http
-HTTP/1.1 200 OK
-Content-Type: text/plain; charset=utf-8
-X-OpenCurtainLab-Version-Source: manifest
-X-OpenCurtainLab-WebUI-Match: 0.1.x
-
-0.1.1
+```json
+{
+  "manifestAvailable": true,
+  "currentFirmware": "0.1.2",
+  "projectVersion": "0.1.2",
+  "bugfixversion": "0.1.2"
+}
 ```
 
-If manifest lookup fails, the firmware returns the local firmware version with:
+Example response when the manifest cannot be reached or parsed:
 
-```http
-X-OpenCurtainLab-Version-Source: local-fallback
+```json
+{
+  "manifestAvailable": false,
+  "currentFirmware": "0.1.2",
+  "projectVersion": "",
+  "bugfixversion": ""
+}
 ```
+
+Fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `manifestAvailable` | boolean | `true` when `web/manifest.json` was fetched and parsed. |
+| `currentFirmware` | string | Firmware version running on the ESP32. |
+| `projectVersion` | string | Newest project version from the manifest. Empty when the manifest is unavailable. |
+| `bugfixversion` | string | Highest `entries[].version` whose `match` pattern is compatible with `currentFirmware`. Empty when no compatible manifest entry is available. |
 
 ## `GET /wifi/status`
 
@@ -587,12 +601,12 @@ Current manifest shape:
 ```json
 {
   "schema": "opencurtainlab-web-manifest-v1",
-  "projectVersion": "0.1.1",
+  "projectVersion": "0.1.2",
   "entries": [
     {
       "match": "0.1.x",
-      "version": "0.1.1",
-      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.1.html"
+      "version": "0.1.2",
+      "url": "https://raw.githubusercontent.com/benikum/OpenCurtainLab/refs/heads/main/web/compiled/compiled-v0.1.2.html"
     }
   ]
 }

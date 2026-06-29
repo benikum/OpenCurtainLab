@@ -48,26 +48,26 @@ function pctScore(score) {
 }
 
 function formatScore(score) {
-  return Number.isFinite(score) ? Math.round(score) + ' / 100' : '—';
+  return Number.isFinite(score) ? Math.round(score) + ' / 100' : '-';
 }
 
 function formatReportTime(seconds) {
   const s = Number(seconds);
-  if (!Number.isFinite(s) || s <= 0) return '—';
+  if (!Number.isFinite(s) || s <= 0) return '-';
   if (s >= 1) return s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s';
   return (s * 1000).toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' ms';
 }
 
 function formatFractionFromSeconds(seconds) {
   const s = Number(seconds);
-  if (!Number.isFinite(s) || s <= 0) return '—';
+  if (!Number.isFinite(s) || s <= 0) return '-';
   const frac = Math.round(1 / s);
   return frac <= 1 ? s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s' : '1/' + frac + ' s';
 }
 
 function signedEv(value) {
   const v = Number(value);
-  if (!Number.isFinite(v)) return '—';
+  if (!Number.isFinite(v)) return '-';
   return (v >= 0 ? '+' : '') + v.toFixed(3) + ' EV';
 }
 
@@ -81,7 +81,7 @@ function activeSensorDurations(entry) {
 
 function targetLabel(targetFrac) {
   const t = Number(targetFrac);
-  return Number.isFinite(t) && t > 0 ? '1/' + t + ' s' : '—';
+  return Number.isFinite(t) && t > 0 ? '1/' + t + ' s' : '-';
 }
 
 function targetRowsForProject(project) {
@@ -204,7 +204,7 @@ function recommendedFlashSync(targetRows) {
     return {
       targetFrac: best.targetFrac,
       label: targetLabel(best.targetFrac),
-      status: tx('report.flashRecommendedMeasured', 'Maximum measured flash sync time'),
+      status: tx('report.flashRecommendedMeasured', 'Fastest safely measured flash time'),
     };
   }
 
@@ -212,7 +212,7 @@ function recommendedFlashSync(targetRows) {
   return {
     targetFrac: null,
     label: anyFlash ? tx('report.noSafeFlashSync', 'No safe flash sync measured') : tx('report.flashNotMeasured', 'Flash sync not measured'),
-    status: anyFlash ? tx('report.allMeasuredFlashFailed', 'Every measured flash time had failures') : tx('report.noFlashData', 'No flash data in this project'),
+    status: anyFlash ? tx('report.allMeasuredFlashFailed', 'All measured flash times had failures') : tx('report.noFlashData', 'No flash data in this project'),
   };
 }
 
@@ -267,7 +267,7 @@ function exportProjCSV(projId) {
 
   lines.push(csvLine(['OpenCurtainLab project export', APP_VERSION]));
   lines.push(csvLine(['Project', p.name]));
-  lines.push(csvLine(['Exported', now.toLocaleString(uiLocale())]));
+  lines.push(csvLine(['Exported', formatReportDateTime(now)]));
   lines.push(csvLine(['Mode', modeLabel(p.mode)]));
   lines.push(csvLine(['Sensor distance X mm', csvNumber(model.entries[0]?.sensorDistanceXmm, 3)]));
   lines.push(csvLine(['Sensor distance Y mm', csvNumber(model.entries[0]?.sensorDistanceYmm, 3)]));
@@ -302,7 +302,7 @@ function exportProjCSV(projId) {
   model.entries.forEach(entry => {
     const curtain = calcCurtain(entry) || {};
     lines.push(csvLine([
-      'MEASUREMENT', entry.id, new Date(entry.ts || Date.now()).toLocaleString(uiLocale()), p.name, modeLabel(entry.mode), targetLabel(entry.targetFrac),
+      'MEASUREMENT', entry.id, formatReportDateTime(new Date(entry.ts || Date.now())), p.name, modeLabel(entry.mode), targetLabel(entry.targetFrac),
       entry.avgFrac ? '1/' + entry.avgFrac : '', csvNumber(entry.avgSec, 6), csvNumber(entry.avgSec * 1000, 3), csvNumber(entry.avgDev, 4), csvNumber(entry.spread, 4), entry.count || activeSensorDurations(entry).length,
       csvNumber(curtain.v1, 4), csvNumber(curtain.v2, 4), csvBool(entry.flash && entry.flash.detected), csvBool(isFlashSyncOk(entry)), typeof flashSyncState === 'function' ? flashSyncState(entry) : '', entry.hint || ''
     ]));
@@ -324,12 +324,26 @@ function exportProjCSV(projId) {
 
   const dateStr = timestampForFilename(now);
   downloadTextFile('\uFEFF' + lines.join('\n'), safeFilenameName(p.name) + '_' + dateStr + '_camera_attributes.csv', 'text/csv;charset=utf-8;');
-  toast(tf('toast.csvExported', 'CSV exported — {count} target times', {count: model.targetRows.length}), 'success');
+  toast(tf('toast.csvExported', 'CSV exported - {count} target times', {count: model.targetRows.length}), 'success');
 }
 
 // ════════════════════════════════════════════
 // STANDALONE HTML CAMERA REPORT
 // ════════════════════════════════════════════
+function formatReportDateTime(date = new Date()) {
+  return date.toLocaleString(uiLocale(), {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function reportDensityClass(rows) {
+  const count = (rows || []).filter(r => r && r.measured).length;
+  if (count >= 12) return 'dense-report';
+  if (count >= 8) return 'compact-report';
+  return '';
+}
+
 function reportScoreCard(title, score, body) {
   const pct = pctScore(score);
   const bar = Number.isFinite(pct) ? pct : 0;
@@ -353,8 +367,8 @@ function reportRowsHtml(rows) {
       <td>${esc(row.avgSpread.toFixed(3) + ' EV')}</td>
       <td>${esc(row.sigmaEv.toFixed(3) + ' EV')}</td>
       <td>${esc(formatScore(row.accuracyScore))}</td>
-      <td>${row.openingSpeed != null && row.closingSpeed != null ? esc(row.openingSpeed.toFixed(2) + ' / ' + row.closingSpeed.toFixed(2)) : '—'}</td>
-      <td>${row.flashDetected ? (row.flashBad ? '×' : (row.flashLate ? '●' : '●')) : '—'}</td>
+      <td>${row.openingSpeed != null && row.closingSpeed != null ? esc(row.openingSpeed.toFixed(2) + ' / ' + row.closingSpeed.toFixed(2)) : '-'}</td>
+      <td>${row.flashDetected ? (row.flashBad ? '×' : (row.flashLate ? '●' : '●')) : '-'}</td>
     </tr>`;
   }).join('');
 }
@@ -379,11 +393,13 @@ function targetBarsSvg(rows) {
   const tickStep = evChartTickStep(rawLimit);
   const limit = Math.ceil(rawLimit / tickStep) * tickStep;
   const width = 820;
-  const left = 94;
-  const right = 74;
-  const top = 42;
-  const bottom = 34;
-  const rowH = 30;
+  const dense = measured.length >= 12;
+  const compact = measured.length >= 8;
+  const left = 90;
+  const right = 68;
+  const top = compact ? 24 : 32;
+  const bottom = 24;
+  const rowH = dense ? 12 : compact ? 16 : 22;
   const plotW = width - left - right;
   const height = top + bottom + measured.length * rowH;
   const zeroX = left + plotW / 2;
@@ -412,10 +428,10 @@ function targetBarsSvg(rows) {
     const errMaxX = xFor(dx + halfSpread);
     const valueX = dx >= 0 ? Math.min(width - 8, Math.max(errMaxX + 8, x1 + 8)) : Math.max(8, Math.min(errMinX - 8, x1 - 8));
     return `<text class="target" x="16" y="${y + 4}">${esc(targetLabel(row.targetFrac))}</text>` +
-      `<rect x="${barX.toFixed(1)}" y="${y - 9}" width="${barW.toFixed(1)}" height="16" rx="4"></rect>` +
+      `<rect x="${barX.toFixed(1)}" y="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(8, rowH * 0.52).toFixed(1)}" rx="4"></rect>` +
       `<line class="error" x1="${errMinX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 1}" y2="${y - 1}"></line>` +
-      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${y - 8}" y2="${y + 6}"></line>` +
-      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 8}" y2="${y + 6}"></line>` +
+      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
+      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
       `<text class="value" x="${valueX.toFixed(1)}" y="${y + 4}" text-anchor="${dx >= 0 ? 'start' : 'end'}">${esc(signedEv(row.avgDev))}</text>`;
   }).join('');
 
@@ -440,11 +456,12 @@ function curtainSpeedSvg(project, rows) {
   if (!measured.length) return '';
 
   const width = 820;
-  const height = 318;
-  const left = 70;
-  const right = 34;
-  const top = 34;
-  const bottom = 76;
+  const compact = measured.length >= 8;
+  const height = compact ? 204 : 230;
+  const left = 64;
+  const right = 28;
+  const top = 24;
+  const bottom = 46;
   const plotW = width - left - right;
   const plotH = height - top - bottom;
   const allSpeeds = measured.flatMap(row => [row.openingSpeed, row.closingSpeed]).filter(v => Number.isFinite(v) && v > 0);
@@ -461,10 +478,12 @@ function curtainSpeedSvg(project, rows) {
     grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(value.toFixed(maxV < 10 ? 1 : 0))}</text>`);
   }
 
+  const labelStride = measured.length >= 12 ? 2 : measured.length >= 8 ? 2 : 1;
   const xAxis = measured.map((row, i) => {
     const x = xFor(i);
+    const showLabel = i === 0 || i === measured.length - 1 || i % labelStride === 0;
     return `<line class="grid soft" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${top + plotH}"></line>` +
-      `<text class="tick target" x="${x.toFixed(1)}" y="${height - 36}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>`;
+      (showLabel ? `<text class="tick target" x="${x.toFixed(1)}" y="${height - 28}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>` : '');
   }).join('');
 
   function lineFor(key, cls) {
@@ -474,14 +493,14 @@ function curtainSpeedSvg(project, rows) {
     }).filter(Boolean);
     if (!points.length) return '';
     const pointString = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    const circles = points.map(p => `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"><title>${esc(targetLabel(p.row.targetFrac) + ': ' + p.v.toFixed(2) + ' m/s')}</title></circle>`).join('');
+    const circles = points.map(p => `<circle class="${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${compact ? 3.4 : 4}"><title>${esc(targetLabel(p.row.targetFrac) + ': ' + p.v.toFixed(2) + ' m/s')}</title></circle>`).join('');
     return `<polyline class="curtain-line ${cls}" points="${pointString}"></polyline>${circles}`;
   }
 
   const axis = `<line class="axis" x1="${left}" x2="${left}" y1="${top}" y2="${top + plotH}"></line>` +
     `<line class="axis" x1="${left}" x2="${width - right}" y1="${top + plotH}" y2="${top + plotH}"></line>` +
     `<text class="axis-label y" x="16" y="${top + plotH / 2}" transform="rotate(-90 16 ${top + plotH / 2})" text-anchor="middle">m/s</text>` +
-    `<text class="axis-label x" x="${left + plotW / 2}" y="${height - 13}" text-anchor="middle">${esc(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'))}</text>`;
+    `<text class="axis-label x" x="${left + plotW / 2}" y="${height - 9}" text-anchor="middle">${esc(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'))}</text>`;
 
   return `<svg class="curtain-speed-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}">` +
     grid.join('') + xAxis + axis + lineFor('openingSpeed', 'opening') + lineFor('closingSpeed', 'closing') +
@@ -492,7 +511,7 @@ function curtainSpeedReportSection(project, rows) {
   const chart = curtainSpeedSvg(project, rows);
   if (!chart) return '';
   return `<section class="chart-section curtain-speed-section"><h2>${esc(tx('cards.curtainCurve', 'Curtain speed by target'))}</h2>` +
-    `<div class="chart-explainer"><p>${esc(tx('report.curtainSpeedExplanation', 'Average opening and closing curtain speed for each measured target time.'))}</p>` +
+    `<div class="chart-explainer"><p>${esc(tx('report.curtainSpeedExplanation', 'The lines show whether the opening and closing curtains move at similar, steady speeds across the measured settings. Smooth, close lines suggest clean shutter travel; jumps or large separation can indicate adjustment or service needs.'))}</p>` +
     `<div class="chart-legend"><div><span class="legend-line opening"></span><span>${esc(tx('charts.openingSpeed', 'Opening speed'))}</span></div>` +
     `<div><span class="legend-line closing"></span><span>${esc(tx('charts.closingSpeed', 'Closing speed'))}</span></div></div></div>` +
     chart + `</section>`;
@@ -501,8 +520,8 @@ function curtainSpeedReportSection(project, rows) {
 function reportDataFieldsHtml(project, model, measuredCount, measuredTargets) {
   const fields = [
     { label: tx('report.maximumFlashTime', 'Maximum flash time'), value: model.flash.label, sub: model.flash.status },
-    { label: tx('report.measurements', 'Measurements'), value: String(measuredCount), sub: tx('report.validProjectMeasurements', 'valid project measurements') },
-    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: tx('report.measuredTargets', 'measured target times') }
+    { label: tx('report.measurements', 'Measurements'), value: String(measuredCount), sub: tx('report.validProjectMeasurements', 'evaluated releases; more repeats make the rating more reliable') },
+    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: tx('report.measuredTargets', 'measured target speeds in this camera project') }
   ];
   return `<section class="data-fields">${fields.map(field => `<div class="data-field"><span>${esc(field.label)}</span><strong>${esc(field.value)}</strong><small>${esc(field.sub || '')}</small></div>`).join('')}</section>`;
 }
@@ -520,23 +539,24 @@ async function reportTemplateHtml() {
 }
 
 async function standaloneReportHtml(project, model) {
-  const exportedAt = new Date().toLocaleString(uiLocale());
+  const exportedAt = formatReportDateTime(new Date());
   const measuredCount = model.entries.length;
   const measuredTargets = model.measuredRows.length;
   const title = tx('report.title', 'Camera measurement report');
-  const accBody = tx('report.accuracyBody', 'Based on measured exposure times and image-position spread. Spread is weighted higher than offset because uneven exposure is harder to compensate.');
-  const relBody = tx('report.reliabilityBody', 'Based on differences between repeated measurements of the same target times. Single measurements are listed but not enough for reliability.');
-  const curtainBody = tx('report.curtainBody', 'Based on local curtain-speed uniformity and the parallelism between opening and closing curtain speeds.');
+  const accBody = tx('report.accuracyBody', 'Rates the actual shutter speeds. High values mean the camera exposes close to the selected time and evenly across the frame. Low values point to visible timing error or brightness falloff.');
+  const relBody = tx('report.reliabilityBody', 'Rates whether the same setting stays consistent over repeated releases. This matters when the camera should work reproducibly, not only once. Without repeat measurements, the result is limited.');
+  const curtainBody = tx('report.curtainBody', 'Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Low values can indicate adjustment or service needs.');
   const overallLabel = scoreLabel(model.overall);
   const note = project.note ? `<section class="note"><h2>${esc(tx('report.projectNote', 'Project note'))}</h2><p>${esc(project.note)}</p></section>` : '';
   const template = await reportTemplateHtml();
 
   return renderReportTemplate(template, {
     LANG: esc(document.documentElement.lang || 'en'),
-    PAGE_TITLE: esc(project.name + ' — ' + title),
+    PAGE_TITLE: esc(project.name + ' - ' + title),
     APP_VERSION: esc(APP_VERSION),
     PROJECT_NAME: esc(project.name),
     REPORT_TITLE: esc(title),
+    REPORT_DENSITY_CLASS: esc(reportDensityClass(model.targetRows)),
     EXPORTED_AT: esc(exportedAt),
     OVERALL_GRADE: esc(reportGrade(model.overall)),
     OVERALL_LABEL: esc(overallLabel),
@@ -547,21 +567,22 @@ async function standaloneReportHtml(project, model) {
     OVERALL_TITLE: esc(tx('report.overall', 'Overall')),
     OVERALL_SCORE: esc(formatScore(model.overall)),
     SCORES_TITLE: esc(tx('report.scoresTitle', 'Assessment')),
-    SCORES_INTRO: esc(tx('report.scoresIntro', 'The rating separates exposure accuracy, repeatability and curtain travel. Old mechanical cameras are rated with tolerant thresholds.')),
     SCORE_CARDS: [
       reportScoreCard(tx('report.accuracy', 'Accuracy'), model.accuracyScore, accBody),
       reportScoreCard(tx('report.reliability', 'Reliability'), model.reliabilityScore, relBody),
       reportScoreCard(tx('report.curtainCondition', 'Curtain condition'), model.curtain.curtainScore, curtainBody),
     ].join(''),
-    DATA_TITLE: esc(tx('report.dataTitle', 'Camera data')),
+    DATA_TITLE: esc(tx('report.dataTitle', 'Results')), 
     EXPOSURE_OFFSETS_TITLE: esc(tx('report.exposureOffsets', 'Exposure offsets')),
-    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'The horizontal scale is measured in EV. Bars to the left of 0 EV are faster than the selected time, bars to the right are slower.')),
-    EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average exposure offset')),
-    EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: spread across the image')),
+    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows how much exposure varies across the frame.')),
+    EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average timing error')),
+    EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: frame evenness')),
     OFFSET_CHART: targetBarsSvg(model.targetRows),
     CURTAIN_SPEED_SECTION: curtainSpeedReportSection(project, model.targetRows),
     DATA_FIELDS: reportDataFieldsHtml(project, model, measuredCount, measuredTargets),
     PROJECT_NOTE: note,
+    GITHUB_URL: esc(typeof GITHUB_URL !== 'undefined' ? GITHUB_URL : 'https://github.com/benikum/OpenCurtainLab'),
+    GITHUB_LABEL: esc(tx('report.githubLink', 'GitHub: benikum/OpenCurtainLab')),
   });
 }
 

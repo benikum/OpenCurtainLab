@@ -487,7 +487,7 @@ function renderHistList() {
         <div class="h-time" style="color:var(--red);">ERROR</div>
         <div class="h-dev pos">!</div>
         <div class="h-meta"><span class="h-meta-line">${ts} · ${esc(e.error || 'Unknown error')}</span></div>
-        <div class="h-mode h-mode-empty">—</div>
+        <div class="h-mode h-mode-empty">-</div>
       </div>`;
     }
 
@@ -557,7 +557,7 @@ function renderDetailView(id) {
     <!-- Summary -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">${tx('cards.measurement', 'Measurement')} — ${ts} — ${measurementModeSummary(e)}</span>
+        <span class="card-title">${tx('cards.measurement', 'Measurement')} - ${ts} - ${measurementModeSummary(e)}</span>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
           ${moveToDefaultAction}
           <span style="font-size:10px;color:var(--tx4)">${e.id}</span>
@@ -598,7 +598,7 @@ function renderDetailView(id) {
 
     <!-- Timeline -->
     <div class="card timeline-card">
-      <div class="card-hdr"><span class="card-title">${tx('cards.timelineOpening', 'Timeline — shutter opening')}</span></div>
+      <div class="card-hdr"><span class="card-title">${tx('cards.timelineOpening', 'Timeline - shutter opening')}</span></div>
       <div class="card-body" style="padding:10px 6px;">
         <div class="tl-wrap"><canvas id="tl"></canvas></div>
       </div>

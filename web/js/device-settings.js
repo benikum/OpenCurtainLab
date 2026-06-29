@@ -512,7 +512,7 @@ function renderVersionSummary() {
 // Format the battery voltage from /status as voltage and percentage.
 function formatBatteryVoltageStatus(voltage) {
   const n = Number(voltage);
-  if (!Number.isFinite(n) || n <= 0) return tx('settingsInfo.unavailable', '—');
+  if (!Number.isFinite(n) || n <= 0) return tx('settingsInfo.unavailable', '-');
   const pct = batteryPercentage(n);
   const label = n.toLocaleString(uiLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   return `${label}V - ${pct ?? 0}%`;
@@ -526,7 +526,7 @@ function renderSettingsDeviceInfo() {
   const net = S.networkStatus || {};
   const dev = S.deviceStatus || {};
   const rt = S.deviceRuntime || {};
-  const dash = tx('settingsInfo.unavailable', '—');
+  const dash = tx('settingsInfo.unavailable', '-');
   const statusOk = !(dev.error && dev.error !== 'none');
   const connected = !!S.connected;
   const statusValue = !connected

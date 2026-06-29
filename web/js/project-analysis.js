@@ -29,7 +29,7 @@ function weightedAverage(items, valueKey, weightKey = 'n') {
 }
 // Convert a numeric score into a coarse condition grade.
 function gradeFromScore(score) {
-  if (!Number.isFinite(score)) return { grade:'—', cls:'' };
+  if (!Number.isFinite(score)) return { grade:'-', cls:'' };
   if (score >= 90) return { grade:'A', cls:'grade-a' };
   if (score >= 78) return { grade:'B', cls:'grade-b' };
   if (score >= 62) return { grade:'C', cls:'grade-c' };
@@ -115,10 +115,10 @@ function buildProjectSummary(p) {
   if (typeof projectScoreModel !== 'function') {
     const a = projectAnalysis(p);
     const cond = gradeFromScore(a.conditionScore);
-    const fmtPct = v => v == null ? '—' : Math.round(v) + ' %';
+    const fmtPct = v => v == null ? '-' : Math.round(v) + ' %';
     return `<div class="card">
       <div class="card-hdr">
-        <span class="card-title">${tx('project.overallRating', 'Camera — overall rating')}</span>
+        <span class="card-title">${tx('project.overallRating', 'Camera - overall rating')}</span>
         <span class="grade-badge ${cond.cls}">${cond.grade}</span>
       </div>
       <div class="card-body">
@@ -132,14 +132,14 @@ function buildProjectSummary(p) {
 
   const model = projectScoreModel(p);
   const cond = gradeFromScore(model.overall);
-  const pct = v => Number.isFinite(v) ? Math.round(v) + ' %' : '—';
+  const pct = v => Number.isFinite(v) ? Math.round(v) + ' %' : '-';
   const score = v => typeof formatScore === 'function' ? formatScore(v) : pct(v);
   const label = v => typeof scoreLabel === 'function' ? scoreLabel(v) : conditionLabel(v);
   const measuredTargets = model.measuredRows ? model.measuredRows.length : 0;
-  const flashLabel = model.flash && model.flash.label ? model.flash.label : '—';
+  const flashLabel = model.flash && model.flash.label ? model.flash.label : '-';
   return `<div class="card">
     <div class="card-hdr">
-      <span class="card-title">${tx('project.overallRating', 'Camera — overall rating')}</span>
+      <span class="card-title">${tx('project.overallRating', 'Camera - overall rating')}</span>
       <span class="grade-badge ${cond.cls}">${cond.grade}</span>
     </div>
     <div class="card-body">
@@ -155,7 +155,7 @@ function buildProjectSummary(p) {
   </div>`;
 }
 // ════════════════════════════════════════════
-   // PROJECT TABLE — rows=targetTimes, cols=metrics, cells=averages
+   // PROJECT TABLE - rows=targetTimes, cols=metrics, cells=averages
 // ════════════════════════════════════════════
 
 // Aggregate all measurements for a given project + target fraction
@@ -187,18 +187,18 @@ function aggregateForTarget(projId, targetFrac) {
 
 // Build the per-target project analysis table.
 function buildProjectTable(p) {
-  const fmt = (v, dec) => v != null ? v.toFixed(dec) : '—';
+  const fmt = (v, dec) => v != null ? v.toFixed(dec) : '-';
 
   const rows = p.times.map(tgt => {
     const agg = aggregateForTarget(p.id, tgt);
     if (!agg) {
       return `<tr>
         <td class="t-target">1/${tgt}</td>
-        <td class="t-dim">—</td>
-        <td class="t-dim">—</td>
-        <td class="t-dim">—</td>
-        <td class="t-dim">—</td>
-        <td class="t-dim">—</td>
+        <td class="t-dim">-</td>
+        <td class="t-dim">-</td>
+        <td class="t-dim">-</td>
+        <td class="t-dim">-</td>
+        <td class="t-dim">-</td>
         <td class="t-dim" style="font-size:10px;">${tx('project.zeroMeas', '0 meas.')}</td>
       </tr>`;
     }
@@ -210,8 +210,8 @@ function buildProjectTable(p) {
       <td class="t-amber">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
       <td><span style="color:var(--tx1)">${agg.sigmaEv.toFixed(3)} EV</span><br><span style="font-size:10px;color:var(--tx3)">σ ${tx('project.repeatability', 'repeatability')}</span></td>
       <td>${gradeBadge(agg.score)}</td>
-      <td class="t-teal">${agg.avgV1!=null ? fmt(agg.avgV1,2) : '—'} / ${agg.avgV2!=null ? fmt(agg.avgV2,2) : '—'}</td>
-      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : (agg.flashLate ? '<span style="color:var(--amber);font-size:16px;">●</span>' : '<span style="color:var(--green);font-size:16px;">●</span>')) : '<span style="color:var(--tx4);font-size:16px;">—</span>'}</td>
+      <td class="t-teal">${agg.avgV1!=null ? fmt(agg.avgV1,2) : '-'} / ${agg.avgV2!=null ? fmt(agg.avgV2,2) : '-'}</td>
+      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : (agg.flashLate ? '<span style="color:var(--amber);font-size:16px;">●</span>' : '<span style="color:var(--green);font-size:16px;">●</span>')) : '<span style="color:var(--tx4);font-size:16px;">-</span>'}</td>
       <td style="font-size:10px;color:var(--tx3)">${agg.n} ${tx('project.measShort', 'meas.')}</td>
     </tr>`;
   }).join('');
@@ -309,7 +309,7 @@ function showProject(projId) {
 }
 
 // ════════════════════════════════════════════
-   // CURTAIN CHART — project-level average speed by target time
+   // CURTAIN CHART - project-level average speed by target time
    // X = supported target times (1/x), Y = local curtain speed in m/s
 // ════════════════════════════════════════════
 function drawCurtainChart(p) {

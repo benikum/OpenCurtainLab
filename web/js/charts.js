@@ -591,7 +591,7 @@ function flashSyncIcon(entry) {
   if (state === 'ok') return `<span title="${esc(tx('flash.within', 'Flash within total opening'))}" style="color:var(--green);font-size:16px;">●</span>`;
   if (state === 'late') return `<span title="${esc(tx('flash.late', 'Flash near the end of total opening'))}" style="color:var(--amber);font-size:16px;">●</span>`;
   if (state === 'bad') return `<span title="${esc(tx('flash.outside', 'Flash outside total opening'))}" style="color:var(--red);font-size:16px;">×</span>`;
-  return `<span title="${esc(tx('flash.none', 'No flash detected'))}" style="color:var(--tx4);font-size:16px;">—</span>`;
+  return `<span title="${esc(tx('flash.none', 'No flash detected'))}" style="color:var(--tx4);font-size:16px;">-</span>`;
 }
 
 // ════════════════════════════════════════════

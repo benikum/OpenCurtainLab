@@ -329,7 +329,7 @@ function exportProjCSV(projId) {
   const dateStr = timestampForFilename();
   const safeName = (p.name||'export').replace(/[^a-zA-Z0-9_\-]/g,'_');
   dlCSV(lines.join('\n'), safeName + '_' + dateStr + '.csv');
-  toast(tf('toast.csvExported', 'CSV exported — {count} target times', {count: p.times.length}));
+  toast(tf('toast.csvExported', 'CSV exported - {count} target times', {count: p.times.length}));
 }
 
 // Download a CSV file.

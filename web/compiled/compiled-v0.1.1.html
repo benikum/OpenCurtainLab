@@ -507,6 +507,7 @@ td.t-amber  { color: var(--amber); font-size: 13px; }
 td.t-teal   { color: var(--teal); }
 td.t-dim    { color: var(--tx4); }
 td.t-target { color: var(--tx1); font-weight: 600; background: var(--bg3); border-right: 1px solid var(--bdr2); }
+.t-nowrap { white-space: nowrap; }
 
 /* Highlighted measurement column */
 
@@ -1223,6 +1224,37 @@ canvas#tl {
   margin: -2px 0 10px;
 }
 
+.metric-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 16px;
+  line-height: 1.12;
+}
+
+.chart-tooltip {
+  position: absolute;
+  display: none;
+  z-index: 20;
+  pointer-events: none;
+  min-width: 90px;
+  max-width: 220px;
+  padding: 6px 8px;
+  border: 1px solid var(--bdr2);
+  border-radius: var(--r1);
+  background: rgba(12,14,13,0.95);
+  color: var(--tx2);
+  font-size: 10px;
+  line-height: 1.35;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+.chart-tooltip strong {
+  display: block;
+  color: var(--tx1);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
 </style>
   </head>
   <body>
@@ -1534,7 +1566,7 @@ canvas#tl {
     </div>
     <div id="toast"></div>
     <!-- ══ JAVASCRIPT ══════════════════════════════ -->
-<script id="ocl-i18n-all" type="application/json">{"de":{"locale":"de-DE","modes":{"vertical":"Vertikal","horizontal":"Horizontal","central":"Zentralverschluss"},"resultDisplay":{"none":"gar nicht","untilButton":"bis Tastendruck"},"config":{"none":"Keine Config geladen","address":"Adresse","series":"Messreihe","resultDisplay":"Ergebnisanzeige"},"toast":{"deviceConnected":"Gerät verbunden: {host}","deviceNotFoundHost":"Kein OpenCurtainLab unter dieser Adresse gefunden.","deviceNotFoundDefault":"Kein OpenCurtainLab unter opencurtainlab.local gefunden.","customTimesEmpty":"Custom-Zielzeiten sind leer","settingsSaved":"Einstellungen gespeichert","settingsSaveFailed":"Einstellungen konnten nicht gespeichert werden","enterProjectName":"Bitte Projektnamen eingeben","projectCreated":"Projekt \"{name}\" erstellt","backupImported":"Backup-JSON importiert","importFailed":"Import fehlgeschlagen: keine gültige JSON-Datei","backupExported":"Backup-JSON exportiert","csvExported":"Kamera-Attribute als CSV exportiert - {count} Zielzeiten","projectNameExists":"Ein Projekt mit diesem Namen existiert bereits","noTargetTimesSelected":"Bitte mindestens eine Zielzeit auswählen","customTimesInvalid":"Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.","customTimesDuplicate":"Custom-Zielzeiten enthalten doppelte Werte","customTimesTooMany":"Maximal 16 Custom-Zielzeiten erlaubt","customTimesInvalidWithMax":"Custom-Zielzeiten ungültig. Nutze positive Zahlen bis 1/{max}, getrennt mit Komma.","customTimesDefaulted":"Standardzeiten geladen","localDataReset":"Lokale WebUI-Daten zurückgesetzt","defaultProjectKept":"Das Standardprojekt kann nicht gelöscht werden","measurementMovedToDefault":"Messung ins Standardprojekt verschoben","measurementAssignedToDefaultIncompatible":"Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.","deviceNotConnected":"Gerät nicht verbunden","languageUnavailable":"Sprachdateien sind nicht verfügbar","batteryLow":"Batterie niedrig: {voltage} V ({percent}%).","reportExported":"HTML-Kamerabericht exportiert","reportExportFailed":"HTML-Kamerabericht konnte nicht exportiert werden"},"frame":{"tutorialTitle":"OpenCurtainLab Anleitung","tutorialLoadFailed":"Die Anleitung konnte nicht geladen werden."},"connection":{"connected":"VERBUNDEN","connecting":"VERBINDE…","networkHint":"Netzwerkproblem"},"errors":{"unknown":"Unbekannter Fehler","invalidBackup":"Ungültiges Backup","unsupportedMeasurementPacket":"Nicht unterstütztes Messdatenpaket"},"confirm":{"deleteProject":"Projekt löschen?","importBackup":"Backup-JSON importieren? Aktuelle Projekte und Verlauf werden ersetzt.","resetLocalData":"Lokale WebUI-Daten zurücksetzen? Dadurch werden Projekte, Messungen und zwischengespeicherte Geräteeinstellungen gelöscht."},"empty":{"noProjectYet":"Noch kein Projekt","noMeasurements":"Keine Messungen","waitingForRelease":"Warte auf Kameraauslösung","connectDevice":"Verbinde das Gerät","connectDeviceSub":"Gib die Geräteadresse in den Einstellungen ein oder nutze opencurtainlab.local.","createFirstProject":"Erstelle dein erstes Projekt","createFirstProjectSub":"Erstelle ein Kameraprojekt für passende Messungen. Andere Messungen bleiben im Standardprojekt.","readyMeasure":"Bereit zum Messen","readyMeasureSub":"Löse den Verschluss aus.","deviceError":"Gerätefehler","createProjectAction":"Projekt erstellen","noMeasurementsYet":"Noch keine Messungen","noMeasurementsYetSub":"Löse den Kameraverschluss aus. Neue Messungen erscheinen automatisch.","selectMeasurement":"Messung auswählen","selectMeasurementSub":"Wähle einen Eintrag aus dem Verlauf, um die Messdetails zu prüfen.","waitingForProjectMeasurement":"Warte auf Messungen in {project}"},"labels":{"speeds":"Zeiten","measurements":"Messungen","noProject":"kein Projekt","target":"Ziel","warning":"Hinweis","sensorsActive":"Sensoren aktiv","noFlashDetected":"kein Blitz erkannt","inactive":"inaktiv"},"cards":{"measurement":"Messung","timelineOpening":"Zeitstrahl - Verschlussöffnung","timelineSpeed":"Vorhanggeschwindigkeit nach Sensorposition","note":"Notiz","curtainCurve":"Vorhanggeschwindigkeit nach Zielzeit","projectNote":"Projekt-Notiz"},"metrics":{"avgExposure":"Ø Belichtungszeit","avgDeviation":"Abweichung Ø","totalOpenTime":"Totale Öffnungsdauer","flashSync":"Blitz-Sync"},"placeholders":{"projectNotes":"Notizen zu diesem Projekt…"},"condition":{"notRated":"Nicht bewertet","veryGood":"Sehr gut","good":"Gut","checkService":"Service prüfen","serviceRecommended":"Service empfohlen"},"charts":{"notEnoughCurtain":"Nicht genug Sensorpunkte für Vorhangdiagramm","openingCurtain":"ÖFFNENDER VORHANG","closingCurtain":"SCHLIEẞENDER VORHANG","v1Speed":"Öffnungsgeschwindigkeit","v2Speed":"Schließgeschwindigkeit","openingSpeed":"Öffnungsvorhang","closingSpeed":"Schließvorhang","positionAxis":"POSITION (mm)","speedAxis":"GESCHWINDIGKEIT (m/s)","targetSpeedAxis":"Zielzeit (1/x s)","noCurtainMeasurements":"Noch keine Messungen mit Vorhanggeschwindigkeit","timeRelative":"ZEIT (ms, relativ zur ersten Öffnung)"},"flash":{"within":"Blitz innerhalb der totalen Öffnung","outside":"Blitz außerhalb der totalen Öffnung","late":"Blitz in den letzten 2 ms der totalen Öffnung","none":"Kein Blitz erkannt"},"project":{"overallRating":"Kamera - Gesamtbewertung","condition":"Zustand","measurements":"Messungen","targetSpeedsMeasured":"Zielzeiten gemessen","avgDeviation":"Ø Abweichung","absoluteAcrossRuns":"Betrag, über alle Messreihen","avgScatter":"Ø Streuung σ","repeatability":"Wiederholung","linearity":"Gleichmäßigkeit","fromLocalCurtainSpeeds":"aus lokaler Vorhanggeschwindigkeit","parallelism":"Parallelität","fromSlitWidth":"aus Schlitzbreite je Sensor","zeroMeas":"0 Mess.","measShort":"Mess.","series":"Messreihe","defaultName":"Standardprojekt","deleteProject":"Projekt löschen","deleteProjectHelp":"Löscht das Projekt. Die Messungen werden ins Standardprojekt verschoben.","delete":"LÖSCHEN"},"table":{"target":"Zielzeit","avgMeasurement":"Ø Messung","grade":"Note","flash":"Blitz","curtainSpeed":"Vorhanggeschwindigkeit"},"csv":{"note":"Notiz","project":"Projekt","exported":"Exportiert"},"settings":{"customTimesHelp":"Nenner bis 1/{max}, durch Kommas getrennt. Leer lassen, um die Standardzeiten zu laden.","save":"EINSTELLUNGEN SPEICHERN","saving":"SPEICHERN...","saved":"GESPEICHERT","unsaved":"Ungespeicherte Änderungen","savingLabel":"Speichern..."},"quickStart":{"title":"Schnellstart","help":"Messungen werden nach jedem Verschlusstest automatisch empfangen.","steps":["Mit dem Gerät verbinden.","Projekt erstellen oder auswählen.","Zielzeit am Gerät oder in der WebUI einstellen.","Kameraverschluss auslösen.","Messung auswerten."]},"connectionHelp":{"title":"Verbindung zu OpenCurtainLab nicht möglich","steps":["Prüfe, ob das Gerät eingeschaltet ist.","Nutze opencurtainlab.local oder die IP vom OLED.","Prüfe, ob dieser Computer im gleichen WLAN ist.","Wenn der Setup-Modus aktiv ist: mit dem OpenCurtainLab-WLAN verbinden und 192.168.4.1 öffnen."]},"measurementHints":{"generic":{"action":"Prüfe den Kameraaufbau und wiederhole die Messung."},"sensor_already_active_at_start":{"title":"Sensor bereits aktiv","body":"Ein Sensor war bereits abgedeckt, als das Gerät die Messung scharf schalten wollte.","action":"Öffne den Verschlussweg, prüfe die Ausrichtung und versuche es erneut."},"flash_without_sensor":{"title":"Blitz ohne Sensorabdeckung","body":"Der Blitzkontakt wurde ausgelöst, aber kein Phototransistor hat eine Verschlussbewegung erkannt.","action":"Prüfe Blitz-Sync-Kabel, Kameramodus und Sensorausrichtung."},"timeout_with_data":{"title":"Messung abgelaufen","body":"Es wurden Sensordaten erfasst, aber der Verschlussablauf wurde nicht rechtzeitig beendet.","action":"Prüfe, ob der Verschluss hängen bleibt oder der Testaufbau passt."},"incomplete_sensor_coverage":{"title":"Unvollständige Sensorabdeckung","body":"Nicht alle fünf Sensoren wurden während dieser Messung abgedeckt.","action":"Prüfe Kameraausrichtung, Vorhangweg oder ob der Schlitz die gesamte Sensorreihe abdeckt."},"flash_already_active_at_start":{"title":"Blitzkontakt bereits aktiv","body":"Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.","action":"Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."},"too_few_sensors":{"title":"Zu wenige Sensoren wurden abgedeckt","body":"Die Messung hat weniger als drei Sensoren verwendet und bleibt nur im Standardprojekt.","action":"Kameraausrichtung prüfen und die Messung wiederholen."}},"deviceErrors":{"generic":{"action":"Prüfe das Gerät und verbinde erneut, wenn der Fehler behoben ist."},"network_access_point_failed":{"title":"Setup-Access-Point fehlgeschlagen","body":"Das Gerät konnte sein Setup-WLAN nicht starten.","action":"Starte das Gerät neu. Wenn der Fehler bleibt, Firmware neu flashen oder ESP32-Board prüfen."},"display_init_failed":{"title":"Display konnte nicht initialisiert werden","body":"Das OLED-Display konnte nicht initialisiert werden.","action":"Prüfe I2C-Verdrahtung, Display-Adresse und Stromversorgung."}},"firmware":{"title":"Versionskonflikt","warning":"Firmware {actual} und WebUI {expected}.x passen möglicherweise nicht zusammen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version."},"measurement":{"moveToDefault":"Ins Standardprojekt verschieben"},"versions":{"title":"Versionsunterschied","unknown":"unbekannt","webUiLabel":"WebUI {version}","publishedLabel":"veröffentlicht {version}","firmwareWebUiMismatch":"Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.","webUiOutdated":"Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.","cdnMismatch":"Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.","deviceCdnMismatch":"Firmware {firmware} und die im Manifest gewählte WebUI {cdn} nutzen unterschiedliche API-Versionen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version.","mismatchTitle":"Versionsunterschied","updateAvailable":"Update verfügbar","updateAvailableWithVersion":"Update verfügbar {version}","mismatchAction":"Nutze Firmware und WebUI-Dateien aus demselben Release.","updateAction":"Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.","deviceLabel":"Gerät {version}","upToDate":"Software auf neuestem Stand","updateUnknown":"Update unbekannt","newWebUiAvailableTitle":"Neue WebUI-Version verfügbar","newFirmwareAvailableTitle":"Neue Firmware-Version verfügbar","newWebUiAvailable":"Neue WebUI-Version verfügbar {version}","newFirmwareAvailable":"Neue Firmware-Version verfügbar {version}","multipleUpdatesAvailable":"Updates verfügbar","webUiUpdateAction":"Lade die aktuelle WebUI über das Gerät oder aus dem Projekt-Release herunter.","firmwareUpdateAction":"Installiere die aktuelle Firmware aus dem Projekt-Release."},"html":{"menuButtonLabel":"Menü","connecting":"Verbinde…","projects":"Projekte","newProject":"Neues Projekt","projectMeasurements":"Projektmessungen","webUiVersion":"WebUI v0.1.2","device":"Gerät","deviceAddress":"Geräteadresse","connect":"Verbinden","measurement":"Messung","targetSeries":"Messreihe","customTargetTimes":"Benutzerdefinierte Zeiten","sensitivity":"Empfindlichkeit","sensitivityLow":"niedrig","sensitivityMedium":"mittel","sensitivityHigh":"hoch","display":"Anzeige","results":"Ergebnisse","untilButtonPress":"bis Tastendruck","oledSleep":"OLED Schlaf","afterOneMinute":"nach 1 min","afterFiveMinutes":"nach 5 min","afterTenMinutes":"nach 10 min","afterThirtyMinutes":"nach 30 min","interpolateCharts":"Diagramme interpolieren","saveSettings":"EINSTELLUNGEN SPEICHERN","localData":"Lokale Daten","exportWorkspaceBackup":"Exportieren","importWorkspaceBackup":"Importieren","resetLocalWebUiData":"Zurücksetzen","guide":"Anleitung","settings":"Einstellungen","connectDeviceTitle":"Verbinde das Gerät","connectDeviceSubtitle":"Verbinde OpenCurtainLab mit deinem Netzwerk.","cameraProjectName":"Kamera / Projektname","cameraProjectNamePlaceholder":"z.B. Leica M3, Canon AE-1 …","measurementMode":"Messmodus","timeSeries":"Messreihe","supportedShutterSpeeds":"Unterstützte Belichtungszeiten (1/x s)","cancel":"Abbrechen","create":"Erstellen","resultDisplayOff":"gar nicht","oledSleepOff":"aus","pollIntervalMs":"Polling-Intervall (ms)"},"targetSeries":{"standard":"Standard","custom":"Benutzerdefiniert"},"settingsInfo":{"connection":"Verbindung","connected":"verbunden","notConnected":"Verbindung getrennt","ip":"IP","hostname":"Hostname","wifi":"WLAN","signal":"Signal","measurements":"Messungen","status":"Status","ok":"OK","unavailable":"-","measurementId":"Measurement-ID","problem":"Problem","battery":"Batterie"},"directions":{"leftRight":"links → rechts","rightLeft":"rechts → links","topDown":"oben → unten","bottomTop":"unten → oben"},"report":{"title":"Kamera-Messbericht","notRated":"Nicht bewertet","excellent":"Sehr gut","good":"Gut","usable":"Brauchbar","needsServiceSoon":"Service sinnvoll","serviceRecommended":"Service empfohlen","flashRecommendedMeasured":"Schnellste sicher gemessene Blitzzeit","noSafeFlashSync":"Keine sichere Blitzzeit gemessen","flashNotMeasured":"Blitzsynchronzeit nicht gemessen","allMeasuredFlashFailed":"Bei allen gemessenen Blitzzeiten gab es Fehler","noFlashData":"Keine Blitzdaten in diesem Projekt","notMeasured":"Nicht gemessen","projectNote":"Projektnotiz","accuracyBody":"Bewertet die tatsächlichen Verschlusszeiten. Hohe Werte bedeuten: Die Kamera belichtet nah an der eingestellten Zeit und über das Bild gleichmäßig. Niedrige Werte weisen auf sichtbare Abweichungen oder Helligkeitsverlauf hin.","reliabilityBody":"Bewertet, ob dieselbe Einstellung bei mehreren Auslösungen gleich bleibt. Das ist wichtig, wenn die Kamera nicht nur einmal korrekt, sondern reproduzierbar arbeiten soll. Ohne Wiederholungen ist die Aussage begrenzt.","curtainBody":"Bewertet den Lauf des Schlitzverschlusses. Gute Werte bedeuten, dass öffnender und schließender Vorhang gleichmäßig und passend zueinander laufen. Schlechte Werte deuten auf Justage- oder Servicebedarf.","measurements":"Messungen","targetTimes":"Zielzeiten","mode":"Modus","overall":"Gesamt","recommendedFlash":"Maximale Blitzzeit","accuracy":"Genauigkeit","reliability":"Zuverlässigkeit","curtainCondition":"Vorhangzustand","exposureOffsets":"Belichtungsoffsets","resultsTable":"Ergebnistabelle","measured":"Gemessen","time":"Zeit","offset":"Offset","spread":"Spread","repeatability":"Wiederholbarkeit","maximumFlashTime":"Maximale Blitzzeit","evScale":"Offset in EV, Fehlerindikator zeigt Spread","validProjectMeasurements":"ausgewertete Auslösungen; mehr Wiederholungen machen die Bewertung sicherer","measuredTargets":"gemessene Sollzeiten in diesem Kameraprojekt","sensorDistance":"Sensorabstand","sensorDistanceSub":"X × Y Abstand des Messrasters","accuracyBodyShort":"Belichtungszeiten und Spread","reliabilityBodyShort":"Wiederholungsmessungen","curtainBodyShort":"Gleichmäßigkeit und Parallelität","scoresTitle":"Bewertung","dataTitle":"Ergebnisse","exposureOffsetsExplanation":"Für jede eingestellte Verschlusszeit zeigt der Balken die mittlere Abweichung vom Sollwert. 0 EV ist ideal. Links ist die Kamera schneller, rechts langsamer. Die Fehlerlinie zeigt, wie stark die Belichtung über das Bild variiert.","exposureBarLegend":"Balken: mittlere Zeitabweichung","exposureErrorLegend":"Fehlerlinie: Bildgleichmäßigkeit","curtainSpeedExplanation":"Die Linien zeigen, ob der öffnende und der schließende Vorhang über die gemessenen Zeiten ähnlich schnell und ruhig laufen. Ruhige, nahe Linien sprechen für einen sauberen Verschlusslauf; Sprünge oder großer Abstand können Justage- oder Servicebedarf bedeuten.","githubLink":"GitHub: benikum/OpenCurtainLab"}},"en":{"locale":"en-GB","modes":{"vertical":"vertical","horizontal":"horizontal","central":"central shutter"},"resultDisplay":{"none":"off","untilButton":"until button"},"config":{"none":"No config loaded","address":"Address","series":"Series","resultDisplay":"Result display"},"toast":{"deviceConnected":"Device connected: {host}","deviceNotFoundHost":"No OpenCurtainLab found at this address.","deviceNotFoundDefault":"No OpenCurtainLab found at opencurtainlab.local.","customTimesEmpty":"Custom target times are empty","settingsSaved":"Settings saved","settingsSaveFailed":"Settings could not be saved","enterProjectName":"Please enter a project name","projectCreated":"Project \"{name}\" created","backupImported":"Backup JSON imported","importFailed":"Import failed: no valid JSON file","backupExported":"Backup JSON exported","csvExported":"Camera attributes CSV exported - {count} target times","projectNameExists":"A project with this name already exists","noTargetTimesSelected":"Select at least one target time","customTimesInvalid":"Invalid custom target times. Use positive numbers separated by commas.","customTimesDuplicate":"Custom target times contain duplicates","customTimesTooMany":"Maximum 16 custom target times allowed","customTimesInvalidWithMax":"Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.","customTimesDefaulted":"Standard target times loaded","localDataReset":"Local WebUI data reset","defaultProjectKept":"The default project cannot be deleted","measurementMovedToDefault":"Measurement moved to the default project","measurementAssignedToDefaultIncompatible":"Measurement assigned to the default project because it does not match the selected project.","deviceNotConnected":"Device not connected","languageUnavailable":"Language resources are not available","batteryLow":"Battery low: {voltage} V ({percent}%).","reportExported":"HTML camera report exported","reportExportFailed":"HTML camera report could not be exported"},"frame":{"tutorialTitle":"OpenCurtainLab Guide","tutorialLoadFailed":"The guide could not be loaded."},"connection":{"connected":"CONNECTED","connecting":"CONNECTING…","networkHint":"Network issue"},"errors":{"unknown":"Unknown error","invalidBackup":"Invalid backup","unsupportedMeasurementPacket":"Unsupported measurement packet"},"confirm":{"deleteProject":"Delete project?","importBackup":"Import backup JSON? Current projects and history will be replaced.","resetLocalData":"Reset all local WebUI data? This removes projects, measurements and cached device settings."},"empty":{"noProjectYet":"No project yet","noMeasurements":"No measurements","waitingForRelease":"Waiting for camera release","connectDevice":"Connect the device","connectDeviceSub":"Enter the device address in Settings or use opencurtainlab.local.","createFirstProject":"Create your first project","createFirstProjectSub":"Create a camera project to collect compatible measurements. Other measurements stay in the default project.","readyMeasure":"Ready to measure","readyMeasureSub":"Release the shutter.","deviceError":"Device error","createProjectAction":"Create project","noMeasurementsYet":"No measurements yet","noMeasurementsYetSub":"Trigger the camera shutter. New measurements will appear automatically.","selectMeasurement":"Select a measurement","selectMeasurementSub":"Choose an entry from the history to inspect timing details.","waitingForProjectMeasurement":"Waiting for measurements in {project}"},"labels":{"speeds":"speeds","measurements":"measurements","noProject":"no project","target":"Target","warning":"Warning","sensorsActive":"sensors active","noFlashDetected":"no flash detected","inactive":"inactive"},"cards":{"measurement":"Measurement","timelineOpening":"Timeline - shutter opening","timelineSpeed":"Curtain speed by sensor position","note":"Note","curtainCurve":"Curtain speed by target","projectNote":"Project note"},"metrics":{"avgExposure":"Avg exposure time","avgDeviation":"Avg deviation","totalOpenTime":"Total open time","flashSync":"Flash sync"},"placeholders":{"projectNotes":"Notes for this project…"},"condition":{"notRated":"Not rated","veryGood":"Very good","good":"Good","checkService":"Check service","serviceRecommended":"Service recommended"},"charts":{"notEnoughCurtain":"Not enough sensor points for curtain chart","openingCurtain":"OPENING CURTAIN","closingCurtain":"CLOSING CURTAIN","v1Speed":"Opening speed","v2Speed":"Closing speed","openingSpeed":"Opening speed","closingSpeed":"Closing speed","positionAxis":"POSITION (mm)","speedAxis":"SPEED (m/s)","targetSpeedAxis":"Target speed (1/x s)","noCurtainMeasurements":"No measurements with curtain speed data yet","timeRelative":"TIME (ms, relative to first opening)"},"flash":{"within":"Flash within total opening","outside":"Flash outside total opening","late":"Flash in the last 2 ms of total opening","none":"No flash detected"},"project":{"overallRating":"Camera - overall rating","condition":"Condition","measurements":"Measurements","targetSpeedsMeasured":"target speeds measured","avgDeviation":"Avg deviation","absoluteAcrossRuns":"absolute, across all runs","avgScatter":"Avg scatter σ","repeatability":"repeatability","linearity":"Linearity","fromLocalCurtainSpeeds":"from local curtain speeds","parallelism":"Parallelism","fromSlitWidth":"from slit width at each sensor","zeroMeas":"0 meas.","measShort":"meas.","series":"Time series","defaultName":"Default project","deleteProject":"Delete project","deleteProjectHelp":"Deletes the project. Its measurements move to the default project.","delete":"DELETE"},"table":{"target":"Target","avgMeasurement":"Avg measurement","grade":"Grade","flash":"Flash","curtainSpeed":"Curtain speed"},"csv":{"note":"Note","project":"Project","exported":"Exported"},"settings":{"customTimesHelp":"Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.","save":"SAVE SETTINGS","saving":"SAVING...","saved":"SAVED","unsaved":"Unsaved changes","savingLabel":"Saving..."},"quickStart":{"title":"Quick start","help":"Measurements are received automatically after each shutter test.","steps":["Connect to the device.","Create or select a project.","Set the target time on the device or in the Web UI.","Fire the camera shutter.","Review the measurement."]},"connectionHelp":{"title":"Could not connect to OpenCurtainLab","steps":["Make sure the device is powered on.","Use opencurtainlab.local or the IP shown on the OLED.","Make sure this computer is on the same Wi-Fi network.","If setup mode is active, connect to the OpenCurtainLab Wi-Fi and open 192.168.4.1."]},"measurementHints":{"generic":{"action":"Check the camera setup and repeat the measurement."},"sensor_already_active_at_start":{"title":"Sensor already active","body":"A sensor was already covered when the device tried to arm the measurement.","action":"Open the shutter path, check alignment, then try again."},"flash_without_sensor":{"title":"Flash without sensor coverage","body":"The flash input fired, but no phototransistor detected shutter movement.","action":"Check the flash sync cable, camera mode, and sensor alignment."},"timeout_with_data":{"title":"Measurement timed out","body":"Some sensor data was captured, but the shutter sequence did not finish in time.","action":"Check whether the shutter got stuck or the selected test setup is correct."},"incomplete_sensor_coverage":{"title":"Incomplete sensor coverage","body":"Not all five sensors were covered during this measurement.","action":"Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."},"flash_already_active_at_start":{"title":"Flash contact already active","body":"The flash contact was already closed when the device tried to arm the measurement.","action":"Check the flash sync cable and camera contact. The input must be open before release."},"too_few_sensors":{"title":"Too few sensors were covered","body":"The measurement used fewer than three sensors and is kept only in the default project.","action":"Check camera alignment and repeat the measurement."}},"deviceErrors":{"generic":{"action":"Check the device and reconnect when the problem is fixed."},"network_access_point_failed":{"title":"Setup access point failed","body":"The device could not start its setup Wi-Fi network.","action":"Restart the device. If this persists, reflash the firmware or check the ESP32 board."},"display_init_failed":{"title":"Display initialization failed","body":"The OLED display could not be initialized.","action":"Check the I2C wiring, display address, and power supply."}},"firmware":{"title":"Version mismatch","warning":"Firmware {actual} and Web UI {expected}.x may not match.","action":"Use firmware and a manifest-compatible Web UI release."},"measurement":{"moveToDefault":"Move to default project"},"versions":{"title":"version mismatch","unknown":"unknown","webUiLabel":"WebUI {version}","publishedLabel":"published {version}","firmwareWebUiMismatch":"Firmware {firmware} and Web UI {webui} use different API versions.","webUiOutdated":"This Web UI is outdated. Loaded {webui}, published {cdn}.","cdnMismatch":"The loaded Web UI {webui} and manifest-selected Web UI {cdn} do not match.","deviceCdnMismatch":"Firmware {firmware} and manifest-selected Web UI {cdn} use different API versions.","action":"Use firmware and a manifest-compatible Web UI release.","mismatchTitle":"Version mismatch","updateAvailable":"Update available","updateAvailableWithVersion":"Update available {version}","mismatchAction":"Use firmware and Web UI files from the same release.","updateAction":"Download the current Web UI files from the project release.","deviceLabel":"Device {version}","upToDate":"Software up to date","updateUnknown":"Update unknown","newWebUiAvailableTitle":"New Web UI version available","newFirmwareAvailableTitle":"New firmware version available","newWebUiAvailable":"New Web UI version available {version}","newFirmwareAvailable":"New firmware version available {version}","multipleUpdatesAvailable":"Updates available","webUiUpdateAction":"Download the current Web UI through the device or from the project release.","firmwareUpdateAction":"Install the current firmware from the project release."},"html":{"menuButtonLabel":"Menu","connecting":"Connecting…","projects":"Projects","newProject":"New project","projectMeasurements":"Project measurements","webUiVersion":"Web UI v0.1.2","device":"Device","deviceAddress":"Device address","connect":"Connect","measurement":"Measurement","targetSeries":"Target series","customTargetTimes":"Custom target times","sensitivity":"Sensitivity","sensitivityLow":"low","sensitivityMedium":"medium","sensitivityHigh":"high","display":"Display","results":"Results","untilButtonPress":"until button press","oledSleep":"OLED sleep","afterOneMinute":"after 1 min","afterFiveMinutes":"after 5 min","afterTenMinutes":"after 10 min","afterThirtyMinutes":"after 30 min","interpolateCharts":"Interpolate charts","saveSettings":"SAVE SETTINGS","localData":"Local data","exportWorkspaceBackup":"Export","importWorkspaceBackup":"Import","resetLocalWebUiData":"Reset","guide":"Guide","settings":"Settings","connectDeviceTitle":"Connect the device","connectDeviceSubtitle":"Connect OpenCurtainLab to your network.","cameraProjectName":"Camera / project name","cameraProjectNamePlaceholder":"e.g. Leica M3, Canon AE-1 …","measurementMode":"Measurement mode","timeSeries":"Time series","supportedShutterSpeeds":"Supported shutter speeds (1/x s)","cancel":"Cancel","create":"Create","resultDisplayOff":"off","oledSleepOff":"off","pollIntervalMs":"Polling interval (ms)"},"targetSeries":{"standard":"Standard","custom":"Custom"},"settingsInfo":{"connection":"Connection","connected":"connected","notConnected":"disconnected","ip":"IP","hostname":"Hostname","wifi":"Wi-Fi","signal":"Signal","measurements":"Measurements","status":"Status","ok":"OK","unavailable":"-","measurementId":"Measurement ID","problem":"problem","battery":"Battery"},"directions":{"leftRight":"left → right","rightLeft":"right → left","topDown":"top → bottom","bottomTop":"bottom → top"},"report":{"title":"Camera measurement report","notRated":"Not rated","excellent":"Excellent","good":"Good","usable":"Usable","needsServiceSoon":"Service useful","serviceRecommended":"Service recommended","flashRecommendedMeasured":"Fastest safely measured flash time","noSafeFlashSync":"No safe flash time measured","flashNotMeasured":"Flash sync not measured","allMeasuredFlashFailed":"All measured flash times had failures","noFlashData":"No flash data in this project","notMeasured":"Not measured","projectNote":"Project note","accuracyBody":"Rates the actual shutter speeds. High values mean the camera exposes close to the selected time and evenly across the frame. Low values point to visible timing error or brightness falloff.","reliabilityBody":"Rates whether the same setting stays consistent over repeated releases. This matters when the camera should work reproducibly, not only once. Without repeat measurements, the result is limited.","curtainBody":"Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Low values can indicate adjustment or service needs.","measurements":"Measurements","targetTimes":"Target times","mode":"Mode","overall":"Overall","recommendedFlash":"Maximum flash time","accuracy":"Accuracy","reliability":"Reliability","curtainCondition":"Curtain condition","exposureOffsets":"Exposure offsets","resultsTable":"Results table","measured":"Measured","time":"Time","offset":"Offset","spread":"Spread","repeatability":"Repeatability","maximumFlashTime":"Maximum flash time","evScale":"Offset in EV, error indicator shows spread","validProjectMeasurements":"evaluated releases; more repeats make the rating more reliable","measuredTargets":"measured target speeds in this camera project","sensorDistance":"Sensor distance","sensorDistanceSub":"X × Y spacing of the measurement grid","accuracyBodyShort":"Exposure times and spread","reliabilityBodyShort":"Repeat measurements","curtainBodyShort":"Uniformity and parallelism","scoresTitle":"Assessment","dataTitle":"Results","exposureOffsetsExplanation":"For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows how much exposure varies across the frame.","exposureBarLegend":"Bar: average timing error","exposureErrorLegend":"Whisker: frame evenness","curtainSpeedExplanation":"The lines show whether the opening and closing curtains move at similar, steady speeds across the measured settings. Smooth, close lines suggest clean shutter travel; jumps or large separation can indicate adjustment or service needs.","githubLink":"GitHub: benikum/OpenCurtainLab"}}}</script>
+<script id="ocl-i18n-all" type="application/json">{"de":{"locale":"de-DE","modes":{"vertical":"Vertikal","horizontal":"Horizontal","central":"Zentralverschluss"},"resultDisplay":{"none":"gar nicht","untilButton":"bis Tastendruck"},"config":{"none":"Keine Config geladen","address":"Adresse","series":"Messreihe","resultDisplay":"Ergebnisanzeige"},"toast":{"deviceConnected":"Gerät verbunden: {host}","deviceNotFoundHost":"Kein OpenCurtainLab unter dieser Adresse gefunden.","deviceNotFoundDefault":"Kein OpenCurtainLab unter opencurtainlab.local gefunden.","customTimesEmpty":"Custom-Zielzeiten sind leer","settingsSaved":"Einstellungen gespeichert","settingsSaveFailed":"Einstellungen konnten nicht gespeichert werden","enterProjectName":"Bitte Projektnamen eingeben","projectCreated":"Projekt \"{name}\" erstellt","backupImported":"Backup-JSON importiert","importFailed":"Import fehlgeschlagen: keine gültige JSON-Datei","backupExported":"Backup-JSON exportiert","csvExported":"Kamera-Attribute als CSV exportiert - {count} Zielzeiten","projectNameExists":"Ein Projekt mit diesem Namen existiert bereits","noTargetTimesSelected":"Bitte mindestens eine Zielzeit auswählen","customTimesInvalid":"Custom-Zielzeiten ungültig. Nutze positive Zahlen, getrennt mit Komma.","customTimesDuplicate":"Custom-Zielzeiten enthalten doppelte Werte","customTimesTooMany":"Maximal 16 Custom-Zielzeiten erlaubt","customTimesInvalidWithMax":"Custom-Zielzeiten ungültig. Nutze positive Zahlen bis 1/{max}, getrennt mit Komma.","customTimesDefaulted":"Standardzeiten geladen","localDataReset":"Lokale WebUI-Daten zurückgesetzt","defaultProjectKept":"Das Standardprojekt kann nicht gelöscht werden","measurementMovedToDefault":"Messung ins Standardprojekt verschoben","measurementAssignedToDefaultIncompatible":"Messung dem Standardprojekt zugeordnet, weil sie nicht zum ausgewählten Projekt passt.","deviceNotConnected":"Gerät nicht verbunden","languageUnavailable":"Sprachdateien sind nicht verfügbar","batteryLow":"Batterie niedrig: {voltage} V ({percent}%).","reportExported":"HTML-Kamerabericht exportiert","reportExportFailed":"HTML-Kamerabericht konnte nicht exportiert werden"},"frame":{"tutorialTitle":"OpenCurtainLab Anleitung","tutorialLoadFailed":"Die Anleitung konnte nicht geladen werden."},"connection":{"connected":"VERBUNDEN","connecting":"VERBINDE…","networkHint":"Netzwerkproblem"},"errors":{"unknown":"Unbekannter Fehler","invalidBackup":"Ungültiges Backup","unsupportedMeasurementPacket":"Nicht unterstütztes Messdatenpaket"},"confirm":{"deleteProject":"Projekt löschen?","importBackup":"Backup-JSON importieren? Aktuelle Projekte und Verlauf werden ersetzt.","resetLocalData":"Lokale WebUI-Daten zurücksetzen? Dadurch werden Projekte, Messungen und zwischengespeicherte Geräteeinstellungen gelöscht."},"empty":{"noProjectYet":"Noch kein Projekt","noMeasurements":"Keine Messungen","waitingForRelease":"Warte auf Kameraauslösung","connectDevice":"Verbinde das Gerät","connectDeviceSub":"Gib die Geräteadresse in den Einstellungen ein oder nutze opencurtainlab.local.","createFirstProject":"Erstelle dein erstes Projekt","createFirstProjectSub":"Erstelle ein Kameraprojekt für passende Messungen. Andere Messungen bleiben im Standardprojekt.","readyMeasure":"Bereit zum Messen","readyMeasureSub":"Löse den Verschluss aus.","deviceError":"Gerätefehler","createProjectAction":"Projekt erstellen","noMeasurementsYet":"Noch keine Messungen","noMeasurementsYetSub":"Löse den Kameraverschluss aus. Neue Messungen erscheinen automatisch.","selectMeasurement":"Messung auswählen","selectMeasurementSub":"Wähle einen Eintrag aus dem Verlauf, um die Messdetails zu prüfen.","waitingForProjectMeasurement":"Warte auf Messungen in {project}"},"labels":{"speeds":"Zeiten","measurements":"Messungen","noProject":"kein Projekt","target":"Ziel","warning":"Hinweis","sensorsActive":"Sensoren aktiv","noFlashDetected":"kein Blitz erkannt","inactive":"inaktiv"},"cards":{"measurement":"Messung","timelineOpening":"Zeitstrahl - Verschlussöffnung","timelineSpeed":"Vorhanggeschwindigkeit nach Sensorposition","note":"Notiz","curtainCurve":"Vorhanggeschwindigkeit nach Zielzeit","projectNote":"Projekt-Notiz"},"metrics":{"avgExposure":"Ø Belichtungszeit","avgDeviation":"Abweichung Ø","totalOpenTime":"Totale Öffnungsdauer","flashSync":"Blitz-Sync","exposureAndDeviation":"Belichtungszeit","frameSpread":"Spread über Frame","slitWidth":"Schlitzbreite","min":"min","max":"max"},"placeholders":{"projectNotes":"Notizen zu diesem Projekt…"},"condition":{"notRated":"Nicht bewertet","veryGood":"Sehr gut","good":"Gut","checkService":"Service prüfen","serviceRecommended":"Service empfohlen"},"charts":{"notEnoughCurtain":"Nicht genug Sensorpunkte für Vorhangdiagramm","openingCurtain":"ÖFFNENDER VORHANG","closingCurtain":"SCHLIEẞENDER VORHANG","v1Speed":"Öffnungsgeschwindigkeit","v2Speed":"Schließgeschwindigkeit","openingSpeed":"Öffnungsvorhang","closingSpeed":"Schließvorhang","positionAxis":"POSITION (mm)","speedAxis":"GESCHWINDIGKEIT (m/s)","targetSpeedAxis":"Zielzeit (1/x s)","noCurtainMeasurements":"Noch keine Messungen mit Vorhanggeschwindigkeit","timeRelative":"ZEIT (ms, relativ zur ersten Öffnung)"},"flash":{"within":"Blitz innerhalb der totalen Öffnung","outside":"Blitz außerhalb der totalen Öffnung","late":"Blitz in den letzten 2 ms der totalen Öffnung","none":"Kein Blitz erkannt"},"project":{"overallRating":"Kamera - Gesamtbewertung","condition":"Zustand","measurements":"Messungen","targetSpeedsMeasured":"Zielzeiten gemessen","avgDeviation":"Ø Abweichung","absoluteAcrossRuns":"Betrag, über alle Messreihen","avgScatter":"Ø Streuung σ","repeatability":"Wiederholung","linearity":"Gleichmäßigkeit","fromLocalCurtainSpeeds":"aus lokaler Vorhanggeschwindigkeit","parallelism":"Parallelität","fromSlitWidth":"aus Schlitzbreite je Sensor","zeroMeas":"0 Mess.","measShort":"Mess.","series":"Messreihe","defaultName":"Standardprojekt","deleteProject":"Projekt löschen","deleteProjectHelp":"Löscht das Projekt. Die Messungen werden ins Standardprojekt verschoben.","delete":"LÖSCHEN"},"table":{"target":"Zielzeit","avgMeasurement":"Ø Messung","grade":"Note","flash":"Blitz","curtainSpeed":"Vorhanggeschwindigkeit","frameSpread":"Spread über Frame","slitWidth":"Schlitzbreite min-max","consistency":"Konsistenz","consistencySingle":"Einzelmessung","consistencyVeryStable":"sehr stabil","consistencyStable":"stabil","consistencyCheck":"prüfen","consistencyUneven":"ungleichmäßig","slitWidthMin":"Schlitzbreite min","slitWidthMax":"Schlitzbreite max"},"csv":{"note":"Notiz","project":"Projekt","exported":"Exportiert"},"settings":{"customTimesHelp":"Nenner bis 1/{max}, durch Kommas getrennt. Leer lassen, um die Standardzeiten zu laden.","save":"EINSTELLUNGEN SPEICHERN","saving":"SPEICHERN...","saved":"GESPEICHERT","unsaved":"Ungespeicherte Änderungen","savingLabel":"Speichern..."},"quickStart":{"title":"Schnellstart","help":"Messungen werden nach jedem Verschlusstest automatisch empfangen.","steps":["Mit dem Gerät verbinden.","Projekt erstellen oder auswählen.","Zielzeit am Gerät oder in der WebUI einstellen.","Kameraverschluss auslösen.","Messung auswerten."]},"connectionHelp":{"title":"Verbindung zu OpenCurtainLab nicht möglich","steps":["Prüfe, ob das Gerät eingeschaltet ist.","Nutze opencurtainlab.local oder die IP vom OLED.","Prüfe, ob dieser Computer im gleichen WLAN ist.","Wenn der Setup-Modus aktiv ist: mit dem OpenCurtainLab-WLAN verbinden und 192.168.4.1 öffnen."]},"measurementHints":{"generic":{"action":"Prüfe den Kameraaufbau und wiederhole die Messung."},"sensor_already_active_at_start":{"title":"Sensor bereits aktiv","body":"Ein Sensor war bereits abgedeckt, als das Gerät die Messung scharf schalten wollte.","action":"Öffne den Verschlussweg, prüfe die Ausrichtung und versuche es erneut."},"flash_without_sensor":{"title":"Blitz ohne Sensorabdeckung","body":"Der Blitzkontakt wurde ausgelöst, aber kein Phototransistor hat eine Verschlussbewegung erkannt.","action":"Prüfe Blitz-Sync-Kabel, Kameramodus und Sensorausrichtung."},"timeout_with_data":{"title":"Messung abgelaufen","body":"Es wurden Sensordaten erfasst, aber der Verschlussablauf wurde nicht rechtzeitig beendet.","action":"Prüfe, ob der Verschluss hängen bleibt oder der Testaufbau passt."},"incomplete_sensor_coverage":{"title":"Unvollständige Sensorabdeckung","body":"Nicht alle fünf Sensoren wurden während dieser Messung abgedeckt.","action":"Prüfe Kameraausrichtung, Vorhangweg oder ob der Schlitz die gesamte Sensorreihe abdeckt."},"flash_already_active_at_start":{"title":"Blitzkontakt bereits aktiv","body":"Der Blitzkontakt war schon geschlossen, als das Gerät die Messung scharf schalten wollte.","action":"Prüfe Blitz-Sync-Kabel und Kamerakontakt. Der Eingang muss vor dem Auslösen offen sein."},"too_few_sensors":{"title":"Zu wenige Sensoren wurden abgedeckt","body":"Die Messung hat weniger als drei Sensoren verwendet und bleibt nur im Standardprojekt.","action":"Kameraausrichtung prüfen und die Messung wiederholen."}},"deviceErrors":{"generic":{"action":"Prüfe das Gerät und verbinde erneut, wenn der Fehler behoben ist."},"network_access_point_failed":{"title":"Setup-Access-Point fehlgeschlagen","body":"Das Gerät konnte sein Setup-WLAN nicht starten.","action":"Starte das Gerät neu. Wenn der Fehler bleibt, Firmware neu flashen oder ESP32-Board prüfen."},"display_init_failed":{"title":"Display konnte nicht initialisiert werden","body":"Das OLED-Display konnte nicht initialisiert werden.","action":"Prüfe I2C-Verdrahtung, Display-Adresse und Stromversorgung."}},"firmware":{"title":"Versionskonflikt","warning":"Firmware {actual} und WebUI {expected}.x passen möglicherweise nicht zusammen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version."},"measurement":{"moveToDefault":"Ins Standardprojekt verschieben"},"versions":{"title":"Versionsunterschied","unknown":"unbekannt","webUiLabel":"WebUI {version}","publishedLabel":"veröffentlicht {version}","firmwareWebUiMismatch":"Firmware {firmware} und WebUI {webui} nutzen unterschiedliche API-Versionen.","webUiOutdated":"Diese WebUI ist veraltet. Geladen {webui}, veröffentlicht {cdn}.","cdnMismatch":"Die geladene WebUI {webui} und die veröffentlichte Versionsdatei {cdn} passen nicht zusammen.","deviceCdnMismatch":"Firmware {firmware} und die im Manifest gewählte WebUI {cdn} nutzen unterschiedliche API-Versionen.","action":"Nutze Firmware und eine im Manifest kompatible WebUI-Version.","mismatchTitle":"Versionsunterschied","updateAvailable":"Update verfügbar","updateAvailableWithVersion":"Update verfügbar {version}","mismatchAction":"Nutze Firmware und WebUI-Dateien aus demselben Release.","updateAction":"Lade die aktuellen WebUI-Dateien aus dem Projekt-Release herunter.","deviceLabel":"Gerät {version}","upToDate":"Software auf neuestem Stand","updateUnknown":"Update unbekannt","newWebUiAvailableTitle":"Neue WebUI-Version verfügbar","newFirmwareAvailableTitle":"Neue Firmware-Version verfügbar","newWebUiAvailable":"Neue WebUI-Version verfügbar {version}","newFirmwareAvailable":"Neue Firmware-Version verfügbar {version}","multipleUpdatesAvailable":"Updates verfügbar","webUiUpdateAction":"Lade die aktuelle WebUI über das Gerät oder aus dem Projekt-Release herunter.","firmwareUpdateAction":"Installiere die aktuelle Firmware aus dem Projekt-Release."},"html":{"menuButtonLabel":"Menü","connecting":"Verbinde…","projects":"Projekte","newProject":"Neues Projekt","projectMeasurements":"Projektmessungen","webUiVersion":"WebUI v0.1.2","device":"Gerät","deviceAddress":"Geräteadresse","connect":"Verbinden","measurement":"Messung","targetSeries":"Messreihe","customTargetTimes":"Benutzerdefinierte Zeiten","sensitivity":"Empfindlichkeit","sensitivityLow":"niedrig","sensitivityMedium":"mittel","sensitivityHigh":"hoch","display":"Anzeige","results":"Ergebnisse","untilButtonPress":"bis Tastendruck","oledSleep":"OLED Schlaf","afterOneMinute":"nach 1 min","afterFiveMinutes":"nach 5 min","afterTenMinutes":"nach 10 min","afterThirtyMinutes":"nach 30 min","interpolateCharts":"Diagramme interpolieren","saveSettings":"EINSTELLUNGEN SPEICHERN","localData":"Lokale Daten","exportWorkspaceBackup":"Exportieren","importWorkspaceBackup":"Importieren","resetLocalWebUiData":"Zurücksetzen","guide":"Anleitung","settings":"Einstellungen","connectDeviceTitle":"Verbinde das Gerät","connectDeviceSubtitle":"Verbinde OpenCurtainLab mit deinem Netzwerk.","cameraProjectName":"Kamera / Projektname","cameraProjectNamePlaceholder":"z.B. Leica M3, Canon AE-1 …","measurementMode":"Messmodus","timeSeries":"Messreihe","supportedShutterSpeeds":"Unterstützte Belichtungszeiten (1/x s)","cancel":"Abbrechen","create":"Erstellen","resultDisplayOff":"gar nicht","oledSleepOff":"aus","pollIntervalMs":"Polling-Intervall (ms)"},"targetSeries":{"standard":"Standard","custom":"Benutzerdefiniert"},"settingsInfo":{"connection":"Verbindung","connected":"verbunden","notConnected":"Verbindung getrennt","ip":"IP","hostname":"Hostname","wifi":"WLAN","signal":"Signal","measurements":"Messungen","status":"Status","ok":"OK","unavailable":"-","measurementId":"Measurement-ID","problem":"Problem","battery":"Batterie"},"directions":{"leftRight":"links → rechts","rightLeft":"rechts → links","topDown":"oben → unten","bottomTop":"unten → oben"},"report":{"title":"Kamera-Messbericht","notRated":"Nicht bewertet","excellent":"Sehr gut","good":"Gut","usable":"Brauchbar","needsServiceSoon":"Service sinnvoll","serviceRecommended":"Service empfohlen","flashRecommendedMeasured":"Schnellste sicher gemessene Blitzzeit","noSafeFlashSync":"Keine sichere Blitzzeit gemessen","flashNotMeasured":"Blitzsynchronzeit nicht gemessen","allMeasuredFlashFailed":"Bei allen gemessenen Blitzzeiten gab es Fehler","noFlashData":"Keine Blitzdaten in diesem Projekt","notMeasured":"Nicht gemessen","projectNote":"Projektnotiz","accuracyBody":"Vergleicht die Kamera mit jeder gewählten Verschlusszeit. Hohe Werte bedeuten, dass die gemessene Belichtung nah am Soll liegt und über das Bild gleichmäßig ist. Eine fehlende Zielzeit zählt als Fehler, weil diese Zeit offenbar kein gültiges Timing-Ergebnis liefert.","reliabilityBody":"Bewertet, ob dieselbe Einstellung bei mehreren Auslösungen gleich bleibt. Das ist wichtig, wenn die Kamera nicht nur einmal korrekt, sondern reproduzierbar arbeiten soll. Ohne Wiederholungen ist die Aussage begrenzt.","curtainBody":"Bewertet den Lauf des Schlitzverschlusses. Gute Werte bedeuten, dass öffnender und schließender Vorhang gleichmäßig und passend zueinander laufen. Fehlende Zielzeiten senken diesen Wert, weil eine nicht nutzbare Zeit auf ein Timing-Problem des Verschlusses hinweisen kann.","measurements":"Messungen","targetTimes":"Zielzeiten","mode":"Modus","overall":"Gesamt","recommendedFlash":"Maximale Blitzzeit","accuracy":"Genauigkeit","reliability":"Zuverlässigkeit","curtainCondition":"Vorhangzustand","exposureOffsets":"Belichtungsoffsets","resultsTable":"Ergebnistabelle","measured":"Gemessen","time":"Zeit","offset":"Offset","spread":"Spread","repeatability":"Wiederholbarkeit","maximumFlashTime":"Maximale Blitzzeit","evScale":"Offset in EV, Fehlerindikator zeigt Spread","validProjectMeasurements":"ausgewertete Auslösungen; mehr Wiederholungen machen die Bewertung sicherer","measuredTargets":"gemessene Sollzeiten in diesem Kameraprojekt","sensorDistance":"Sensorabstand","sensorDistanceSub":"X × Y Abstand des Messrasters","accuracyBodyShort":"Belichtungszeiten und Spread","reliabilityBodyShort":"Wiederholungsmessungen","curtainBodyShort":"Gleichmäßigkeit und Parallelität","scoresTitle":"Bewertung","dataTitle":"Ergebnisse","exposureOffsetsExplanation":"Für jede eingestellte Verschlusszeit zeigt der Balken die mittlere Abweichung vom Sollwert. 0 EV ist ideal. Links ist die Kamera schneller, rechts langsamer. Die Fehlerlinie zeigt die Gleichmäßigkeit im Bild. Eine fehlende Zielzeit erscheint als Fehlerzeile und senkt Genauigkeit und Vorhangzustand.","exposureBarLegend":"Balken: mittlere Zeitabweichung","exposureErrorLegend":"Fehlerlinie: Bildgleichmäßigkeit","curtainSpeedExplanation":"Die Linien zeigen, ob der öffnende und der schließende Vorhang über die gemessenen Zeiten ähnlich schnell und ruhig laufen. Ruhige, nahe Linien sprechen für einen sauberen Verschlusslauf; Sprünge oder großer Abstand können Justage- oder Servicebedarf bedeuten.","githubLink":"GitHub: benikum/OpenCurtainLab","missingTargetChartLabel":"Keine gültige Messung","missingTargetRow":"Fehlende Zielzeit - zählt als Problem","missingTargetsProblem":"{count} fehlende Zielzeit(en) senken Genauigkeit und Vorhangzustand."}},"en":{"locale":"en-GB","modes":{"vertical":"vertical","horizontal":"horizontal","central":"central shutter"},"resultDisplay":{"none":"off","untilButton":"until button"},"config":{"none":"No config loaded","address":"Address","series":"Series","resultDisplay":"Result display"},"toast":{"deviceConnected":"Device connected: {host}","deviceNotFoundHost":"No OpenCurtainLab found at this address.","deviceNotFoundDefault":"No OpenCurtainLab found at opencurtainlab.local.","customTimesEmpty":"Custom target times are empty","settingsSaved":"Settings saved","settingsSaveFailed":"Settings could not be saved","enterProjectName":"Please enter a project name","projectCreated":"Project \"{name}\" created","backupImported":"Backup JSON imported","importFailed":"Import failed: no valid JSON file","backupExported":"Backup JSON exported","csvExported":"Camera attributes CSV exported - {count} target times","projectNameExists":"A project with this name already exists","noTargetTimesSelected":"Select at least one target time","customTimesInvalid":"Invalid custom target times. Use positive numbers separated by commas.","customTimesDuplicate":"Custom target times contain duplicates","customTimesTooMany":"Maximum 16 custom target times allowed","customTimesInvalidWithMax":"Invalid custom target times. Use positive numbers up to 1/{max}, separated by commas.","customTimesDefaulted":"Standard target times loaded","localDataReset":"Local WebUI data reset","defaultProjectKept":"The default project cannot be deleted","measurementMovedToDefault":"Measurement moved to the default project","measurementAssignedToDefaultIncompatible":"Measurement assigned to the default project because it does not match the selected project.","deviceNotConnected":"Device not connected","languageUnavailable":"Language resources are not available","batteryLow":"Battery low: {voltage} V ({percent}%).","reportExported":"HTML camera report exported","reportExportFailed":"HTML camera report could not be exported"},"frame":{"tutorialTitle":"OpenCurtainLab Guide","tutorialLoadFailed":"The guide could not be loaded."},"connection":{"connected":"CONNECTED","connecting":"CONNECTING…","networkHint":"Network issue"},"errors":{"unknown":"Unknown error","invalidBackup":"Invalid backup","unsupportedMeasurementPacket":"Unsupported measurement packet"},"confirm":{"deleteProject":"Delete project?","importBackup":"Import backup JSON? Current projects and history will be replaced.","resetLocalData":"Reset all local WebUI data? This removes projects, measurements and cached device settings."},"empty":{"noProjectYet":"No project yet","noMeasurements":"No measurements","waitingForRelease":"Waiting for camera release","connectDevice":"Connect the device","connectDeviceSub":"Enter the device address in Settings or use opencurtainlab.local.","createFirstProject":"Create your first project","createFirstProjectSub":"Create a camera project to collect compatible measurements. Other measurements stay in the default project.","readyMeasure":"Ready to measure","readyMeasureSub":"Release the shutter.","deviceError":"Device error","createProjectAction":"Create project","noMeasurementsYet":"No measurements yet","noMeasurementsYetSub":"Trigger the camera shutter. New measurements will appear automatically.","selectMeasurement":"Select a measurement","selectMeasurementSub":"Choose an entry from the history to inspect timing details.","waitingForProjectMeasurement":"Waiting for measurements in {project}"},"labels":{"speeds":"speeds","measurements":"measurements","noProject":"no project","target":"Target","warning":"Warning","sensorsActive":"sensors active","noFlashDetected":"no flash detected","inactive":"inactive"},"cards":{"measurement":"Measurement","timelineOpening":"Timeline - shutter opening","timelineSpeed":"Curtain speed by sensor position","note":"Note","curtainCurve":"Curtain speed by target","projectNote":"Project note"},"metrics":{"avgExposure":"Avg exposure time","avgDeviation":"Avg deviation","totalOpenTime":"Total open time","flashSync":"Flash sync","exposureAndDeviation":"Exposure time","frameSpread":"Spread over frame","slitWidth":"Slit width","min":"min","max":"max"},"placeholders":{"projectNotes":"Notes for this project…"},"condition":{"notRated":"Not rated","veryGood":"Very good","good":"Good","checkService":"Check service","serviceRecommended":"Service recommended"},"charts":{"notEnoughCurtain":"Not enough sensor points for curtain chart","openingCurtain":"OPENING CURTAIN","closingCurtain":"CLOSING CURTAIN","v1Speed":"Opening speed","v2Speed":"Closing speed","openingSpeed":"Opening speed","closingSpeed":"Closing speed","positionAxis":"POSITION (mm)","speedAxis":"SPEED (m/s)","targetSpeedAxis":"Target speed (1/x s)","noCurtainMeasurements":"No measurements with curtain speed data yet","timeRelative":"TIME (ms, relative to first opening)"},"flash":{"within":"Flash within total opening","outside":"Flash outside total opening","late":"Flash in the last 2 ms of total opening","none":"No flash detected"},"project":{"overallRating":"Camera - overall rating","condition":"Condition","measurements":"Measurements","targetSpeedsMeasured":"target speeds measured","avgDeviation":"Avg deviation","absoluteAcrossRuns":"absolute, across all runs","avgScatter":"Avg scatter σ","repeatability":"repeatability","linearity":"Linearity","fromLocalCurtainSpeeds":"from local curtain speeds","parallelism":"Parallelism","fromSlitWidth":"from slit width at each sensor","zeroMeas":"0 meas.","measShort":"meas.","series":"Time series","defaultName":"Default project","deleteProject":"Delete project","deleteProjectHelp":"Deletes the project. Its measurements move to the default project.","delete":"DELETE"},"table":{"target":"Target","avgMeasurement":"Avg measurement","grade":"Grade","flash":"Flash","curtainSpeed":"Curtain speed","frameSpread":"Spread over frame","slitWidth":"Slit width min-max","consistency":"Consistency","consistencySingle":"single measurement","consistencyVeryStable":"very stable","consistencyStable":"stable","consistencyCheck":"check","consistencyUneven":"uneven","slitWidthMin":"Slit width min","slitWidthMax":"Slit width max"},"csv":{"note":"Note","project":"Project","exported":"Exported"},"settings":{"customTimesHelp":"Comma-separated denominators up to 1/{max}. Leave empty to load the standard times.","save":"SAVE SETTINGS","saving":"SAVING...","saved":"SAVED","unsaved":"Unsaved changes","savingLabel":"Saving..."},"quickStart":{"title":"Quick start","help":"Measurements are received automatically after each shutter test.","steps":["Connect to the device.","Create or select a project.","Set the target time on the device or in the Web UI.","Fire the camera shutter.","Review the measurement."]},"connectionHelp":{"title":"Could not connect to OpenCurtainLab","steps":["Make sure the device is powered on.","Use opencurtainlab.local or the IP shown on the OLED.","Make sure this computer is on the same Wi-Fi network.","If setup mode is active, connect to the OpenCurtainLab Wi-Fi and open 192.168.4.1."]},"measurementHints":{"generic":{"action":"Check the camera setup and repeat the measurement."},"sensor_already_active_at_start":{"title":"Sensor already active","body":"A sensor was already covered when the device tried to arm the measurement.","action":"Open the shutter path, check alignment, then try again."},"flash_without_sensor":{"title":"Flash without sensor coverage","body":"The flash input fired, but no phototransistor detected shutter movement.","action":"Check the flash sync cable, camera mode, and sensor alignment."},"timeout_with_data":{"title":"Measurement timed out","body":"Some sensor data was captured, but the shutter sequence did not finish in time.","action":"Check whether the shutter got stuck or the selected test setup is correct."},"incomplete_sensor_coverage":{"title":"Incomplete sensor coverage","body":"Not all five sensors were covered during this measurement.","action":"Check camera alignment, curtain travel, or whether the shutter slit covers the full sensor array."},"flash_already_active_at_start":{"title":"Flash contact already active","body":"The flash contact was already closed when the device tried to arm the measurement.","action":"Check the flash sync cable and camera contact. The input must be open before release."},"too_few_sensors":{"title":"Too few sensors were covered","body":"The measurement used fewer than three sensors and is kept only in the default project.","action":"Check camera alignment and repeat the measurement."}},"deviceErrors":{"generic":{"action":"Check the device and reconnect when the problem is fixed."},"network_access_point_failed":{"title":"Setup access point failed","body":"The device could not start its setup Wi-Fi network.","action":"Restart the device. If this persists, reflash the firmware or check the ESP32 board."},"display_init_failed":{"title":"Display initialization failed","body":"The OLED display could not be initialized.","action":"Check the I2C wiring, display address, and power supply."}},"firmware":{"title":"Version mismatch","warning":"Firmware {actual} and Web UI {expected}.x may not match.","action":"Use firmware and a manifest-compatible Web UI release."},"measurement":{"moveToDefault":"Move to default project"},"versions":{"title":"version mismatch","unknown":"unknown","webUiLabel":"WebUI {version}","publishedLabel":"published {version}","firmwareWebUiMismatch":"Firmware {firmware} and Web UI {webui} use different API versions.","webUiOutdated":"This Web UI is outdated. Loaded {webui}, published {cdn}.","cdnMismatch":"The loaded Web UI {webui} and manifest-selected Web UI {cdn} do not match.","deviceCdnMismatch":"Firmware {firmware} and manifest-selected Web UI {cdn} use different API versions.","action":"Use firmware and a manifest-compatible Web UI release.","mismatchTitle":"Version mismatch","updateAvailable":"Update available","updateAvailableWithVersion":"Update available {version}","mismatchAction":"Use firmware and Web UI files from the same release.","updateAction":"Download the current Web UI files from the project release.","deviceLabel":"Device {version}","upToDate":"Software up to date","updateUnknown":"Update unknown","newWebUiAvailableTitle":"New Web UI version available","newFirmwareAvailableTitle":"New firmware version available","newWebUiAvailable":"New Web UI version available {version}","newFirmwareAvailable":"New firmware version available {version}","multipleUpdatesAvailable":"Updates available","webUiUpdateAction":"Download the current Web UI through the device or from the project release.","firmwareUpdateAction":"Install the current firmware from the project release."},"html":{"menuButtonLabel":"Menu","connecting":"Connecting…","projects":"Projects","newProject":"New project","projectMeasurements":"Project measurements","webUiVersion":"Web UI v0.1.2","device":"Device","deviceAddress":"Device address","connect":"Connect","measurement":"Measurement","targetSeries":"Target series","customTargetTimes":"Custom target times","sensitivity":"Sensitivity","sensitivityLow":"low","sensitivityMedium":"medium","sensitivityHigh":"high","display":"Display","results":"Results","untilButtonPress":"until button press","oledSleep":"OLED sleep","afterOneMinute":"after 1 min","afterFiveMinutes":"after 5 min","afterTenMinutes":"after 10 min","afterThirtyMinutes":"after 30 min","interpolateCharts":"Interpolate charts","saveSettings":"SAVE SETTINGS","localData":"Local data","exportWorkspaceBackup":"Export","importWorkspaceBackup":"Import","resetLocalWebUiData":"Reset","guide":"Guide","settings":"Settings","connectDeviceTitle":"Connect the device","connectDeviceSubtitle":"Connect OpenCurtainLab to your network.","cameraProjectName":"Camera / project name","cameraProjectNamePlaceholder":"e.g. Leica M3, Canon AE-1 …","measurementMode":"Measurement mode","timeSeries":"Time series","supportedShutterSpeeds":"Supported shutter speeds (1/x s)","cancel":"Cancel","create":"Create","resultDisplayOff":"off","oledSleepOff":"off","pollIntervalMs":"Polling interval (ms)"},"targetSeries":{"standard":"Standard","custom":"Custom"},"settingsInfo":{"connection":"Connection","connected":"connected","notConnected":"disconnected","ip":"IP","hostname":"Hostname","wifi":"Wi-Fi","signal":"Signal","measurements":"Measurements","status":"Status","ok":"OK","unavailable":"-","measurementId":"Measurement ID","problem":"problem","battery":"Battery"},"directions":{"leftRight":"left → right","rightLeft":"right → left","topDown":"top → bottom","bottomTop":"bottom → top"},"report":{"title":"Camera measurement report","notRated":"Not rated","excellent":"Excellent","good":"Good","usable":"Usable","needsServiceSoon":"Service useful","serviceRecommended":"Service recommended","flashRecommendedMeasured":"Fastest safely measured flash time","noSafeFlashSync":"No safe flash time measured","flashNotMeasured":"Flash sync not measured","allMeasuredFlashFailed":"All measured flash times had failures","noFlashData":"No flash data in this project","notMeasured":"Not measured","projectNote":"Project note","accuracyBody":"Compares the camera with every selected shutter speed. High values mean the measured exposure is close to the target and even across the frame. A missing target speed counts as a fault because this speed apparently produced no valid timing result.","reliabilityBody":"Rates whether the same setting stays consistent over repeated releases. This matters when the camera should work reproducibly, not only once. Without repeat measurements, the result is limited.","curtainBody":"Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Missing target speeds lower this value because an unusable speed can indicate a shutter timing problem.","measurements":"Measurements","targetTimes":"Target times","mode":"Mode","overall":"Overall","recommendedFlash":"Maximum flash time","accuracy":"Accuracy","reliability":"Reliability","curtainCondition":"Curtain condition","exposureOffsets":"Exposure offsets","resultsTable":"Results table","measured":"Measured","time":"Time","offset":"Offset","spread":"Spread","repeatability":"Repeatability","maximumFlashTime":"Maximum flash time","evScale":"Offset in EV, error indicator shows spread","validProjectMeasurements":"evaluated releases; more repeats make the rating more reliable","measuredTargets":"measured target speeds in this camera project","sensorDistance":"Sensor distance","sensorDistanceSub":"X × Y spacing of the measurement grid","accuracyBodyShort":"Exposure times and spread","reliabilityBodyShort":"Repeat measurements","curtainBodyShort":"Uniformity and parallelism","scoresTitle":"Assessment","dataTitle":"Results","exposureOffsetsExplanation":"For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows frame evenness. A missing target speed is shown as a failed row and lowers the accuracy and curtain-condition scores.","exposureBarLegend":"Bar: average timing error","exposureErrorLegend":"Whisker: frame evenness","curtainSpeedExplanation":"The lines show whether the opening and closing curtains move at similar, steady speeds across the measured settings. Smooth, close lines suggest clean shutter travel; jumps or large separation can indicate adjustment or service needs.","githubLink":"GitHub: benikum/OpenCurtainLab","missingTargetChartLabel":"No valid measurement","missingTargetRow":"Missing target time - counted as a problem","missingTargetsProblem":"{count} missing target time(s) lower accuracy and curtain condition."}}}</script>
     <template id="ocl-tutorial-de"><article class="tutorial-page tutorial guide">
 <section class="hero">
 <div class="eyebrow">OpenCurtainLab Anleitung</div>
@@ -1825,32 +1857,33 @@ canvas#tl {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{PAGE_TITLE}}</title>
-<style>:root{--a4-w:21cm;--a4-h:29.7cm;--page-pad:.68cm;--header-h:3.25cm;--footer-h:.42cm;--paper:#ffffff;--ink:#20201d;--muted:#6c665d;--line:#d9cdbb;--gold:#b78325;--green:#387a4a;--red:#a8493d;--blue:#315f89;--soft:#ffffff}
+<style>:root{--a4-w:21cm;--a4-h:29.7cm;--page-pad:1.27cm;--header-h:3.25cm;--footer-h:.52cm;--paper:#ffffff;--ink:#20201d;--muted:#6c665d;--line:#d9cdbb;--gold:#b78325;--green:#387a4a;--red:#a8493d;--blue:#315f89;--soft:#ffffff;--fs-body:.34cm;--fs-eyebrow:.27cm;--fs-h1:.74cm;--fs-h2:.38cm;--fs-h3:.33cm;--fs-header:.33cm;--fs-seal:.58cm;--fs-seal-small:.30cm;--fs-score:.39cm;--fs-card:.30cm;--fs-data-label:.26cm;--fs-data-value:.42cm;--fs-chart-note:.28cm;--fs-svg:.33cm;--fs-svg-small:.29cm;--fs-footer:.26cm}
 *{box-sizing:border-box}
 html{background:#29251f}
-body{margin:0;background:#29251f;color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:12px;line-height:1.25}
-a{color:inherit;text-decoration:none;border-bottom:1px solid currentColor}
+body{margin:0;background:#29251f;color:var(--ink);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:var(--fs-body);line-height:1.22}
+a{color:inherit;text-decoration:none;border-bottom:.018cm solid currentColor}
 .page{width:min(var(--a4-w),calc(100vw - 1cm));height:min(var(--a4-h),calc((100vw - 1cm) * 1.414285714));max-width:var(--a4-w);max-height:var(--a4-h);aspect-ratio:210/297;margin:.5cm auto;padding:var(--page-pad);background:var(--paper);box-shadow:0 .65cm 2.2cm rgba(0,0,0,.34);border:.03cm solid rgba(255,255,255,.24);overflow:hidden;display:flex;flex-direction:column;min-height:0}
-header{height:var(--header-h);min-height:var(--header-h);max-height:var(--header-h);border:.06cm solid var(--gold);padding:.43cm .52cm;display:grid;grid-template-columns:1fr auto;gap:.46cm;align-items:center;background:linear-gradient(135deg,#fffaf0,#f3ead9);break-inside:avoid;flex:0 0 var(--header-h);overflow:hidden}
-.eyebrow{color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.18em;font-weight:700}
-h1{margin:.12cm 0 0;font-size:29px;line-height:1.02;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-h2{font-size:14px;margin:0 0 .12cm;text-transform:uppercase;letter-spacing:.08em;color:#4a4034;flex:0 0 auto}
-h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#4a4034}
-header p{margin:.12cm 0 0;color:var(--muted);font-size:12px}.seal{width:2.45cm;height:2.45cm;border-radius:50%;border:.06cm solid var(--gold);display:grid;place-items:center;text-align:center;color:var(--gold);font-weight:800;letter-spacing:.08em;background:#fff8e8;flex:0 0 auto}.seal div{font-size:22px;line-height:1.12}.seal small{font-size:12px;color:#8d6a31;letter-spacing:.04em}
-section{margin-top:.26cm;min-height:0}.scores-section,.data-section,.note{flex:0 0 auto}.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:.18cm;margin:0;break-inside:avoid}.score-card{background:var(--soft);border:.03cm solid var(--line);padding:.22cm;break-inside:avoid}.score-card-top{display:flex;justify-content:space-between;gap:.18cm;align-items:center}.score-card strong{font-size:14px;white-space:nowrap}.score-card p{color:var(--muted);font-size:10.3px;line-height:1.17;margin:.11cm 0 0}.score-bar{height:.14cm;background:#e6ddcf;border-radius:99px;overflow:hidden;margin-top:.14cm}.score-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--green));border-radius:99px}
-.data-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:.18cm;margin-top:0;break-inside:avoid}.data-field{background:var(--soft);border:.03cm solid var(--line);padding:.20cm .22cm}.data-field span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.data-field strong{display:block;margin-top:.07cm;font-size:15px}.data-field small{display:block;margin-top:.05cm;color:var(--muted);font-size:10px;line-height:1.15}.muted{color:var(--muted)}
-.chart-section{display:flex;flex-direction:column;flex:1.15 1 0;min-height:0;break-inside:avoid}.curtain-speed-section{flex:.9 1 0}.chart-explainer{display:grid;grid-template-columns:1.45fr .9fr;gap:.22cm;margin:0 0 .10cm;align-items:start;color:var(--muted);font-size:10.5px;line-height:1.18;flex:0 0 auto}.chart-explainer p{margin:0}.chart-legend{display:grid;gap:.06cm}.chart-legend div{display:flex;align-items:center;gap:.12cm}.legend-bar{width:.55cm;height:.18cm;border-radius:99px;background:var(--gold);display:inline-block}.legend-error{width:.55cm;height:0;border-top:.04cm solid #463d33;display:inline-block;position:relative}.legend-error:before,.legend-error:after{content:"";position:absolute;top:-.11cm;width:0;height:.20cm;border-left:.04cm solid #463d33}.legend-error:before{left:0}.legend-error:after{right:0}.legend-line{width:.58cm;height:0;border-top:.055cm solid var(--green);display:inline-block}.legend-line.closing{border-color:var(--blue)}
-.offset-chart,.curtain-speed-chart{display:block;width:100%;height:100%;min-height:0;max-height:100%;background:var(--soft);border:.03cm solid var(--line);padding:.08cm;break-inside:avoid;flex:1 1 0}.offset-chart .grid,.curtain-speed-chart .grid{stroke:#dfd3c1;stroke-width:1}.offset-chart .zero,.curtain-speed-chart .axis{stroke:#8f806c;stroke-width:1.4}.offset-chart rect{fill:var(--gold);opacity:.86}.offset-chart .error,.offset-chart .error-cap{stroke:#463d33;stroke-width:1.4}.offset-chart text,.curtain-speed-chart text{font-size:11px;fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.offset-chart .target,.curtain-speed-chart .target{font-weight:700;fill:#4a4034}.offset-chart .value{fill:#4a4034}.offset-chart .axis-label,.curtain-speed-chart .axis-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;fill:#6c665d}.offset-chart .tick,.curtain-speed-chart .tick{font-size:10px}.curtain-speed-chart .soft{opacity:.62}.curtain-speed-chart .curtain-line{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.curtain-speed-chart .curtain-line.opening{stroke:var(--green)}.curtain-speed-chart .curtain-line.closing{stroke:var(--blue)}.curtain-speed-chart circle{stroke:#fff;stroke-width:1.4}.curtain-speed-chart circle.opening{fill:var(--green)}.curtain-speed-chart circle.closing{fill:var(--blue)}
-.note{background:var(--soft);border:.03cm solid var(--line);padding:.18cm .22cm;margin:.22cm 0 0;break-inside:avoid;max-height:1.18cm;overflow:hidden}.note p{margin:0;color:#423b33;white-space:pre-line;font-size:10px;line-height:1.16;max-height:.74cm;overflow:hidden}.footer{height:var(--footer-h);min-height:var(--footer-h);max-height:var(--footer-h);margin-top:auto;padding-top:.10cm;border-top:.03cm solid var(--line);display:flex;align-items:flex-end;color:var(--muted);font-size:10px;flex:0 0 var(--footer-h);overflow:hidden}.footer span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.compact-report{--header-h:3.05cm;--page-pad:.62cm}.compact-report .chart-explainer,.dense-report .chart-explainer{font-size:9.3px;line-height:1.12}.compact-report .score-card p{font-size:9.5px}.dense-report{--header-h:2.9cm;--page-pad:.56cm}.dense-report h1{font-size:25px}.dense-report .score-card{padding:.17cm}.dense-report .score-card p{font-size:8.9px;line-height:1.08;margin-top:.08cm}.dense-report section{margin-top:.18cm}.dense-report .data-field small{font-size:8.8px}.dense-report .note{max-height:.88cm}.dense-report .chart-explainer{font-size:8.7px}.dense-report .offset-chart text,.dense-report .curtain-speed-chart text{font-size:9.5px}
+header{height:var(--header-h);min-height:var(--header-h);max-height:var(--header-h);border:.06cm solid var(--gold);padding:.34cm .52cm;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr;gap:.46cm;align-items:center;background:linear-gradient(135deg,#fffaf0,#f3ead9);break-inside:avoid;flex:0 0 var(--header-h);overflow:hidden}
+.header-copy{align-self:center;display:flex;flex-direction:column;justify-content:center;min-height:100%;min-width:0}
+.eyebrow{color:var(--gold);font-size:var(--fs-eyebrow);text-transform:uppercase;letter-spacing:.18em;font-weight:700;line-height:1}
+h1{margin:.12cm 0 0;font-size:var(--fs-h1);line-height:1.02;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+h2{font-size:var(--fs-h2);margin:0 0 .14cm;text-transform:uppercase;letter-spacing:.08em;color:#4a4034;flex:0 0 auto;line-height:1.05}
+h3{margin:0;font-size:var(--fs-h3);text-transform:uppercase;letter-spacing:.08em;color:#4a4034;line-height:1.08}
+header p{margin:.12cm 0 0;color:var(--muted);font-size:var(--fs-header);line-height:1.08}.seal{width:2.45cm;height:2.45cm;align-self:center;justify-self:end;margin:auto 0;border-radius:50%;border:.06cm solid var(--gold);display:grid;place-items:center;text-align:center;color:var(--gold);font-weight:800;letter-spacing:.08em;background:#fff8e8;flex:0 0 auto}.seal div{font-size:var(--fs-seal);line-height:1.03;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%}.seal br{display:none}.seal small{font-size:var(--fs-seal-small);line-height:1.05;color:#8d6a31;letter-spacing:.04em}
+section{margin-top:.26cm;min-height:0}.scores-section,.data-section,.note{flex:0 0 auto}.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:.18cm;margin:0;break-inside:avoid}.score-card{background:var(--soft);border:.03cm solid var(--line);padding:.20cm;break-inside:avoid}.score-card-top{display:flex;justify-content:space-between;gap:.18cm;align-items:center}.score-card strong{font-size:var(--fs-score);white-space:nowrap}.score-card p{color:var(--muted);font-size:var(--fs-card);line-height:1.12;margin:.10cm 0 0}.score-bar{height:.14cm;background:#e6ddcf;border-radius:99px;overflow:hidden;margin-top:.13cm}.score-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--green));border-radius:99px}
+.data-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:.18cm;margin-top:0;break-inside:avoid}.data-field{background:var(--soft);border:.03cm solid var(--line);padding:.18cm .20cm}.data-field span{display:block;color:var(--muted);font-size:var(--fs-data-label);text-transform:uppercase;letter-spacing:.08em}.data-field strong{display:block;margin-top:.06cm;font-size:var(--fs-data-value);line-height:1.08}.data-field small{display:block;margin-top:.04cm;color:var(--muted);font-size:var(--fs-data-label);line-height:1.12}.muted{color:var(--muted)}
+.chart-section{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;break-inside:avoid}.curtain-speed-section{flex:0 0 auto}.chart-explainer{display:grid;grid-template-columns:1.45fr .9fr;gap:.22cm;margin:0 0 .24cm;align-items:start;color:var(--muted);font-size:var(--fs-chart-note);line-height:1.14;flex:0 0 auto}.chart-explainer p{margin:0}.chart-legend{display:grid;gap:.06cm}.chart-legend div{display:flex;align-items:center;gap:.12cm}.legend-bar{width:.55cm;height:.18cm;border-radius:99px;background:var(--gold);display:inline-block}.legend-error{width:.55cm;height:0;border-top:.04cm solid #463d33;display:inline-block;position:relative}.legend-error:before,.legend-error:after{content:"";position:absolute;top:-.11cm;width:0;height:.20cm;border-left:.04cm solid #463d33}.legend-error:before{left:0}.legend-error:after{right:0}.legend-line{width:.58cm;height:0;border-top:.055cm solid var(--green);display:inline-block}.legend-line.closing{border-color:var(--blue)}
+.offset-chart,.curtain-speed-chart{display:block;width:100%;height:auto;min-height:0;max-width:100%;background:var(--soft);border:.03cm solid var(--line);padding:.08cm;break-inside:avoid;flex:0 0 auto}.offset-chart{max-height:5.1cm}.curtain-speed-chart{max-height:none;align-self:stretch}.offset-chart .grid,.curtain-speed-chart .grid{stroke:#dfd3c1;stroke-width:1}.offset-chart .zero,.curtain-speed-chart .axis{stroke:#8f806c;stroke-width:1.4}.offset-chart rect{fill:var(--gold);opacity:.86}.offset-chart .missing-band{fill:var(--red);opacity:.16}.offset-chart .missing-label{fill:var(--red);font-weight:800}.offset-chart .error,.offset-chart .error-cap{stroke:#463d33;stroke-width:1.4}.offset-chart text,.curtain-speed-chart text{font-size:var(--fs-svg);fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.offset-chart .target,.curtain-speed-chart .target{font-weight:700;fill:#4a4034}.offset-chart .target.missing-target,.curtain-speed-chart .target.missing-target{fill:var(--red)}.offset-chart .value{fill:#4a4034}.offset-chart .axis-label,.curtain-speed-chart .axis-label{font-size:var(--fs-svg-small);text-transform:uppercase;letter-spacing:.08em;fill:#6c665d}.offset-chart .tick,.curtain-speed-chart .tick{font-size:var(--fs-svg-small)}.curtain-speed-chart .soft{opacity:.62}.curtain-speed-chart .curtain-line{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}.curtain-speed-chart .curtain-line.opening{stroke:var(--green)}.curtain-speed-chart .curtain-line.closing{stroke:var(--blue)}.curtain-speed-chart circle{stroke:#fff;stroke-width:1.4}.curtain-speed-chart circle.opening{fill:var(--green)}.curtain-speed-chart circle.closing{fill:var(--blue)}
+.note{background:var(--soft);border:.03cm solid var(--line);padding:.16cm .20cm;margin:.22cm 0 0;break-inside:avoid;max-height:1.18cm;overflow:hidden}.note p{margin:0;color:#423b33;white-space:pre-line;font-size:var(--fs-data-label);line-height:1.12;max-height:.74cm;overflow:hidden}.footer{height:var(--footer-h);min-height:var(--footer-h);max-height:var(--footer-h);margin-top:auto;padding-top:.10cm;border-top:.03cm solid var(--line);display:flex;align-items:flex-end;color:var(--muted);font-size:var(--fs-footer);flex:0 0 var(--footer-h);overflow:hidden}.footer span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compact-report{--header-h:3.22cm;--fs-body:.33cm;--fs-h1:.70cm;--fs-card:.285cm;--fs-chart-note:.27cm;--fs-svg:.32cm;--fs-svg-small:.28cm}.compact-report .offset-chart{max-height:4.75cm}.dense-report{--header-h:3.12cm;--fs-body:.32cm;--fs-h1:.67cm;--fs-h2:.36cm;--fs-h3:.31cm;--fs-header:.31cm;--fs-score:.36cm;--fs-card:.27cm;--fs-data-label:.25cm;--fs-data-value:.39cm;--fs-chart-note:.26cm;--fs-svg:.31cm;--fs-svg-small:.27cm}.dense-report .offset-chart{max-height:4.45cm}.dense-report .score-card{padding:.16cm}.dense-report .score-card p{line-height:1.08;margin-top:.08cm}.dense-report section{margin-top:.18cm}.dense-report .chart-explainer{margin-bottom:.20cm}.dense-report .note{max-height:.88cm}
 @page{size:A4;margin:0}
-@media print{html,body{width:21cm;height:29.7cm;background:#ffffff;overflow:hidden}body{font-size:11px;line-height:1.2;-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:21cm;height:29.7cm;max-width:21cm;max-height:29.7cm;aspect-ratio:210/297;margin:0;padding:.6cm;box-shadow:none;border:0;background:#ffffff;overflow:hidden}header{background:#ffffff}.eyebrow{font-size:9px}h1{font-size:22px}h2{font-size:11px;margin-bottom:.08cm}h3{font-size:9.5px}header p{font-size:9.5px}.seal div{font-size:14px}.seal small{font-size:9px}.scores{gap:.10cm}.score-card{padding:.12cm}.score-card strong{font-size:10.5px}.score-card p{font-size:8.2px;line-height:1.08;margin-top:.06cm}.score-bar{height:.09cm;margin-top:.06cm}section{margin-top:.16cm}.chart-explainer{grid-template-columns:1.5fr .85fr;gap:.18cm;font-size:8px;line-height:1.08;margin-bottom:.05cm}.data-fields{gap:.10cm}.data-field{padding:.12cm .14cm}.data-field span{font-size:8px}.data-field strong{font-size:11px}.data-field small{font-size:8px;line-height:1.08}.offset-chart,.curtain-speed-chart{padding:.04cm;background:#ffffff}.offset-chart text,.curtain-speed-chart text{font-size:8.6px}.offset-chart .axis-label,.curtain-speed-chart .axis-label,.offset-chart .tick,.curtain-speed-chart .tick{font-size:7.8px}.note{padding:.10cm .14cm;margin:.14cm 0 0;max-height:.82cm}.note h2{display:none}.note p{font-size:8px;max-height:.6cm}.footer{font-size:8px;padding-top:.04cm}.dense-report h1{font-size:20px}.dense-report .score-card p{font-size:7.6px}.dense-report .chart-explainer{font-size:7.6px}}
-@media screen and (max-width:760px){.page{width:calc(100vw - .5cm);height:calc((100vw - .5cm) * 1.414285714);margin:.25cm auto;padding:.45cm;overflow:hidden}header,.scores,.data-fields,.chart-explainer{grid-template-columns:1fr}.seal{width:2.1cm;height:2.1cm}.seal div{font-size:19px}.seal small{font-size:11px}h1{font-size:24px}.chart-legend{display:none}.score-card p,.data-field small{font-size:8.5px}}</style>
+@media print{html,body{width:21cm;height:29.7cm;background:#ffffff;overflow:hidden}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{width:21cm;height:29.7cm;max-width:21cm;max-height:29.7cm;aspect-ratio:210/297;margin:0;padding:var(--page-pad);box-shadow:none;border:0;background:#ffffff;overflow:hidden}header{background:#ffffff}.scores{gap:.10cm}.score-card{padding:.14cm}.score-bar{height:.10cm;margin-top:.07cm}section{margin-top:.18cm}.chart-explainer{grid-template-columns:1.5fr .85fr;gap:.18cm;margin-bottom:.20cm}.data-fields{gap:.10cm}.data-field{padding:.12cm .14cm}.offset-chart,.curtain-speed-chart{padding:.04cm;background:#ffffff}.offset-chart{max-height:4.45cm}.curtain-speed-chart{max-height:none}.note{padding:.10cm .14cm;margin:.14cm 0 0;max-height:.82cm}.note h2{display:none}.note p{max-height:.6cm}.footer{padding-top:.04cm}}
+@media screen and (max-width:760px){.page{width:calc(100vw - .5cm);height:calc((100vw - .5cm) * 1.414285714);margin:.25cm auto;padding:.45cm;overflow:hidden;--fs-body:.25cm;--fs-eyebrow:.20cm;--fs-h1:.54cm;--fs-h2:.26cm;--fs-header:.23cm;--fs-seal:.42cm;--fs-seal-small:.22cm;--fs-score:.28cm;--fs-card:.20cm;--fs-data-label:.19cm;--fs-data-value:.30cm;--fs-chart-note:.20cm;--fs-svg:.24cm;--fs-svg-small:.21cm;--fs-footer:.19cm}header,.scores,.data-fields,.chart-explainer{grid-template-columns:1fr}.seal{width:2.1cm;height:2.1cm}.chart-legend{display:none}}</style>
 </head>
 <body>
 <main class="page {{REPORT_DENSITY_CLASS}}">
 <header>
- <div><div class="eyebrow">OpenCurtainLab v{{APP_VERSION}}</div><h1>{{PROJECT_NAME}}</h1><p>{{REPORT_TITLE}} · {{EXPORTED_AT}}</p></div>
+ <div class="header-copy"><div class="eyebrow">OpenCurtainLab v{{APP_VERSION}}</div><h1>{{PROJECT_NAME}}</h1><p>{{REPORT_TITLE}} - {{EXPORTED_AT}}</p></div>
  <div class="seal"><div>{{OVERALL_GRADE}}<br><small>{{OVERALL_LABEL}}</small></div></div>
 </header>
 {{PROJECT_NOTE}}
@@ -1860,7 +1893,7 @@ section{margin-top:.26cm;min-height:0}.scores-section,.data-section,.note{flex:0
 <section class="data-section"><h2>{{DATA_TITLE}}</h2>{{DATA_FIELDS}}</section>
 <section class="chart-section"><h2>{{EXPOSURE_OFFSETS_TITLE}}</h2><div class="chart-explainer"><p>{{EXPOSURE_OFFSETS_EXPLANATION}}</p><div class="chart-legend"><div><span class="legend-bar"></span><span>{{EXPOSURE_BAR_LEGEND}}</span></div><div><span class="legend-error"></span><span>{{EXPOSURE_ERROR_LEGEND}}</span></div></div></div>{{OFFSET_CHART}}</section>
 {{CURTAIN_SPEED_SECTION}}
-<div class="footer"><span><a href="{{GITHUB_URL}}">{{GITHUB_LABEL}}</a> · {{EXPORTED_AT}}</span></div>
+<div class="footer"><span><a href="{{GITHUB_URL}}">{{GITHUB_LABEL}}</a> - {{EXPORTED_AT}}</span></div>
 </main>
 </body>
 </html>
@@ -2013,6 +2046,49 @@ function devStatus(ev) {
 function devColor(ev) { return devStatus(ev).color; }
 function devClass(ev) { return devStatus(ev).level; }
 
+function displayDash() { return '-'; }
+
+function formatFixed(value, digits = 2, fallback = '-') {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : fallback;
+}
+
+function formatSignedNumber(value, digits = 2, fallback = '-') {
+  const n = Number(value);
+  return Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(digits) : fallback;
+}
+
+function formatEv(value, fallback = '-') {
+  const text = formatSignedNumber(value, 2, fallback);
+  return text === fallback ? fallback : text + ' EV';
+}
+
+function formatMs(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' ms';
+}
+
+function formatMm(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' mm';
+}
+
+function formatMetersPerSecond(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' m/s';
+}
+
+function formatTimeMinute(date = new Date()) {
+  return date.toLocaleTimeString(uiLocale(), { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateTimeMinute(date = new Date()) {
+  return date.toLocaleString(uiLocale(), {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
 function niceInterval(range, maxTicks) {
   const raw = Math.max(Math.abs(range) / Math.max(maxTicks, 1), Number.EPSILON);
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -2092,7 +2168,7 @@ const DEFAULT_DEVICE_SETTINGS = {
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
 const DEFAULT_UI_SETTINGS = {
-  interpolateCharts: false,
+  interpolateCharts: true,
   pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
 };
 
@@ -2196,8 +2272,32 @@ function projectById(id) {
 }
 
 function normalizeMeasurementMode(mode) {
-  const key = String(mode || '').toLowerCase();
-  return key === 'vertical' ? 'vertical' : key === 'central' ? 'central' : 'horizontal';
+  const key = String(mode || '').toLowerCase().replace(/[\s_-]+/g, '');
+  if (key === 'vertical') return 'vertical';
+  if (key === 'central' || key === 'centralshutter' || key === 'leaf' || key === 'leafshutter' || key === 'lensshutter' || key === 'objektivverschluss' || key === 'zentralverschluss') return 'central';
+  return 'horizontal';
+}
+
+function isLowSensorCoverageHint(hint) {
+  return hint === 'too_few_sensors' || hint === 'incomplete_sensor_coverage';
+}
+
+function resolveMeasurementModeForPacket(packet = {}) {
+  const rawMode = packet.mode || packet.measurementMode || packet.shutterMode;
+  if (rawMode) return normalizeMeasurementMode(rawMode);
+  const p = activeProject();
+  if (p && !isDefaultProject(p) && p.mode) return normalizeMeasurementMode(p.mode);
+  return normalizeMeasurementMode(S.deviceSettings && S.deviceSettings.defaultMeasurementMode);
+}
+
+function medianPositive(values) {
+  const arr = (Array.isArray(values) ? values : [])
+    .map(Number)
+    .filter(v => Number.isFinite(v) && v > 0)
+    .sort((a, b) => a - b);
+  if (!arr.length) return 0;
+  const mid = Math.floor(arr.length / 2);
+  return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
 }
 
 function projectSupportsMeasurement(p, targetFrac, mode) {
@@ -2215,22 +2315,38 @@ function projectSupportsMeasurement(p, targetFrac, mode) {
 
 function isProjectInvalidMeasurement(entry) {
   if (!entry) return false;
+  const mode = normalizeMeasurementMode(entry.mode);
+  const hint = String(entry.hint || 'none');
+
+  if (mode === 'central') {
+    if (isLowSensorCoverageHint(hint)) return false;
+    if (entry.valid === false) return true;
+    return hint === 'timeout_with_data';
+  }
+
   if (entry.valid === false) return true;
   const count = Number(entry.count);
   if (Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) return true;
-  const hint = String(entry.hint || 'none');
   return PROJECT_INVALID_HINTS.includes(hint);
 }
 
 function sanitizeMeasurementAssignments() {
   ensureDefaultProject();
   S.history.forEach(entry => {
+    const mode = normalizeMeasurementMode(entry.mode);
+    if (mode === 'central' && isLowSensorCoverageHint(entry.hint)) {
+      entry.valid = true;
+      entry.hint = 'none';
+      entry.hintText = '';
+      entry.warning = '';
+    }
+
     const p = projectById(entry.projId);
     const invalid = isProjectInvalidMeasurement(entry);
     if (invalid) {
       entry.valid = false;
       const count = Number(entry.count);
-      if ((!entry.hint || entry.hint === 'none') && Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) {
+      if (mode !== 'central' && (!entry.hint || entry.hint === 'none') && Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) {
         entry.hint = 'too_few_sensors';
         entry.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
         entry.warning = entry.hintText;
@@ -2333,7 +2449,7 @@ function saveUiSettings() {
 function sanitizeUiSettings(input) {
   const raw = Object.assign({}, input || {});
   return {
-    interpolateCharts: raw.interpolateCharts === true,
+    interpolateCharts: raw.interpolateCharts !== false,
     pollIntervalMs: normalizePollIntervalMs(raw.pollIntervalMs),
   };
 }
@@ -2583,6 +2699,8 @@ function evaluateMeasurementHintFromData(data = {}) {
   const activeSensors = sensors.filter(s => s && s.activated && Number(s.openUs) > 0 && Number(s.closeUs) > Number(s.openUs));
   const flash = data.flash || null;
   const flashDetected = !!(flash && flash.detected && Number(flash.triggerUs) > 0);
+  const mode = normalizeMeasurementMode(data.mode || data.measurementMode || data.shutterMode);
+  const isCentral = mode === 'central';
 
   if (activeSensors.length && isTimeoutMeasurementPattern(activeSensors)) {
     return makeMeasurementHint('timeout_with_data', 'Timeout measurement');
@@ -2590,10 +2708,10 @@ function evaluateMeasurementHintFromData(data = {}) {
   if (!activeSensors.length && flashDetected) {
     return makeMeasurementHint('flash_without_sensor', 'Flash without shutter sensor');
   }
-  if (activeSensors.length > 0 && activeSensors.length < MIN_VALID_SENSOR_COUNT) {
+  if (!isCentral && activeSensors.length > 0 && activeSensors.length < MIN_VALID_SENSOR_COUNT) {
     return makeMeasurementHint('too_few_sensors', 'Too few sensors were covered');
   }
-  if (activeSensors.length > 0 && activeSensors.length < 5) {
+  if (!isCentral && activeSensors.length > 0 && activeSensors.length < 5) {
     return makeMeasurementHint('incomplete_sensor_coverage', 'Incomplete sensor coverage');
   }
   return makeMeasurementHint('none');
@@ -2797,6 +2915,7 @@ function firmwareNoticeHtml() {
 
 function measurementHintNoticeHtml(entry) {
   if (!entry || !entry.hint || entry.hint === 'none') return '';
+  if (normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return '';
   const h = measurementHintHelp(entry.hint, entry.hintText || entry.hint);
   return buildNoticeCard('warning', h.title, h.body, h.action);
 }
@@ -3669,6 +3788,7 @@ function setConnState(state) {
 }
 
 function notifyMeasurementHint(entry) {
+  if (entry && normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return;
   const key = entry && entry.id && entry.hint ? entry.id + ':' + entry.hint : '';
   if (!key || key === S.lastMeasurementHintNotice) return;
   S.lastMeasurementHintNotice = key;
@@ -3740,8 +3860,11 @@ function buildEntryFromPacket(d) {
     });
 
     const act = sensors.filter(s => s.activated);
-    const avgSec = act.length ? act.reduce((a,s)=>a+s.seconds,0) / act.length : 0;
+    const mode = resolveMeasurementModeForPacket(d);
     const durs = act.map(s => s.seconds).filter(v => v > 0);
+    const avgSec = mode === 'central'
+      ? medianPositive(durs)
+      : (act.length ? act.reduce((a,s)=>a+s.seconds,0) / act.length : 0);
     const minSec = durs.length ? Math.min(...durs) : 0;
     const maxSec = durs.length ? Math.max(...durs) : 0;
 
@@ -3758,8 +3881,8 @@ function buildEntryFromPacket(d) {
       };
     }
 
-    const h = evaluateMeasurementHintFromData({ sensors, flash });
-    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: h.hint === 'too_few_sensors' ? false : d.valid !== false, count: act.length });
+    const h = evaluateMeasurementHintFromData({ sensors, flash, mode });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: h.hint === 'too_few_sensors' ? false : d.valid !== false, count: act.length, mode });
     if (!act.length) return null;
     const geometry = currentMeasurementGeometry();
     const x = Number(d.sensorDistanceXmm);
@@ -3769,11 +3892,11 @@ function buildEntryFromPacket(d) {
       valid: !projectInvalid,
       ts: Date.now(),
       targetFrac: target,
-      mode: normalizeMeasurementMode(d.mode),
+      mode,
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 && targetSec > 0 ? Math.log2(avgSec / targetSec) : 0,
-      spread: durs.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0,
+      spread: mode === 'central' ? 0 : (durs.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0),
       count: act.length,
       sensors,
       flash,
@@ -3782,7 +3905,7 @@ function buildEntryFromPacket(d) {
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
-      projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, normalizeMeasurementMode(d.mode)),
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, mode),
       raw: d,
     };
     entry.flashSyncOk = isFlashSyncOk(entry);
@@ -3955,7 +4078,7 @@ function renderProjList() {
     const active = p.id === S.selectedProjId ? ' active' : '';
     const meta = (p.id === DEFAULT_PROJECT_ID || p.isDefault)
       ? `${cnt} ${tx('labels.measurements', 'measurements')}`
-      : `${modeLabel(p.mode)} · ${p.times.length} ${tx('labels.speeds', 'speeds')} · ${cnt} ${tx('labels.measurements', 'measurements')}`;
+      : `${modeLabel(p.mode)} - ${p.times.length} ${tx('labels.speeds', 'speeds')} - ${cnt} ${tx('labels.measurements', 'measurements')}`;
     return `<div class="proj-card${active}" onclick="showProject('${p.id}')">
       <div class="proj-card-name">${esc(p.name)}</div>
       <div class="proj-card-meta">${esc(meta)}</div>
@@ -3965,6 +4088,7 @@ function renderProjList() {
 
 function measurementHistoryHintLine(entry) {
   if (!entry || !entry.hint || entry.hint === 'none') return '';
+  if (normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return '';
   const h = typeof measurementHintHelp === 'function' ? measurementHintHelp(entry.hint, entry.hintText || entry.hint) : null;
   const text = (h && h.title) || entry.hintText || entry.warning || entry.hint;
   if (!text) return '';
@@ -3990,26 +4114,26 @@ function renderHistList() {
   }
 
   el.innerHTML = entries.map(e => {
-    const ts  = new Date(e.ts).toLocaleTimeString(uiLocale());
+    const ts  = formatTimeMinute(new Date(e.ts));
 
     if (e.isError) {
       return `<div class="h-entry err" id="he-${e.id}">
         <div class="h-time" style="color:var(--red);">ERROR</div>
         <div class="h-dev pos">!</div>
-        <div class="h-meta"><span class="h-meta-line">${ts} · ${esc(e.error || 'Unknown error')}</span></div>
+        <div class="h-meta"><span class="h-meta-line">${ts} - ${esc(e.error || 'Unknown error')}</span></div>
         <div class="h-mode h-mode-empty">-</div>
       </div>`;
     }
 
     const dev = e.avgDev;
     const dc  = devClass(dev);
-    const ds  = (dev>=0?'+':'') + dev.toFixed(2);
+    const ds  = formatSignedNumber(dev, 2);
     const sel = e.id === S.selId ? 'sel' : '';
 
     return `<div class="h-entry ${sel}" id="he-${e.id}" onclick="selectEntry('${e.id}')">
       <div class="h-time">1/${e.avgFrac}</div>
       <div class="h-dev ${dc}"><span>${ds}</span><span class="h-dev-unit">EV</span></div>
-      <div class="h-meta"><span class="h-meta-line">${ts} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.</span>${measurementHistoryHintLine(e)}</div>
+      <div class="h-meta"><span class="h-meta-line">${ts} - ${tx('labels.target', 'Target')} 1/${e.targetFrac} - ${e.count} Sens.</span>${measurementHistoryHintLine(e)}</div>
       ${historyModeHtml(e)}
     </div>`;
   }).join('');
@@ -4028,8 +4152,8 @@ function renderDetailView(id) {
   const e = S.history.find(h => h.id === id);
   if (!e) return;
 
-  const ts  = new Date(e.ts).toLocaleString(uiLocale());
-  const ds  = (e.avgDev>=0?'+':'') + e.avgDev.toFixed(3);
+  const ts  = formatDateTimeMinute(new Date(e.ts));
+  const ds  = formatSignedNumber(e.avgDev, 2);
   const devC = devColor(e.avgDev);
   const isCentral = (normalizeMeasurementMode(e.mode) === 'central');
 
@@ -4038,12 +4162,12 @@ function renderDetailView(id) {
       <div class="s-name">ID ${i}</div>
       <div style="font-size:11px;color:var(--tx4);">${tx('labels.inactive', 'inactive')}</div></div>`;
     const sdc = devColor(s.deviation);
-    const sds = (s.deviation>=0?'+':'') + s.deviation.toFixed(3);
+    const sds = formatSignedNumber(s.deviation, 2);
     return `<div class="s-box" data-s="${i}">
       <div class="s-name">ID ${i}</div>
       <div class="s-frac">1/${s.fraction}</div>
       <div class="s-dev" style="color:${sdc}">${sds} EV</div>
-      <div class="s-ms">${(s.seconds*1000).toFixed(3)} ms</div>
+      <div class="s-ms">${formatMs(s.seconds * 1000)}</div>
     </div>`;
   }).join('');
 
@@ -4067,29 +4191,29 @@ function renderDetailView(id) {
         ${measurementHintNoticeHtml(e)}
         <div class="metrics-row">
           <div class="metric">
-            <div class="m-label">${tx('metrics.avgExposure', 'Avg exposure time')}</div>
-            <div class="m-val">1/${e.avgFrac}</div>
-            <div class="m-sub">${(e.avgSec*1000).toFixed(3)} ms</div>
-          </div>
-          <div class="metric">
-            <div class="m-label">${tx('metrics.avgDeviation', 'Avg deviation')}</div>
-            <div class="m-val" style="color:${devC};font-size:20px;">${ds} EV</div>
-            <div class="m-sub">${tx('labels.target', 'Target')}: 1/${e.targetFrac} s</div>
+            <div class="m-label">${tx('metrics.exposureAndDeviation', 'Exposure time')}</div>
+            <div class="m-val">1/${e.avgFrac} <span style="color:${devC};font-size:16px;">(${ds} EV)</span></div>
+            <div class="m-sub">${formatMs(e.avgSec * 1000)}</div>
           </div>
           ${isCentral ? '' : `<div class="metric">
-            <div class="m-label">Spread min↔max</div>
-            <div class="m-val" style="font-size:18px;">${e.spread.toFixed(3)} EV</div>
+            <div class="m-label">${tx('metrics.frameSpread', 'Spread over frame')}</div>
+            <div class="m-val" style="font-size:18px;">${formatFixed(e.spread, 2)} EV</div>
             <div class="m-sub">${e.count} ${tx('labels.sensorsActive', 'sensors active')}</div>
+          </div>
+          <div class="metric">
+            <div class="m-label">${tx('metrics.slitWidth', 'Slit width')}</div>
+            <div class="m-val metric-lines"><span>${tx('metrics.min', 'min')}: ${formatMm((slitWidthStatsForEntry(e) || {}).min)}</span><span>${tx('metrics.max', 'max')}: ${formatMm((slitWidthStatsForEntry(e) || {}).max)}</span></div>
+            <div class="m-sub">&nbsp;</div>
           </div>`}
           <div class="metric">
             <div class="m-label">${tx('metrics.totalOpenTime', 'Total open time')}</div>
-            <div class="m-val" style="font-size:18px;">${calcTotalOpenTime(e).toFixed(3)} ms</div>
+            <div class="m-val" style="font-size:18px;">${formatMs(calcTotalOpenTime(e))}</div>
             <div class="m-sub">&nbsp;</div>
           </div>
           <div class="metric">
             <div class="m-label">${tx('metrics.flashSync', 'Flash sync')}</div>
             <div class="m-val" style="font-size:18px;">${flashSyncIcon(e)}</div>
-            <div class="m-sub">${e.flash && e.flash.detected ? e.flash.triggerMs.toFixed(3) + ' ms' : tx('labels.noFlashDetected', 'no flash detected')}</div>
+            <div class="m-sub">${e.flash && e.flash.detected ? formatMs(e.flash.triggerMs) : tx('labels.noFlashDetected', 'no flash detected')}</div>
           </div>
         </div>
         <div class="sensor-row">${sboxes}</div>
@@ -4105,7 +4229,7 @@ function renderDetailView(id) {
     </div>
 
     ${isCentral ? '' : `<div class="card timeline-card">
-      <div class="card-hdr"><span class="card-title">${tx('cards.timelineSpeed', 'Curtain speed by sensor position')}</span><span style="font-size:10px;color:var(--tx3)">m/s · mm</span></div>
+      <div class="card-hdr"><span class="card-title">${tx('cards.timelineSpeed', 'Curtain speed by sensor position')}</span></div>
       <div class="card-body" style="padding:10px 6px;">
         <div class="tl-wrap"><canvas id="curtain-time-chart"></canvas></div>
       </div>
@@ -4210,6 +4334,29 @@ function gradeBadge(score) {
   const g = gradeFromScore(score);
   return `<span class="grade-badge ${g.cls}">${g.grade}</span>`;
 }
+
+function tableScoreColor(score) {
+  if (!Number.isFinite(score)) return 'var(--tx4)';
+  if (score >= 90) return 'var(--green)';
+  if (score >= 78) return 'var(--amber)';
+  if (score >= 62) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function tableToleranceColor(value, greenLimit, redLimit, floor = 25) {
+  if (!Number.isFinite(value)) return 'var(--tx4)';
+  const score = typeof scoreFromTolerance === 'function'
+    ? scoreFromTolerance(Math.abs(value), greenLimit, redLimit, floor)
+    : clampNumber(100 - Math.abs(value) / Math.max(redLimit, Number.EPSILON) * 100, 0, 100);
+  return tableScoreColor(score);
+}
+
+function flashIconForAggregate(agg) {
+  if (!agg || !agg.flashDetected) return `<span title="${esc(tx('flash.none', 'No flash detected'))}" style="color:var(--tx4);font-size:16px;">-</span>`;
+  if (agg.flashBad) return `<span title="${esc(tx('flash.outside', 'Flash outside total opening'))}" style="color:var(--red);font-size:16px;">×</span>`;
+  if (agg.flashLate) return `<span title="${esc(tx('flash.late', 'Flash near the end of total opening'))}" style="color:var(--amber);font-size:16px;">●</span>`;
+  return `<span title="${esc(tx('flash.within', 'Flash within total opening'))}" style="color:var(--green);font-size:16px;">●</span>`;
+}
 function buildProjectSummary(p) {
   if (typeof projectScoreModel !== 'function') {
     const a = projectAnalysis(p);
@@ -4266,23 +4413,34 @@ function aggregateForTarget(projId, targetFrac) {
   const devValues = entries.map(entry => Number.isFinite(entry.avgDev) ? entry.avgDev : Math.log2(entry.avgSec * targetFrac));
   const avgAbsDev = average(devValues.map(Math.abs)) || 0;
   const sigmaEv = stddev(devValues);
-  const score = scoreForTarget(Math.abs(avgDev), sigmaEv, n);
+
+  const cfg = typeof exportConfig === 'function' ? exportConfig() : null;
+  const offsetScore = typeof scoreFromTolerance === 'function' ? scoreFromTolerance(Math.abs(avgDev), 0.15, 0.75, 25) : null;
+  const spreadScore = typeof scoreFromTolerance === 'function' ? scoreFromTolerance(avgSpread, 0.10, 0.55, 20) : null;
+  const accuracyScore = typeof scoreBlend === 'function' ? scoreBlend([
+    { score: offsetScore, weight: cfg ? cfg.accuracyOffsetWeight : 35 },
+    { score: spreadScore, weight: cfg ? cfg.accuracySpreadWeight : 65 },
+  ]) : null;
+  const reliabilityScore = n >= 2 && typeof scoreFromTolerance === 'function' ? scoreFromTolerance(sigmaEv, 0.05, 0.35, 30) : null;
+  const score = Number.isFinite(accuracyScore) ? accuracyScore : scoreForTarget(Math.abs(avgDev), sigmaEv, n);
 
   const curtains = entries.map(entry => calcCurtain(entry)).filter(Boolean);
   const avgV1 = curtains.length ? curtains.reduce((sum, c) => sum + c.v1, 0) / curtains.length : null;
   const avgV2 = curtains.length ? curtains.reduce((sum, c) => sum + c.v2, 0) / curtains.length : null;
+  const entriesWithNegativeTotalOpen = typeof calcTotalOpenTime === 'function'
+    ? entries.filter(entry => calcTotalOpenTime(entry) < 0)
+    : [];
+  const slitWidth = typeof slitWidthStatsForEntries === 'function' ? slitWidthStatsForEntries(entriesWithNegativeTotalOpen) : null;
 
   const flashDetected = entries.filter(entry => entry.flash && entry.flash.detected).length;
   const flashOk = entries.filter(entry => isFlashSyncOk(entry) === true).length;
   const flashLate = entries.filter(entry => typeof flashSyncState === 'function' && flashSyncState(entry) === 'late').length;
   const flashBad = entries.filter(entry => isFlashSyncOk(entry) === false).length;
 
-  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, avgSpread, avgV1, avgV2, flashDetected, flashOk, flashLate, flashBad };
+  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, accuracyScore, reliabilityScore, avgSpread, avgV1, avgV2, slitWidth, flashDetected, flashOk, flashLate, flashBad };
 }
 
 function buildProjectTable(p) {
-  const fmt = (v, dec) => v != null ? v.toFixed(dec) : '-';
-
   const rows = p.times.map(tgt => {
     const agg = aggregateForTarget(p.id, tgt);
     if (!agg) {
@@ -4292,21 +4450,29 @@ function buildProjectTable(p) {
         <td class="t-dim">-</td>
         <td class="t-dim">-</td>
         <td class="t-dim">-</td>
+        <td class="t-dim">${flashIconForAggregate(null)}</td>
         <td class="t-dim">-</td>
-        <td class="t-dim" style="font-size:10px;">${tx('project.zeroMeas', '0 meas.')}</td>
+        <td>${gradeBadge((typeof exportConfig === 'function' && Number.isFinite(exportConfig().missingTargetScore)) ? exportConfig().missingTargetScore : 0)}</td>
+        <td class="t-dim" style="font-size:10px;">0</td>
       </tr>`;
     }
-    const devStr = (agg.avgDev>=0?'+':'') + agg.avgDev.toFixed(3) + ' EV';
+    const devStr = formatEv(agg.avgDev);
     const devC = devColor(agg.avgDev);
+    const spreadC = tableToleranceColor(agg.avgSpread, 0.10, 0.55, 20);
+    const consistencyC = agg.n >= 2 ? tableToleranceColor(agg.sigmaEv, 0.05, 0.35, 30) : 'var(--tx4)';
+    const slitMin = agg.slitWidth ? formatMm(agg.slitWidth.min) : '-';
+    const slitMax = agg.slitWidth ? formatMm(agg.slitWidth.max) : '-';
 
     return `<tr>
       <td class="t-target">1/${tgt}</td>
-      <td class="t-amber">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
-      <td><span style="color:var(--tx1)">${agg.sigmaEv.toFixed(3)} EV</span><br><span style="font-size:10px;color:var(--tx3)">σ ${tx('project.repeatability', 'repeatability')}</span></td>
+      <td class="t-amber t-nowrap">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
+      <td class="t-nowrap" style="color:${spreadC}">${formatFixed(agg.avgSpread, 2)} EV</td>
+      <td class="t-teal t-nowrap">${slitMin}</td>
+      <td class="t-teal t-nowrap">${slitMax}</td>
+      <td>${flashIconForAggregate(agg)}</td>
+      <td class="t-nowrap" style="color:${consistencyC}">${agg.n >= 2 ? formatFixed(agg.sigmaEv, 2) + ' EV' : '-'}</td>
       <td>${gradeBadge(agg.score)}</td>
-      <td class="t-teal">${agg.avgV1!=null ? fmt(agg.avgV1,2) : '-'} / ${agg.avgV2!=null ? fmt(agg.avgV2,2) : '-'}</td>
-      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : (agg.flashLate ? '<span style="color:var(--amber);font-size:16px;">●</span>' : '<span style="color:var(--green);font-size:16px;">●</span>')) : '<span style="color:var(--tx4);font-size:16px;">-</span>'}</td>
-      <td style="font-size:10px;color:var(--tx3)">${agg.n} ${tx('project.measShort', 'meas.')}</td>
+      <td style="font-size:10px;color:var(--tx3)">${agg.n}</td>
     </tr>`;
   }).join('');
 
@@ -4316,10 +4482,12 @@ function buildProjectTable(p) {
         <tr>
           <th>${tx('table.target', 'Target')}</th>
           <th>${tx('table.avgMeasurement', 'Avg measurement')}</th>
-          <th>σ</th>
-          <th>${tx('table.grade', 'Grade')}</th>
-          <th>${tx('table.curtainSpeed', 'Curtain speed')} V₁/V₂ (m/s)</th>
+          <th>${tx('table.frameSpread', 'Spread over frame')}</th>
+          <th>${tx('table.slitWidthMin', 'Slit width min')}</th>
+          <th>${tx('table.slitWidthMax', 'Slit width max')}</th>
           <th>${tx('table.flash', 'Flash')}</th>
+          <th>${tx('table.consistency', 'Consistency')}</th>
+          <th>${tx('table.grade', 'Grade')}</th>
           <th>n</th>
         </tr>
       </thead>
@@ -4353,7 +4521,7 @@ function showProject(projId) {
     <!-- Project table -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">${esc(p.name)}</span>
+        <span class="card-title">${esc(p.name)} - ${esc(modeLabel(p.mode))}</span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="exportProjCSV('${projId}')">CSV EXPORT</button>
           <button class="btn btn-amber btn-sm" onclick="exportProjectReportHtml('${projId}')">HTML REPORT</button>
@@ -4368,7 +4536,6 @@ function showProject(projId) {
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">${tx('cards.curtainCurve', 'Curtain speed by target')}</span>
-        <span style="font-size:10px;color:var(--tx3)">m/s</span>
       </div>
       <div class="card-body" style="padding:10px 6px;">
         <canvas id="curtain-chart" data-proj-id="${projId}"></canvas>
@@ -4438,6 +4605,7 @@ function drawCurtainChart(p) {
     ctx.font = `11px 'Share Tech Mono', monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(tx('charts.noCurtainMeasurements', 'No measurements with curtain speed data yet'), W / 2, H / 2);
+    if (typeof bindCanvasPointTooltip === 'function') bindCanvasPointTooltip(canvas, []);
     return;
   }
 
@@ -4473,7 +4641,7 @@ function drawCurtainChart(p) {
   for (let i = 0; i <= nGrid; i++) {
     const v = vMax * (1 - i / nGrid);
     const y = PAD_T + (i / nGrid) * PH;
-    ctx.fillText(v.toFixed(vMax < 10 ? 1 : 0), PAD_L - 4, y + 3);
+    ctx.fillText(formatFixed(v, 2), PAD_L - 4, y + 3);
   }
   ctx.save();
   ctx.translate(14, PAD_T + PH / 2);
@@ -4493,6 +4661,8 @@ function drawCurtainChart(p) {
   });
   ctx.fillStyle = C.tx3;
   ctx.fillText(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'), PAD_L + PW / 2, PAD_T + PH + 29);
+
+  const hoverPoints = [];
 
   function drawLine(pts, color, label) {
     if (!pts.length) return;
@@ -4524,19 +4694,26 @@ function drawCurtainChart(p) {
     }
     ctx.stroke();
     ordered.forEach(pt => {
+      const px = xOf(pt.tgt);
+      const py = yV(pt.val);
       ctx.beginPath();
-      ctx.arc(xOf(pt.tgt), yV(pt.val), 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = C.bg;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      hoverPoints.push({
+        x: px,
+        y: py,
+        html: `<strong>${esc(label || '')}</strong><br>${esc(targetLabel(pt.tgt))}<br>${esc(formatMetersPerSecond(pt.val))}`
+      });
     });
     ctx.restore();
   }
 
-  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v1 })), '#52c4b0');
-  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v2 })), '#68a8e0');
+  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v1 })), '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
+  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v2 })), '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
 
   ctx.font = `9px 'Share Tech Mono', monospace`;
   function legendItem(x, y, color, label) {
@@ -4548,6 +4725,7 @@ function drawCurtainChart(p) {
   const ly = PAD_T + PH + 52;
   legendItem(PAD_L + 8, ly, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
   legendItem(Math.max(PAD_L + PW * 0.50, W - PAD_R - 190), ly, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
+  if (typeof bindCanvasPointTooltip === 'function') bindCanvasPointTooltip(canvas, hoverPoints);
 }
 
 
@@ -4628,6 +4806,58 @@ function chartInterpolationEnabled() {
   return !!(S.uiSettings && S.uiSettings.interpolateCharts);
 }
 
+function ensureChartTooltip(canvas) {
+  if (!canvas || !canvas.parentElement) return null;
+  const parent = canvas.parentElement;
+  if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+  let tip = parent.querySelector('.chart-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.className = 'chart-tooltip';
+    parent.appendChild(tip);
+  }
+  return tip;
+}
+
+function bindCanvasPointTooltip(canvas, points) {
+  if (!canvas) return;
+  canvas._oclTooltipPoints = Array.isArray(points) ? points : [];
+  const tip = ensureChartTooltip(canvas);
+  if (!tip) return;
+  if (canvas._oclTooltipBound) {
+    tip.style.display = 'none';
+    return;
+  }
+  canvas._oclTooltipBound = true;
+
+  canvas.addEventListener('mousemove', event => {
+    const pts = canvas._oclTooltipPoints || [];
+    if (!pts.length) { tip.style.display = 'none'; return; }
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width ? canvas.clientWidth / rect.width : 1;
+    const sy = rect.height ? canvas.clientHeight / rect.height : 1;
+    const mx = (event.clientX - rect.left) * sx;
+    const my = (event.clientY - rect.top) * sy;
+    let best = null;
+    let bestDist = Infinity;
+    pts.forEach(point => {
+      const dx = mx - point.x;
+      const dy = my - point.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = point; }
+    });
+    if (!best || bestDist > 14) { tip.style.display = 'none'; return; }
+    tip.innerHTML = best.html || '';
+    tip.style.display = 'block';
+    const left = Math.min(canvas.clientWidth - tip.offsetWidth - 6, Math.max(6, best.x + 10));
+    const top = Math.min(canvas.clientHeight - tip.offsetHeight - 6, Math.max(6, best.y - tip.offsetHeight - 10));
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
 function speedSeriesForChart(points) {
   if (!Array.isArray(points) || !points.length) return points || [];
   return points.slice().sort((a, b) => a.x - b.x);
@@ -4635,7 +4865,7 @@ function speedSeriesForChart(points) {
 
 
 function drawSpeedEdgeExtensions(ctx, points, minX, maxX, toX, toY) {
-  if (!points.length || !chartInterpolationEnabled()) return;
+  if (!points.length) return;
   const line = points.slice().sort((a, b) => a.x - b.x);
   const first = line[0];
   const last = line[line.length - 1];
@@ -4779,6 +5009,7 @@ function drawCurtainTimeChart(entry) {
     ctx.font = `11px 'Share Tech Mono', monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(tx('charts.notEnoughCurtain', 'Not enough sensor points for curtain chart'), W / 2, H / 2);
+    bindCanvasPointTooltip(canvas, []);
     return;
   }
 
@@ -4802,7 +5033,7 @@ function drawCurtainTimeChart(entry) {
     ctx.lineTo(W - PAD_R, y);
     ctx.stroke();
     const v = vMax * (1 - i / yGrid);
-    ctx.fillText(v.toFixed(vMax < 10 ? 1 : 0), PAD_L - 6, y + 3);
+    ctx.fillText(formatFixed(v, 2), PAD_L - 6, y + 3);
   }
   ctx.restore();
 
@@ -4821,7 +5052,7 @@ function drawCurtainTimeChart(entry) {
     ctx.moveTo(x, PAD_T);
     ctx.lineTo(x, PAD_T + PH);
     ctx.stroke();
-    ctx.fillText(pos.toFixed(pos < 10 ? 1 : 0), x, PAD_T + PH + 17);
+    ctx.fillText(formatFixed(pos, 2), x, PAD_T + PH + 17);
   }
   ctx.restore();
 
@@ -4851,7 +5082,9 @@ function drawCurtainTimeChart(entry) {
   ctx.fillText(tx('charts.positionAxis', 'POSITION (mm)'), PAD_L + PW / 2, PAD_T + PH + 37);
   ctx.restore();
 
-  function drawLine(arr, color) {
+  const hoverPoints = [];
+
+  function drawLine(arr, color, label) {
     if (!arr.length) return;
     const line = speedSeriesForChart(arr);
     ctx.save();
@@ -4863,19 +5096,26 @@ function drawCurtainTimeChart(entry) {
     drawSpeedPath(ctx, line, toX, toY, chartInterpolationEnabled());
     ctx.stroke();
     arr.forEach(point => {
+      const px = toX(point.x);
+      const py = toY(point.v);
       ctx.beginPath();
-      ctx.arc(toX(point.x), toY(point.v), 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = C.bg;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      hoverPoints.push({
+        x: px,
+        y: py,
+        html: `<strong>${esc(label || '')}</strong><br>${esc(formatMm(point.x))}<br>${esc(formatMetersPerSecond(point.v))}`
+      });
     });
     ctx.restore();
   }
 
-  drawLine(profile.open, '#52c4b0');
-  drawLine(profile.close, '#68a8e0');
+  drawLine(profile.open, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
+  drawLine(profile.close, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
 
   ctx.font = `9px 'Share Tech Mono', monospace`;
   function legendItemLeft(x, y, color, label) {
@@ -4907,6 +5147,7 @@ function drawCurtainTimeChart(entry) {
   const ly = PAD_T + PH + 37;
   legendItemLeft(PAD_L + 8, ly, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
   legendItemRight(W - PAD_R, ly, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
+  bindCanvasPointTooltip(canvas, hoverPoints);
 }
 
 function drawTimeline(entry) {
@@ -4989,10 +5230,10 @@ function drawTimeline(entry) {
 
     const relMs = t - tMin;
     let label;
-    if (tickInt < 0.1)       label = relMs.toFixed(3) + ' ms';
-    else if (tickInt < 1)    label = relMs.toFixed(2) + ' ms';
-    else if (tickInt < 10)   label = relMs.toFixed(1) + ' ms';
-    else                     label = Math.round(relMs) + ' ms';
+    if (tickInt < 0.1)       label = formatMs(relMs);
+    else if (tickInt < 1)    label = formatMs(relMs);
+    else if (tickInt < 10)   label = formatMs(relMs);
+    else                     label = formatMs(relMs);
     ctx.fillText(label, x, H - PAD_B + 17);
   }
   ctx.restore();
@@ -5087,7 +5328,7 @@ function drawTimeline(entry) {
     });
     ctx.restore();
 
-    const durMs = (s.closeMs - s.openMs).toFixed(3);
+    const durMs = formatFixed(s.closeMs - s.openMs, 2);
     ctx.save();
     ctx.fillStyle = '#fff';
     ctx.font      = `9px 'Share Tech Mono', monospace`;
@@ -5206,7 +5447,7 @@ function drawTimelineVertical(entry, canvas) {
   for(let t=tickStart; t<=T1; t+=tickInt){
     const y=toY(t); if(y<PAD_T||y>H-PAD_B) continue;
     const rel=t-tMin;
-    ctx.fillText((rel<0?'':'+')+(tickInt<1?rel.toFixed(2):rel.toFixed(1)), PAD_L-3, y+3);
+    ctx.fillText((rel < 0 ? '' : '+') + formatFixed(rel, 2), PAD_L - 3, y + 3);
   }
 
   if (entry.flash && entry.flash.detected && entry.flash.triggerMs != null) {
@@ -5294,6 +5535,38 @@ function calcCurtain(entry) {
   if (!profile) return null;
   const avg = arr => arr.length ? arr.reduce((sum, point) => sum + point.v, 0) / arr.length : 0;
   return { v1: avg(profile.open), v2: avg(profile.close) };
+}
+
+function slitWidthStatsForEntry(entry) {
+  if (!entry || normalizeMeasurementMode(entry.mode) === 'central') return null;
+  const curtain = calcCurtain(entry);
+  const speeds = [curtain && curtain.v1, curtain && curtain.v2].filter(v => Number.isFinite(v) && v > 0);
+  const speed = average(speeds);
+  if (!Number.isFinite(speed) || speed <= 0) return null;
+
+  const widths = (entry.sensors || [])
+    .filter(s => s.activated && Number.isFinite(s.seconds) && s.seconds > 0)
+    .map(s => s.seconds * 1000 * speed)
+    .filter(v => Number.isFinite(v) && v > 0);
+  if (!widths.length) return null;
+
+  return {
+    min: Math.min(...widths),
+    max: Math.max(...widths),
+    avg: average(widths),
+    n: widths.length,
+  };
+}
+
+function slitWidthStatsForEntries(entries) {
+  const stats = (entries || []).map(slitWidthStatsForEntry).filter(Boolean);
+  if (!stats.length) return null;
+  return {
+    min: Math.min(...stats.map(x => x.min)),
+    max: Math.max(...stats.map(x => x.max)),
+    avg: average(stats.map(x => x.avg).filter(Number.isFinite)),
+    n: stats.reduce((sum, x) => sum + (x.n || 0), 0),
+  };
 }
 
 
@@ -5430,24 +5703,32 @@ function normalizeImportedBackup(data) {
     const targetSec = 1 / target;
     const baseUs = finiteNumber(raw.baseUs || (raw.raw && raw.raw.baseUs), 0);
     const sensors = raw.sensors.slice(0, 5).map((sensor, idx) => normalizeImportedSensor(sensor, idx, baseUs, targetSec));
+    const rawProjId = String(raw.projId || '');
+    const mappedProjId = projectIdMap.get(rawProjId) || DEFAULT_PROJECT_ID;
+    const importedProject = projects.find(project => project.id === mappedProjId);
+    const mode = raw.mode || raw.measurementMode || raw.shutterMode
+      ? normalizeMeasurementMode(raw.mode || raw.measurementMode || raw.shutterMode)
+      : normalizeMeasurementMode(importedProject && importedProject.mode);
     const active = sensors.filter(sensor => sensor.activated && sensor.seconds > 0);
     if (!active.length) continue;
 
     const durations = active.map(sensor => sensor.seconds);
-    const avgSec = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    const avgSec = mode === 'central'
+      ? medianPositive(durations)
+      : durations.reduce((sum, value) => sum + value, 0) / durations.length;
     const minSec = Math.min(...durations);
     const maxSec = Math.max(...durations);
     const flash = normalizeImportedFlash(raw.flash, baseUs);
-    const hint = evaluateMeasurementHintFromData({ sensors, flash });
-    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length });
+    const hint = evaluateMeasurementHintFromData({ sensors, flash, mode });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length, mode });
     const geometry = currentMeasurementGeometry();
     const x = Number(raw.sensorDistanceXmm);
     const y = Number(raw.sensorDistanceYmm);
 
     const entry = Object.assign({}, raw, {
       id: makeSafeInternalId('m'),
-      projId: projectInvalid ? DEFAULT_PROJECT_ID : (projectIdMap.get(String(raw.projId || '')) || DEFAULT_PROJECT_ID),
-      mode: normalizeMeasurementMode(raw.mode),
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : mappedProjId,
+      mode,
       targetFrac: target,
       ts: Number.isFinite(Number(raw.ts)) ? Number(raw.ts) : Date.now(),
       valid: !projectInvalid,
@@ -5456,7 +5737,7 @@ function normalizeImportedBackup(data) {
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 ? Math.log2(avgSec / targetSec) : 0,
-      spread: durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0,
+      spread: mode === 'central' ? 0 : (durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0),
       count: active.length,
       sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
       sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,
@@ -5711,6 +5992,7 @@ const REPORT_EXPORT_CONFIG = Object.freeze({
   reliabilityWeight: 100,
   curtainUniformityWeight: 55,
   curtainParallelismWeight: 45,
+  missingTargetScore: 0,
 });
 
 function exportConfig() {
@@ -5755,21 +6037,21 @@ function formatScore(score) {
 function formatReportTime(seconds) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return '-';
-  if (s >= 1) return s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s';
-  return (s * 1000).toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' ms';
+  if (s >= 1) return s.toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' s';
+  return (s * 1000).toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ms';
 }
 
 function formatFractionFromSeconds(seconds) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return '-';
   const frac = Math.round(1 / s);
-  return frac <= 1 ? s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s' : '1/' + frac + ' s';
+  return frac <= 1 ? s.toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' s' : '1/' + frac + ' s';
 }
 
 function signedEv(value) {
   const v = Number(value);
   if (!Number.isFinite(v)) return '-';
-  return (v >= 0 ? '+' : '') + v.toFixed(3) + ' EV';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + ' EV';
 }
 
 function safeFilenameName(name, fallback = 'camera') {
@@ -5786,6 +6068,7 @@ function targetLabel(targetFrac) {
 }
 
 function targetRowsForProject(project) {
+  const cfg = exportConfig();
   return (project.times || []).map(target => {
     const agg = aggregateForTarget(project.id, target);
     if (!agg) {
@@ -5793,14 +6076,16 @@ function targetRowsForProject(project) {
         targetFrac: target,
         targetSec: target > 0 ? 1 / target : null,
         measured: false,
+        missing: true,
         measurementCount: 0,
+        targetWeight: 1,
+        accuracyScore: cfg.missingTargetScore,
       };
     }
 
     const offsetScore = scoreFromTolerance(Math.abs(agg.avgDev), 0.15, 0.75, 25);
     const spreadScore = scoreFromTolerance(agg.avgSpread, 0.10, 0.55, 20);
     const reliabilityScore = agg.n >= 2 ? scoreFromTolerance(agg.sigmaEv, 0.05, 0.35, 30) : null;
-    const cfg = exportConfig();
     const accuracyScore = scoreBlend([
       { score: offsetScore, weight: cfg.accuracyOffsetWeight },
       { score: spreadScore, weight: cfg.accuracySpreadWeight },
@@ -5810,7 +6095,9 @@ function targetRowsForProject(project) {
       targetFrac: target,
       targetSec: 1 / target,
       measured: true,
+      missing: false,
       measurementCount: agg.n,
+      targetWeight: 1,
       avgFrac: agg.avgFrac,
       avgSec: agg.avgSec,
       avgMs: agg.avgSec * 1000,
@@ -5835,6 +6122,13 @@ function velocityCv(values) {
   const clean = values.filter(v => Number.isFinite(v) && v > 0);
   const avg = average(clean);
   return clean.length > 1 && avg ? stddev(clean) / avg : null;
+}
+
+function missingTargetStats(targetRows) {
+  const rows = Array.isArray(targetRows) ? targetRows : [];
+  const total = rows.length;
+  const missing = rows.filter(row => row && row.missing).length;
+  return { total, missing, missingFraction: total ? missing / total : 0 };
 }
 
 function curtainConditionForEntry(entry) {
@@ -5863,16 +6157,21 @@ function curtainConditionForEntry(entry) {
   };
 }
 
-function curtainConditionForProject(entries) {
+function curtainConditionForProject(entries, targetRows, project) {
+  const missingStats = missingTargetStats(targetRows);
+  const mode = project && typeof normalizeMeasurementMode === 'function' ? normalizeMeasurementMode(project.mode) : '';
+  const applyMissingPenalty = mode !== 'central';
+  const coverageFactor = applyMissingPenalty && missingStats.total ? Math.max(0, 1 - missingStats.missingFraction) : 1;
   const items = entries.map(curtainConditionForEntry).filter(Boolean);
   if (!items.length) return {
     uniformityCv: null,
     parallelEv: null,
     uniformityScore: null,
     parallelScore: null,
-    curtainScore: null,
+    curtainScore: applyMissingPenalty && missingStats.missing ? 0 : null,
     openAvg: null,
     closeAvg: null,
+    missingTargets: missingStats.missing,
   };
 
   const cfg = exportConfig();
@@ -5880,18 +6179,21 @@ function curtainConditionForProject(entries) {
   const parallelEv = average(items.map(x => x.parallelEv).filter(Number.isFinite));
   const uniformityScore = scoreFromTolerance(uniformityCv, 0.08, 0.35, 25);
   const parallelScore = scoreFromTolerance(parallelEv, 0.08, 0.45, 25);
+  const baseCurtainScore = scoreBlend([
+    { score: uniformityScore, weight: cfg.curtainUniformityWeight },
+    { score: parallelScore, weight: cfg.curtainParallelismWeight },
+  ]);
 
   return {
     uniformityCv,
     parallelEv,
     uniformityScore,
     parallelScore,
-    curtainScore: scoreBlend([
-      { score: uniformityScore, weight: cfg.curtainUniformityWeight },
-      { score: parallelScore, weight: cfg.curtainParallelismWeight },
-    ]),
+    curtainScore: Number.isFinite(baseCurtainScore) ? clampNumber(baseCurtainScore * coverageFactor, 0, 100) : null,
+    baseCurtainScore,
     openAvg: average(items.map(x => x.openAvg).filter(Number.isFinite)),
     closeAvg: average(items.map(x => x.closeAvg).filter(Number.isFinite)),
+    missingTargets: missingStats.missing,
   };
 }
 
@@ -5921,11 +6223,12 @@ function projectScoreModel(project) {
   const entries = getProjectEntries(project.id);
   const targetRows = targetRowsForProject(project);
   const measuredRows = targetRows.filter(row => row.measured);
+  const scoredRows = targetRows.filter(row => Number.isFinite(row.accuracyScore));
   const cfg = exportConfig();
-  const accuracyScore = weightedAverage(measuredRows, 'accuracyScore', 'measurementCount');
+  const accuracyScore = weightedAverage(scoredRows, 'accuracyScore', 'targetWeight');
   const repeatedRows = measuredRows.filter(row => row.measurementCount >= 2 && Number.isFinite(row.reliabilityScore));
   const reliabilityScore = repeatedRows.length ? weightedAverage(repeatedRows, 'reliabilityScore', 'measurementCount') : null;
-  const curtain = curtainConditionForProject(entries);
+  const curtain = curtainConditionForProject(entries, targetRows, project);
   const overall = scoreBlend([
     { score: accuracyScore, weight: 44 },
     { score: reliabilityScore, weight: cfg.reliabilityWeight ? 24 : 0 },
@@ -5987,7 +6290,7 @@ function exportProjCSV(projId) {
       'TARGET', targetLabel(row.targetFrac), csvNumber(row.targetSec, 6), row.measured ? ('1/' + row.avgFrac) : '', csvNumber(row.avgSec, 6), csvNumber(row.avgMs, 3),
       csvNumber(row.avgDev, 4), csvNumber(row.avgAbsDev, 4), csvNumber(row.avgSpread, 4), csvNumber(row.sigmaEv, 4),
       csvNumber(row.accuracyScore, 1), csvNumber(row.reliabilityScore, 1), csvNumber(row.openingSpeed, 4), csvNumber(row.closingSpeed, 4),
-      row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, row.measured ? reportGrade(row.accuracyScore) : ''
+      row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, Number.isFinite(row.accuracyScore) ? reportGrade(row.accuracyScore) : ''
     ]));
   });
 
@@ -6033,7 +6336,7 @@ function formatReportDateTime(date = new Date()) {
 }
 
 function reportDensityClass(rows) {
-  const count = (rows || []).filter(r => r && r.measured).length;
+  const count = (rows || []).filter(Boolean).length;
   if (count >= 12) return 'dense-report';
   if (count >= 8) return 'compact-report';
   return '';
@@ -6052,15 +6355,16 @@ function reportScoreCard(title, score, body) {
 function reportRowsHtml(rows) {
   return rows.map(row => {
     if (!row.measured) {
-      return `<tr><td>${esc(targetLabel(row.targetFrac))}</td><td colspan="8" class="muted">${esc(tx('report.notMeasured', 'Not measured'))}</td></tr>`;
+      const label = row.missing ? tx('report.missingTargetRow', 'Missing target time - counted as a problem') : tx('report.notMeasured', 'Not measured');
+      return `<tr><td>${esc(targetLabel(row.targetFrac))}</td><td colspan="8" class="muted">${esc(label)}</td></tr>`;
     }
     return `<tr>
       <td>${esc(targetLabel(row.targetFrac))}</td>
       <td>${esc(formatFractionFromSeconds(row.avgSec))}</td>
       <td>${esc(formatReportTime(row.avgSec))}</td>
       <td>${esc(signedEv(row.avgDev))}</td>
-      <td>${esc(row.avgSpread.toFixed(3) + ' EV')}</td>
-      <td>${esc(row.sigmaEv.toFixed(3) + ' EV')}</td>
+      <td>${esc(formatFixed(row.avgSpread, 2) + ' EV')}</td>
+      <td>${esc(formatFixed(row.sigmaEv, 2) + ' EV')}</td>
       <td>${esc(formatScore(row.accuracyScore))}</td>
       <td>${row.openingSpeed != null && row.closingSpeed != null ? esc(row.openingSpeed.toFixed(2) + ' / ' + row.closingSpeed.toFixed(2)) : '-'}</td>
       <td>${row.flashDetected ? (row.flashBad ? '×' : (row.flashLate ? '●' : '●')) : '-'}</td>
@@ -6075,8 +6379,9 @@ function evChartTickStep(limit) {
 }
 
 function targetBarsSvg(rows) {
-  const measured = rows.filter(r => r.measured);
-  if (!measured.length) return '';
+  const chartRows = rows.filter(r => r && (r.measured || r.missing));
+  const measured = chartRows.filter(r => r.measured);
+  if (!chartRows.length) return '';
 
   const bounds = measured.flatMap(row => {
     const spread = Math.max(0, Number(row.avgSpread) || 0);
@@ -6084,19 +6389,19 @@ function targetBarsSvg(rows) {
     return [row.avgDev - halfSpread, row.avgDev + halfSpread, row.avgDev];
   }).filter(Number.isFinite);
 
-  const rawLimit = Math.max(0.5, ...bounds.map(v => Math.abs(v)));
+  const rawLimit = Math.max(0.5, ...(bounds.length ? bounds.map(v => Math.abs(v)) : [1]));
   const tickStep = evChartTickStep(rawLimit);
   const limit = Math.ceil(rawLimit / tickStep) * tickStep;
   const width = 820;
-  const dense = measured.length >= 12;
-  const compact = measured.length >= 8;
+  const dense = chartRows.length >= 12;
+  const compact = chartRows.length >= 8;
   const left = 90;
   const right = 68;
   const top = compact ? 24 : 32;
   const bottom = 24;
   const rowH = dense ? 12 : compact ? 16 : 22;
   const plotW = width - left - right;
-  const height = top + bottom + measured.length * rowH;
+  const height = top + bottom + chartRows.length * rowH;
   const zeroX = left + plotW / 2;
   const xFor = ev => left + ((ev + limit) / (2 * limit)) * plotW;
 
@@ -6110,8 +6415,18 @@ function targetBarsSvg(rows) {
     return `<line class="${cls}" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 14}" y2="${height - bottom + 5}"></line><text class="tick" x="${x.toFixed(1)}" y="${height - 10}" text-anchor="middle">${esc(label)}</text>`;
   }).join('');
 
-  const items = measured.map((row, i) => {
+  const items = chartRows.map((row, i) => {
     const y = top + i * rowH;
+    const barY = y - Math.max(5, rowH * 0.28);
+    const barH = Math.max(8, rowH * 0.52);
+
+    if (row.missing) {
+      const label = tx('report.missingTargetChartLabel', 'No valid measurement');
+      return `<text class="target missing-target" x="16" y="${y + 4}">${esc(targetLabel(row.targetFrac))}</text>` +
+        `<rect class="missing-band" x="${left}" y="${barY.toFixed(1)}" width="${plotW}" height="${barH.toFixed(1)}" rx="4"></rect>` +
+        `<text class="missing-label" x="${zeroX.toFixed(1)}" y="${y + 4}" text-anchor="middle">${esc(label)}</text>`;
+    }
+
     const dx = Number(row.avgDev) || 0;
     const spread = Math.max(0, Number(row.avgSpread) || 0);
     const halfSpread = spread / 2;
@@ -6123,14 +6438,14 @@ function targetBarsSvg(rows) {
     const errMaxX = xFor(dx + halfSpread);
     const valueX = dx >= 0 ? Math.min(width - 8, Math.max(errMaxX + 8, x1 + 8)) : Math.max(8, Math.min(errMinX - 8, x1 - 8));
     return `<text class="target" x="16" y="${y + 4}">${esc(targetLabel(row.targetFrac))}</text>` +
-      `<rect x="${barX.toFixed(1)}" y="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(8, rowH * 0.52).toFixed(1)}" rx="4"></rect>` +
+      `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="4"></rect>` +
       `<line class="error" x1="${errMinX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 1}" y2="${y - 1}"></line>` +
-      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
-      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
+      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${barY.toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
+      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${barY.toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
       `<text class="value" x="${valueX.toFixed(1)}" y="${y + 4}" text-anchor="${dx >= 0 ? 'start' : 'end'}">${esc(signedEv(row.avgDev))}</text>`;
   }).join('');
 
-  return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Exposure offset by target time">${axis}${items}</svg>`;
+  return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(tx('report.exposureOffsets', 'Exposure offsets'))}">${axis}${items}</svg>`;
 }
 
 function niceSpeedMax(maxValue) {
@@ -6144,24 +6459,26 @@ function niceSpeedMax(maxValue) {
 function curtainSpeedSvg(project, rows) {
   if (project && typeof normalizeMeasurementMode === 'function' && normalizeMeasurementMode(project.mode) === 'central') return '';
 
-  const measured = rows
-    .filter(r => r.measured && (Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed)))
+  const chartRows = rows
+    .filter(r => r && (r.measured || r.missing))
     .sort((a, b) => a.targetFrac - b.targetFrac);
+  const measured = chartRows.filter(r => Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed));
 
   if (!measured.length) return '';
 
   const width = 820;
-  const compact = measured.length >= 8;
-  const height = compact ? 204 : 230;
+  const compact = chartRows.length >= 8;
+  const manyTargets = chartRows.length >= 10;
   const left = 64;
   const right = 28;
   const top = 24;
-  const bottom = 46;
+  const bottom = manyTargets ? 70 : compact ? 58 : 46;
   const plotW = width - left - right;
-  const plotH = height - top - bottom;
+  const plotH = compact ? 134 : 160;
+  const height = top + plotH + bottom;
   const allSpeeds = measured.flatMap(row => [row.openingSpeed, row.closingSpeed]).filter(v => Number.isFinite(v) && v > 0);
   const maxV = niceSpeedMax(Math.max(...allSpeeds) * 1.18);
-  const xFor = index => left + (measured.length === 1 ? plotW / 2 : (index / (measured.length - 1)) * plotW);
+  const xFor = index => left + (chartRows.length === 1 ? plotW / 2 : (index / (chartRows.length - 1)) * plotW);
   const yFor = value => top + plotH * (1 - Math.max(0, value) / maxV);
 
   const grid = [];
@@ -6170,19 +6487,23 @@ function curtainSpeedSvg(project, rows) {
     const value = maxV * (1 - i / gridSteps);
     const y = top + plotH * (i / gridSteps);
     grid.push(`<line class="grid" x1="${left}" x2="${width - right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"></line>`);
-    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(value.toFixed(maxV < 10 ? 1 : 0))}</text>`);
+    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(formatFixed(value, 2))}</text>`);
   }
 
-  const labelStride = measured.length >= 12 ? 2 : measured.length >= 8 ? 2 : 1;
-  const xAxis = measured.map((row, i) => {
+  const tickY = top + plotH + (manyTargets ? 24 : 18);
+  const xAxis = chartRows.map((row, i) => {
     const x = xFor(i);
-    const showLabel = i === 0 || i === measured.length - 1 || i % labelStride === 0;
+    const label = targetLabel(row.targetFrac).replace(' s', '');
+    const targetClass = row.missing ? 'tick target missing-target' : 'tick target';
+    const textAttrs = manyTargets
+      ? `x="${(x - 3).toFixed(1)}" y="${tickY.toFixed(1)}" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)} ${tickY.toFixed(1)})"`
+      : `x="${x.toFixed(1)}" y="${tickY.toFixed(1)}" text-anchor="middle"`;
     return `<line class="grid soft" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${top + plotH}"></line>` +
-      (showLabel ? `<text class="tick target" x="${x.toFixed(1)}" y="${height - 28}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>` : '');
+      `<text class="${targetClass}" ${textAttrs}>${esc(label)}</text>`;
   }).join('');
 
   function lineFor(key, cls) {
-    const points = measured.map((row, i) => {
+    const points = chartRows.map((row, i) => {
       const v = row[key];
       return Number.isFinite(v) && v > 0 ? { x: xFor(i), y: yFor(v), v, row } : null;
     }).filter(Boolean);
@@ -6213,10 +6534,14 @@ function curtainSpeedReportSection(project, rows) {
 }
 
 function reportDataFieldsHtml(project, model, measuredCount, measuredTargets) {
+  const missingTargets = (model.targetRows || []).filter(row => row && row.missing).length;
+  const targetSub = missingTargets
+    ? tf('report.missingTargetsProblem', '{count} missing target time(s) lower accuracy and curtain condition.', { count: missingTargets })
+    : tx('report.measuredTargets', 'measured target speeds in this camera project');
   const fields = [
     { label: tx('report.maximumFlashTime', 'Maximum flash time'), value: model.flash.label, sub: model.flash.status },
     { label: tx('report.measurements', 'Measurements'), value: String(measuredCount), sub: tx('report.validProjectMeasurements', 'evaluated releases; more repeats make the rating more reliable') },
-    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: tx('report.measuredTargets', 'measured target speeds in this camera project') }
+    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: targetSub }
   ];
   return `<section class="data-fields">${fields.map(field => `<div class="data-field"><span>${esc(field.label)}</span><strong>${esc(field.value)}</strong><small>${esc(field.sub || '')}</small></div>`).join('')}</section>`;
 }
@@ -6238,9 +6563,9 @@ async function standaloneReportHtml(project, model) {
   const measuredCount = model.entries.length;
   const measuredTargets = model.measuredRows.length;
   const title = tx('report.title', 'Camera measurement report');
-  const accBody = tx('report.accuracyBody', 'Rates the actual shutter speeds. High values mean the camera exposes close to the selected time and evenly across the frame. Low values point to visible timing error or brightness falloff.');
+  const accBody = tx('report.accuracyBody', 'Compares the camera with every selected shutter speed. High values mean the measured exposure is close to the target and even across the frame. A missing target speed counts as a fault because this speed apparently produced no valid timing result.');
   const relBody = tx('report.reliabilityBody', 'Rates whether the same setting stays consistent over repeated releases. This matters when the camera should work reproducibly, not only once. Without repeat measurements, the result is limited.');
-  const curtainBody = tx('report.curtainBody', 'Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Low values can indicate adjustment or service needs.');
+  const curtainBody = tx('report.curtainBody', 'Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Missing target speeds lower this value because an unusable speed can indicate a shutter timing problem.');
   const overallLabel = scoreLabel(model.overall);
   const note = project.note ? `<section class="note"><h2>${esc(tx('report.projectNote', 'Project note'))}</h2><p>${esc(project.note)}</p></section>` : '';
   const template = await reportTemplateHtml();
@@ -6269,7 +6594,7 @@ async function standaloneReportHtml(project, model) {
     ].join(''),
     DATA_TITLE: esc(tx('report.dataTitle', 'Results')), 
     EXPOSURE_OFFSETS_TITLE: esc(tx('report.exposureOffsets', 'Exposure offsets')),
-    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows how much exposure varies across the frame.')),
+    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows frame evenness. A missing target speed is shown as a failed row and lowers the accuracy and curtain-condition scores.')),
     EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average timing error')),
     EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: frame evenness')),
     OFFSET_CHART: targetBarsSvg(model.targetRows),

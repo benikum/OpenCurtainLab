@@ -131,6 +131,7 @@ function setConnState(state) {
 
 // Show a toast for a new measurement hint.
 function notifyMeasurementHint(entry) {
+  if (entry && normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return;
   const key = entry && entry.id && entry.hint ? entry.id + ':' + entry.hint : '';
   if (!key || key === S.lastMeasurementHintNotice) return;
   S.lastMeasurementHintNotice = key;
@@ -209,8 +210,11 @@ function buildEntryFromPacket(d) {
     });
 
     const act = sensors.filter(s => s.activated);
-    const avgSec = act.length ? act.reduce((a,s)=>a+s.seconds,0) / act.length : 0;
+    const mode = resolveMeasurementModeForPacket(d);
     const durs = act.map(s => s.seconds).filter(v => v > 0);
+    const avgSec = mode === 'central'
+      ? medianPositive(durs)
+      : (act.length ? act.reduce((a,s)=>a+s.seconds,0) / act.length : 0);
     const minSec = durs.length ? Math.min(...durs) : 0;
     const maxSec = durs.length ? Math.max(...durs) : 0;
 
@@ -227,8 +231,8 @@ function buildEntryFromPacket(d) {
       };
     }
 
-    const h = evaluateMeasurementHintFromData({ sensors, flash });
-    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: h.hint === 'too_few_sensors' ? false : d.valid !== false, count: act.length });
+    const h = evaluateMeasurementHintFromData({ sensors, flash, mode });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: h.hint, valid: h.hint === 'too_few_sensors' ? false : d.valid !== false, count: act.length, mode });
     if (!act.length) return null;
     const geometry = currentMeasurementGeometry();
     const x = Number(d.sensorDistanceXmm);
@@ -238,11 +242,11 @@ function buildEntryFromPacket(d) {
       valid: !projectInvalid,
       ts: Date.now(),
       targetFrac: target,
-      mode: normalizeMeasurementMode(d.mode),
+      mode,
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 && targetSec > 0 ? Math.log2(avgSec / targetSec) : 0,
-      spread: durs.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0,
+      spread: mode === 'central' ? 0 : (durs.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0),
       count: act.length,
       sensors,
       flash,
@@ -251,7 +255,7 @@ function buildEntryFromPacket(d) {
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
-      projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, normalizeMeasurementMode(d.mode)),
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, mode),
       raw: d,
     };
     entry.flashSyncOk = isFlashSyncOk(entry);
@@ -441,7 +445,7 @@ function renderProjList() {
     const active = p.id === S.selectedProjId ? ' active' : '';
     const meta = (p.id === DEFAULT_PROJECT_ID || p.isDefault)
       ? `${cnt} ${tx('labels.measurements', 'measurements')}`
-      : `${modeLabel(p.mode)} · ${p.times.length} ${tx('labels.speeds', 'speeds')} · ${cnt} ${tx('labels.measurements', 'measurements')}`;
+      : `${modeLabel(p.mode)} - ${p.times.length} ${tx('labels.speeds', 'speeds')} - ${cnt} ${tx('labels.measurements', 'measurements')}`;
     return `<div class="proj-card${active}" onclick="showProject('${p.id}')">
       <div class="proj-card-name">${esc(p.name)}</div>
       <div class="proj-card-meta">${esc(meta)}</div>
@@ -452,6 +456,7 @@ function renderProjList() {
 // Return the optional second history metadata line for measurement hints.
 function measurementHistoryHintLine(entry) {
   if (!entry || !entry.hint || entry.hint === 'none') return '';
+  if (normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return '';
   const h = typeof measurementHintHelp === 'function' ? measurementHintHelp(entry.hint, entry.hintText || entry.hint) : null;
   const text = (h && h.title) || entry.hintText || entry.warning || entry.hint;
   if (!text) return '';
@@ -480,26 +485,26 @@ function renderHistList() {
   }
 
   el.innerHTML = entries.map(e => {
-    const ts  = new Date(e.ts).toLocaleTimeString(uiLocale());
+    const ts  = formatTimeMinute(new Date(e.ts));
 
     if (e.isError) {
       return `<div class="h-entry err" id="he-${e.id}">
         <div class="h-time" style="color:var(--red);">ERROR</div>
         <div class="h-dev pos">!</div>
-        <div class="h-meta"><span class="h-meta-line">${ts} · ${esc(e.error || 'Unknown error')}</span></div>
+        <div class="h-meta"><span class="h-meta-line">${ts} - ${esc(e.error || 'Unknown error')}</span></div>
         <div class="h-mode h-mode-empty">-</div>
       </div>`;
     }
 
     const dev = e.avgDev;
     const dc  = devClass(dev);
-    const ds  = (dev>=0?'+':'') + dev.toFixed(2);
+    const ds  = formatSignedNumber(dev, 2);
     const sel = e.id === S.selId ? 'sel' : '';
 
     return `<div class="h-entry ${sel}" id="he-${e.id}" onclick="selectEntry('${e.id}')">
       <div class="h-time">1/${e.avgFrac}</div>
       <div class="h-dev ${dc}"><span>${ds}</span><span class="h-dev-unit">EV</span></div>
-      <div class="h-meta"><span class="h-meta-line">${ts} · ${tx('labels.target', 'Target')} 1/${e.targetFrac} · ${e.count} Sens.</span>${measurementHistoryHintLine(e)}</div>
+      <div class="h-meta"><span class="h-meta-line">${ts} - ${tx('labels.target', 'Target')} 1/${e.targetFrac} - ${e.count} Sens.</span>${measurementHistoryHintLine(e)}</div>
       ${historyModeHtml(e)}
     </div>`;
   }).join('');
@@ -524,8 +529,8 @@ function renderDetailView(id) {
   const e = S.history.find(h => h.id === id);
   if (!e) return;
 
-  const ts  = new Date(e.ts).toLocaleString(uiLocale());
-  const ds  = (e.avgDev>=0?'+':'') + e.avgDev.toFixed(3);
+  const ts  = formatDateTimeMinute(new Date(e.ts));
+  const ds  = formatSignedNumber(e.avgDev, 2);
   const devC = devColor(e.avgDev);
   const isCentral = (normalizeMeasurementMode(e.mode) === 'central');
 
@@ -535,12 +540,12 @@ function renderDetailView(id) {
       <div class="s-name">ID ${i}</div>
       <div style="font-size:11px;color:var(--tx4);">${tx('labels.inactive', 'inactive')}</div></div>`;
     const sdc = devColor(s.deviation);
-    const sds = (s.deviation>=0?'+':'') + s.deviation.toFixed(3);
+    const sds = formatSignedNumber(s.deviation, 2);
     return `<div class="s-box" data-s="${i}">
       <div class="s-name">ID ${i}</div>
       <div class="s-frac">1/${s.fraction}</div>
       <div class="s-dev" style="color:${sdc}">${sds} EV</div>
-      <div class="s-ms">${(s.seconds*1000).toFixed(3)} ms</div>
+      <div class="s-ms">${formatMs(s.seconds * 1000)}</div>
     </div>`;
   }).join('');
 
@@ -567,29 +572,29 @@ function renderDetailView(id) {
         ${measurementHintNoticeHtml(e)}
         <div class="metrics-row">
           <div class="metric">
-            <div class="m-label">${tx('metrics.avgExposure', 'Avg exposure time')}</div>
-            <div class="m-val">1/${e.avgFrac}</div>
-            <div class="m-sub">${(e.avgSec*1000).toFixed(3)} ms</div>
-          </div>
-          <div class="metric">
-            <div class="m-label">${tx('metrics.avgDeviation', 'Avg deviation')}</div>
-            <div class="m-val" style="color:${devC};font-size:20px;">${ds} EV</div>
-            <div class="m-sub">${tx('labels.target', 'Target')}: 1/${e.targetFrac} s</div>
+            <div class="m-label">${tx('metrics.exposureAndDeviation', 'Exposure time')}</div>
+            <div class="m-val">1/${e.avgFrac} <span style="color:${devC};font-size:16px;">(${ds} EV)</span></div>
+            <div class="m-sub">${formatMs(e.avgSec * 1000)}</div>
           </div>
           ${isCentral ? '' : `<div class="metric">
-            <div class="m-label">Spread min↔max</div>
-            <div class="m-val" style="font-size:18px;">${e.spread.toFixed(3)} EV</div>
+            <div class="m-label">${tx('metrics.frameSpread', 'Spread over frame')}</div>
+            <div class="m-val" style="font-size:18px;">${formatFixed(e.spread, 2)} EV</div>
             <div class="m-sub">${e.count} ${tx('labels.sensorsActive', 'sensors active')}</div>
+          </div>
+          <div class="metric">
+            <div class="m-label">${tx('metrics.slitWidth', 'Slit width')}</div>
+            <div class="m-val metric-lines"><span>${tx('metrics.min', 'min')}: ${formatMm((slitWidthStatsForEntry(e) || {}).min)}</span><span>${tx('metrics.max', 'max')}: ${formatMm((slitWidthStatsForEntry(e) || {}).max)}</span></div>
+            <div class="m-sub">&nbsp;</div>
           </div>`}
           <div class="metric">
             <div class="m-label">${tx('metrics.totalOpenTime', 'Total open time')}</div>
-            <div class="m-val" style="font-size:18px;">${calcTotalOpenTime(e).toFixed(3)} ms</div>
+            <div class="m-val" style="font-size:18px;">${formatMs(calcTotalOpenTime(e))}</div>
             <div class="m-sub">&nbsp;</div>
           </div>
           <div class="metric">
             <div class="m-label">${tx('metrics.flashSync', 'Flash sync')}</div>
             <div class="m-val" style="font-size:18px;">${flashSyncIcon(e)}</div>
-            <div class="m-sub">${e.flash && e.flash.detected ? e.flash.triggerMs.toFixed(3) + ' ms' : tx('labels.noFlashDetected', 'no flash detected')}</div>
+            <div class="m-sub">${e.flash && e.flash.detected ? formatMs(e.flash.triggerMs) : tx('labels.noFlashDetected', 'no flash detected')}</div>
           </div>
         </div>
         <div class="sensor-row">${sboxes}</div>
@@ -605,7 +610,7 @@ function renderDetailView(id) {
     </div>
 
     ${isCentral ? '' : `<div class="card timeline-card">
-      <div class="card-hdr"><span class="card-title">${tx('cards.timelineSpeed', 'Curtain speed by sensor position')}</span><span style="font-size:10px;color:var(--tx3)">m/s · mm</span></div>
+      <div class="card-hdr"><span class="card-title">${tx('cards.timelineSpeed', 'Curtain speed by sensor position')}</span></div>
       <div class="card-body" style="padding:10px 6px;">
         <div class="tl-wrap"><canvas id="curtain-time-chart"></canvas></div>
       </div>

@@ -208,6 +208,8 @@ function evaluateMeasurementHintFromData(data = {}) {
   const activeSensors = sensors.filter(s => s && s.activated && Number(s.openUs) > 0 && Number(s.closeUs) > Number(s.openUs));
   const flash = data.flash || null;
   const flashDetected = !!(flash && flash.detected && Number(flash.triggerUs) > 0);
+  const mode = normalizeMeasurementMode(data.mode || data.measurementMode || data.shutterMode);
+  const isCentral = mode === 'central';
 
   if (activeSensors.length && isTimeoutMeasurementPattern(activeSensors)) {
     return makeMeasurementHint('timeout_with_data', 'Timeout measurement');
@@ -215,10 +217,10 @@ function evaluateMeasurementHintFromData(data = {}) {
   if (!activeSensors.length && flashDetected) {
     return makeMeasurementHint('flash_without_sensor', 'Flash without shutter sensor');
   }
-  if (activeSensors.length > 0 && activeSensors.length < MIN_VALID_SENSOR_COUNT) {
+  if (!isCentral && activeSensors.length > 0 && activeSensors.length < MIN_VALID_SENSOR_COUNT) {
     return makeMeasurementHint('too_few_sensors', 'Too few sensors were covered');
   }
-  if (activeSensors.length > 0 && activeSensors.length < 5) {
+  if (!isCentral && activeSensors.length > 0 && activeSensors.length < 5) {
     return makeMeasurementHint('incomplete_sensor_coverage', 'Incomplete sensor coverage');
   }
   return makeMeasurementHint('none');
@@ -440,6 +442,7 @@ function firmwareNoticeHtml() {
 // Build the latest measurement-hint notice card.
 function measurementHintNoticeHtml(entry) {
   if (!entry || !entry.hint || entry.hint === 'none') return '';
+  if (normalizeMeasurementMode(entry.mode) === 'central' && isLowSensorCoverageHint(entry.hint)) return '';
   const h = measurementHintHelp(entry.hint, entry.hintText || entry.hint);
   return buildNoticeCard('warning', h.title, h.body, h.action);
 }

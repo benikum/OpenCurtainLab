@@ -25,6 +25,52 @@ function devColor(ev) { return devStatus(ev).color; }
 // Choose the CSS class used for a device state.
 function devClass(ev) { return devStatus(ev).level; }
 
+// Plain fallback used for values that are not available.
+function displayDash() { return '-'; }
+
+// Format decimal display values consistently. Values that can have decimals are
+// shown with two decimal places across the UI.
+function formatFixed(value, digits = 2, fallback = '-') {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : fallback;
+}
+
+function formatSignedNumber(value, digits = 2, fallback = '-') {
+  const n = Number(value);
+  return Number.isFinite(n) ? (n >= 0 ? '+' : '') + n.toFixed(digits) : fallback;
+}
+
+function formatEv(value, fallback = '-') {
+  const text = formatSignedNumber(value, 2, fallback);
+  return text === fallback ? fallback : text + ' EV';
+}
+
+function formatMs(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' ms';
+}
+
+function formatMm(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' mm';
+}
+
+function formatMetersPerSecond(value, fallback = '-') {
+  const text = formatFixed(value, 2, fallback);
+  return text === fallback ? fallback : text + ' m/s';
+}
+
+function formatTimeMinute(date = new Date()) {
+  return date.toLocaleTimeString(uiLocale(), { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDateTimeMinute(date = new Date()) {
+  return date.toLocaleString(uiLocale(), {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
 // Format a time interval in compact human-readable form.
 function niceInterval(range, maxTicks) {
   const raw = Math.max(Math.abs(range) / Math.max(maxTicks, 1), Number.EPSILON);

@@ -5,6 +5,58 @@ function chartInterpolationEnabled() {
   return !!(S.uiSettings && S.uiSettings.interpolateCharts);
 }
 
+function ensureChartTooltip(canvas) {
+  if (!canvas || !canvas.parentElement) return null;
+  const parent = canvas.parentElement;
+  if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+  let tip = parent.querySelector('.chart-tooltip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.className = 'chart-tooltip';
+    parent.appendChild(tip);
+  }
+  return tip;
+}
+
+function bindCanvasPointTooltip(canvas, points) {
+  if (!canvas) return;
+  canvas._oclTooltipPoints = Array.isArray(points) ? points : [];
+  const tip = ensureChartTooltip(canvas);
+  if (!tip) return;
+  if (canvas._oclTooltipBound) {
+    tip.style.display = 'none';
+    return;
+  }
+  canvas._oclTooltipBound = true;
+
+  canvas.addEventListener('mousemove', event => {
+    const pts = canvas._oclTooltipPoints || [];
+    if (!pts.length) { tip.style.display = 'none'; return; }
+    const rect = canvas.getBoundingClientRect();
+    const sx = rect.width ? canvas.clientWidth / rect.width : 1;
+    const sy = rect.height ? canvas.clientHeight / rect.height : 1;
+    const mx = (event.clientX - rect.left) * sx;
+    const my = (event.clientY - rect.top) * sy;
+    let best = null;
+    let bestDist = Infinity;
+    pts.forEach(point => {
+      const dx = mx - point.x;
+      const dy = my - point.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = point; }
+    });
+    if (!best || bestDist > 14) { tip.style.display = 'none'; return; }
+    tip.innerHTML = best.html || '';
+    tip.style.display = 'block';
+    const left = Math.min(canvas.clientWidth - tip.offsetWidth - 6, Math.max(6, best.x + 10));
+    const top = Math.min(canvas.clientHeight - tip.offsetHeight - 6, Math.max(6, best.y - tip.offsetHeight - 10));
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
 // Return speed points in display order without extending them beyond the measured segment centers.
 function speedSeriesForChart(points) {
   if (!Array.isArray(points) || !points.length) return points || [];
@@ -16,7 +68,7 @@ function speedSeriesForChart(points) {
 // are deliberately dashed because they are display continuity only, not measured
 // speed samples.
 function drawSpeedEdgeExtensions(ctx, points, minX, maxX, toX, toY) {
-  if (!points.length || !chartInterpolationEnabled()) return;
+  if (!points.length) return;
   const line = points.slice().sort((a, b) => a.x - b.x);
   const first = line[0];
   const last = line[line.length - 1];
@@ -170,6 +222,7 @@ function drawCurtainTimeChart(entry) {
     ctx.font = `11px 'Share Tech Mono', monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(tx('charts.notEnoughCurtain', 'Not enough sensor points for curtain chart'), W / 2, H / 2);
+    bindCanvasPointTooltip(canvas, []);
     return;
   }
 
@@ -194,7 +247,7 @@ function drawCurtainTimeChart(entry) {
     ctx.lineTo(W - PAD_R, y);
     ctx.stroke();
     const v = vMax * (1 - i / yGrid);
-    ctx.fillText(v.toFixed(vMax < 10 ? 1 : 0), PAD_L - 6, y + 3);
+    ctx.fillText(formatFixed(v, 2), PAD_L - 6, y + 3);
   }
   ctx.restore();
 
@@ -214,7 +267,7 @@ function drawCurtainTimeChart(entry) {
     ctx.moveTo(x, PAD_T);
     ctx.lineTo(x, PAD_T + PH);
     ctx.stroke();
-    ctx.fillText(pos.toFixed(pos < 10 ? 1 : 0), x, PAD_T + PH + 17);
+    ctx.fillText(formatFixed(pos, 2), x, PAD_T + PH + 17);
   }
   ctx.restore();
 
@@ -245,7 +298,9 @@ function drawCurtainTimeChart(entry) {
   ctx.fillText(tx('charts.positionAxis', 'POSITION (mm)'), PAD_L + PW / 2, PAD_T + PH + 37);
   ctx.restore();
 
-  function drawLine(arr, color) {
+  const hoverPoints = [];
+
+  function drawLine(arr, color, label) {
     if (!arr.length) return;
     const line = speedSeriesForChart(arr);
     ctx.save();
@@ -257,19 +312,26 @@ function drawCurtainTimeChart(entry) {
     drawSpeedPath(ctx, line, toX, toY, chartInterpolationEnabled());
     ctx.stroke();
     arr.forEach(point => {
+      const px = toX(point.x);
+      const py = toY(point.v);
       ctx.beginPath();
-      ctx.arc(toX(point.x), toY(point.v), 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = C.bg;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      hoverPoints.push({
+        x: px,
+        y: py,
+        html: `<strong>${esc(label || '')}</strong><br>${esc(formatMm(point.x))}<br>${esc(formatMetersPerSecond(point.v))}`
+      });
     });
     ctx.restore();
   }
 
-  drawLine(profile.open, '#52c4b0');
-  drawLine(profile.close, '#68a8e0');
+  drawLine(profile.open, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
+  drawLine(profile.close, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
 
   ctx.font = `9px 'Share Tech Mono', monospace`;
   function legendItemLeft(x, y, color, label) {
@@ -301,6 +363,7 @@ function drawCurtainTimeChart(entry) {
   const ly = PAD_T + PH + 37;
   legendItemLeft(PAD_L + 8, ly, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
   legendItemRight(W - PAD_R, ly, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
+  bindCanvasPointTooltip(canvas, hoverPoints);
 }
 
 // ════════════════════════════════════════════
@@ -397,10 +460,10 @@ function drawTimeline(entry) {
     // Label: relative ms from first open
     const relMs = t - tMin;
     let label;
-    if (tickInt < 0.1)       label = relMs.toFixed(3) + ' ms';
-    else if (tickInt < 1)    label = relMs.toFixed(2) + ' ms';
-    else if (tickInt < 10)   label = relMs.toFixed(1) + ' ms';
-    else                     label = Math.round(relMs) + ' ms';
+    if (tickInt < 0.1)       label = formatMs(relMs);
+    else if (tickInt < 1)    label = formatMs(relMs);
+    else if (tickInt < 10)   label = formatMs(relMs);
+    else                     label = formatMs(relMs);
     ctx.fillText(label, x, H - PAD_B + 17);
   }
   ctx.restore();
@@ -507,7 +570,7 @@ function drawTimeline(entry) {
     ctx.restore();
 
     // Duration label inside bar (if wide enough)
-    const durMs = (s.closeMs - s.openMs).toFixed(3);
+    const durMs = formatFixed(s.closeMs - s.openMs, 2);
     ctx.save();
     ctx.fillStyle = '#fff';
     ctx.font      = `9px 'Share Tech Mono', monospace`;
@@ -646,7 +709,7 @@ function drawTimelineVertical(entry, canvas) {
   for(let t=tickStart; t<=T1; t+=tickInt){
     const y=toY(t); if(y<PAD_T||y>H-PAD_B) continue;
     const rel=t-tMin;
-    ctx.fillText((rel<0?'':'+')+(tickInt<1?rel.toFixed(2):rel.toFixed(1)), PAD_L-3, y+3);
+    ctx.fillText((rel < 0 ? '' : '+') + formatFixed(rel, 2), PAD_L - 3, y + 3);
   }
 
   // Draw the flash trigger as a dashed line if the packet contains one.

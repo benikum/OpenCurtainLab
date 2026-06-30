@@ -110,6 +110,29 @@ function gradeBadge(score) {
   const g = gradeFromScore(score);
   return `<span class="grade-badge ${g.cls}">${g.grade}</span>`;
 }
+
+function tableScoreColor(score) {
+  if (!Number.isFinite(score)) return 'var(--tx4)';
+  if (score >= 90) return 'var(--green)';
+  if (score >= 78) return 'var(--amber)';
+  if (score >= 62) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function tableToleranceColor(value, greenLimit, redLimit, floor = 25) {
+  if (!Number.isFinite(value)) return 'var(--tx4)';
+  const score = typeof scoreFromTolerance === 'function'
+    ? scoreFromTolerance(Math.abs(value), greenLimit, redLimit, floor)
+    : clampNumber(100 - Math.abs(value) / Math.max(redLimit, Number.EPSILON) * 100, 0, 100);
+  return tableScoreColor(score);
+}
+
+function flashIconForAggregate(agg) {
+  if (!agg || !agg.flashDetected) return `<span title="${esc(tx('flash.none', 'No flash detected'))}" style="color:var(--tx4);font-size:16px;">-</span>`;
+  if (agg.flashBad) return `<span title="${esc(tx('flash.outside', 'Flash outside total opening'))}" style="color:var(--red);font-size:16px;">×</span>`;
+  if (agg.flashLate) return `<span title="${esc(tx('flash.late', 'Flash near the end of total opening'))}" style="color:var(--amber);font-size:16px;">●</span>`;
+  return `<span title="${esc(tx('flash.within', 'Flash within total opening'))}" style="color:var(--green);font-size:16px;">●</span>`;
+}
 // Build the project overview summary cards.
 function buildProjectSummary(p) {
   if (typeof projectScoreModel !== 'function') {
@@ -171,24 +194,35 @@ function aggregateForTarget(projId, targetFrac) {
   const devValues = entries.map(entry => Number.isFinite(entry.avgDev) ? entry.avgDev : Math.log2(entry.avgSec * targetFrac));
   const avgAbsDev = average(devValues.map(Math.abs)) || 0;
   const sigmaEv = stddev(devValues);
-  const score = scoreForTarget(Math.abs(avgDev), sigmaEv, n);
+
+  const cfg = typeof exportConfig === 'function' ? exportConfig() : null;
+  const offsetScore = typeof scoreFromTolerance === 'function' ? scoreFromTolerance(Math.abs(avgDev), 0.15, 0.75, 25) : null;
+  const spreadScore = typeof scoreFromTolerance === 'function' ? scoreFromTolerance(avgSpread, 0.10, 0.55, 20) : null;
+  const accuracyScore = typeof scoreBlend === 'function' ? scoreBlend([
+    { score: offsetScore, weight: cfg ? cfg.accuracyOffsetWeight : 35 },
+    { score: spreadScore, weight: cfg ? cfg.accuracySpreadWeight : 65 },
+  ]) : null;
+  const reliabilityScore = n >= 2 && typeof scoreFromTolerance === 'function' ? scoreFromTolerance(sigmaEv, 0.05, 0.35, 30) : null;
+  const score = Number.isFinite(accuracyScore) ? accuracyScore : scoreForTarget(Math.abs(avgDev), sigmaEv, n);
 
   const curtains = entries.map(entry => calcCurtain(entry)).filter(Boolean);
   const avgV1 = curtains.length ? curtains.reduce((sum, c) => sum + c.v1, 0) / curtains.length : null;
   const avgV2 = curtains.length ? curtains.reduce((sum, c) => sum + c.v2, 0) / curtains.length : null;
+  const entriesWithNegativeTotalOpen = typeof calcTotalOpenTime === 'function'
+    ? entries.filter(entry => calcTotalOpenTime(entry) < 0)
+    : [];
+  const slitWidth = typeof slitWidthStatsForEntries === 'function' ? slitWidthStatsForEntries(entriesWithNegativeTotalOpen) : null;
 
   const flashDetected = entries.filter(entry => entry.flash && entry.flash.detected).length;
   const flashOk = entries.filter(entry => isFlashSyncOk(entry) === true).length;
   const flashLate = entries.filter(entry => typeof flashSyncState === 'function' && flashSyncState(entry) === 'late').length;
   const flashBad = entries.filter(entry => isFlashSyncOk(entry) === false).length;
 
-  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, avgSpread, avgV1, avgV2, flashDetected, flashOk, flashLate, flashBad };
+  return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, accuracyScore, reliabilityScore, avgSpread, avgV1, avgV2, slitWidth, flashDetected, flashOk, flashLate, flashBad };
 }
 
 // Build the per-target project analysis table.
 function buildProjectTable(p) {
-  const fmt = (v, dec) => v != null ? v.toFixed(dec) : '-';
-
   const rows = p.times.map(tgt => {
     const agg = aggregateForTarget(p.id, tgt);
     if (!agg) {
@@ -198,21 +232,29 @@ function buildProjectTable(p) {
         <td class="t-dim">-</td>
         <td class="t-dim">-</td>
         <td class="t-dim">-</td>
+        <td class="t-dim">${flashIconForAggregate(null)}</td>
         <td class="t-dim">-</td>
-        <td class="t-dim" style="font-size:10px;">${tx('project.zeroMeas', '0 meas.')}</td>
+        <td>${gradeBadge((typeof exportConfig === 'function' && Number.isFinite(exportConfig().missingTargetScore)) ? exportConfig().missingTargetScore : 0)}</td>
+        <td class="t-dim" style="font-size:10px;">0</td>
       </tr>`;
     }
-    const devStr = (agg.avgDev>=0?'+':'') + agg.avgDev.toFixed(3) + ' EV';
+    const devStr = formatEv(agg.avgDev);
     const devC = devColor(agg.avgDev);
+    const spreadC = tableToleranceColor(agg.avgSpread, 0.10, 0.55, 20);
+    const consistencyC = agg.n >= 2 ? tableToleranceColor(agg.sigmaEv, 0.05, 0.35, 30) : 'var(--tx4)';
+    const slitMin = agg.slitWidth ? formatMm(agg.slitWidth.min) : '-';
+    const slitMax = agg.slitWidth ? formatMm(agg.slitWidth.max) : '-';
 
     return `<tr>
       <td class="t-target">1/${tgt}</td>
-      <td class="t-amber">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
-      <td><span style="color:var(--tx1)">${agg.sigmaEv.toFixed(3)} EV</span><br><span style="font-size:10px;color:var(--tx3)">σ ${tx('project.repeatability', 'repeatability')}</span></td>
+      <td class="t-amber t-nowrap">1/${agg.avgFrac} <span style="font-size:10px;color:${devC}">(${devStr})</span></td>
+      <td class="t-nowrap" style="color:${spreadC}">${formatFixed(agg.avgSpread, 2)} EV</td>
+      <td class="t-teal t-nowrap">${slitMin}</td>
+      <td class="t-teal t-nowrap">${slitMax}</td>
+      <td>${flashIconForAggregate(agg)}</td>
+      <td class="t-nowrap" style="color:${consistencyC}">${agg.n >= 2 ? formatFixed(agg.sigmaEv, 2) + ' EV' : '-'}</td>
       <td>${gradeBadge(agg.score)}</td>
-      <td class="t-teal">${agg.avgV1!=null ? fmt(agg.avgV1,2) : '-'} / ${agg.avgV2!=null ? fmt(agg.avgV2,2) : '-'}</td>
-      <td>${agg.flashDetected ? (agg.flashBad ? '<span style="color:var(--red);font-size:16px;">×</span>' : (agg.flashLate ? '<span style="color:var(--amber);font-size:16px;">●</span>' : '<span style="color:var(--green);font-size:16px;">●</span>')) : '<span style="color:var(--tx4);font-size:16px;">-</span>'}</td>
-      <td style="font-size:10px;color:var(--tx3)">${agg.n} ${tx('project.measShort', 'meas.')}</td>
+      <td style="font-size:10px;color:var(--tx3)">${agg.n}</td>
     </tr>`;
   }).join('');
 
@@ -222,10 +264,12 @@ function buildProjectTable(p) {
         <tr>
           <th>${tx('table.target', 'Target')}</th>
           <th>${tx('table.avgMeasurement', 'Avg measurement')}</th>
-          <th>σ</th>
-          <th>${tx('table.grade', 'Grade')}</th>
-          <th>${tx('table.curtainSpeed', 'Curtain speed')} V₁/V₂ (m/s)</th>
+          <th>${tx('table.frameSpread', 'Spread over frame')}</th>
+          <th>${tx('table.slitWidthMin', 'Slit width min')}</th>
+          <th>${tx('table.slitWidthMax', 'Slit width max')}</th>
           <th>${tx('table.flash', 'Flash')}</th>
+          <th>${tx('table.consistency', 'Consistency')}</th>
+          <th>${tx('table.grade', 'Grade')}</th>
           <th>n</th>
         </tr>
       </thead>
@@ -260,7 +304,7 @@ function showProject(projId) {
     <!-- Project table -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">${esc(p.name)}</span>
+        <span class="card-title">${esc(p.name)} - ${esc(modeLabel(p.mode))}</span>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="exportProjCSV('${projId}')">CSV EXPORT</button>
           <button class="btn btn-amber btn-sm" onclick="exportProjectReportHtml('${projId}')">HTML REPORT</button>
@@ -275,7 +319,6 @@ function showProject(projId) {
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">${tx('cards.curtainCurve', 'Curtain speed by target')}</span>
-        <span style="font-size:10px;color:var(--tx3)">m/s</span>
       </div>
       <div class="card-body" style="padding:10px 6px;">
         <canvas id="curtain-chart" data-proj-id="${projId}"></canvas>
@@ -349,6 +392,7 @@ function drawCurtainChart(p) {
     ctx.font = `11px 'Share Tech Mono', monospace`;
     ctx.textAlign = 'center';
     ctx.fillText(tx('charts.noCurtainMeasurements', 'No measurements with curtain speed data yet'), W / 2, H / 2);
+    if (typeof bindCanvasPointTooltip === 'function') bindCanvasPointTooltip(canvas, []);
     return;
   }
 
@@ -384,7 +428,7 @@ function drawCurtainChart(p) {
   for (let i = 0; i <= nGrid; i++) {
     const v = vMax * (1 - i / nGrid);
     const y = PAD_T + (i / nGrid) * PH;
-    ctx.fillText(v.toFixed(vMax < 10 ? 1 : 0), PAD_L - 4, y + 3);
+    ctx.fillText(formatFixed(v, 2), PAD_L - 4, y + 3);
   }
   ctx.save();
   ctx.translate(14, PAD_T + PH / 2);
@@ -404,6 +448,8 @@ function drawCurtainChart(p) {
   });
   ctx.fillStyle = C.tx3;
   ctx.fillText(tx('charts.targetSpeedAxis', 'Target speed (1/x s)'), PAD_L + PW / 2, PAD_T + PH + 29);
+
+  const hoverPoints = [];
 
   function drawLine(pts, color, label) {
     if (!pts.length) return;
@@ -435,19 +481,26 @@ function drawCurtainChart(p) {
     }
     ctx.stroke();
     ordered.forEach(pt => {
+      const px = xOf(pt.tgt);
+      const py = yV(pt.val);
       ctx.beginPath();
-      ctx.arc(xOf(pt.tgt), yV(pt.val), 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = C.bg;
       ctx.lineWidth = 1.5;
       ctx.stroke();
+      hoverPoints.push({
+        x: px,
+        y: py,
+        html: `<strong>${esc(label || '')}</strong><br>${esc(targetLabel(pt.tgt))}<br>${esc(formatMetersPerSecond(pt.val))}`
+      });
     });
     ctx.restore();
   }
 
-  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v1 })), '#52c4b0');
-  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v2 })), '#68a8e0');
+  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v1 })), '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
+  drawLine(points.map(pt => ({ tgt: pt.tgt, val: pt.v2 })), '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
 
   ctx.font = `9px 'Share Tech Mono', monospace`;
   function legendItem(x, y, color, label) {
@@ -459,6 +512,7 @@ function drawCurtainChart(p) {
   const ly = PAD_T + PH + 52;
   legendItem(PAD_L + 8, ly, '#52c4b0', tx('charts.openingSpeed', 'Opening speed'));
   legendItem(Math.max(PAD_L + PW * 0.50, W - PAD_R - 190), ly, '#68a8e0', tx('charts.closingSpeed', 'Closing speed'));
+  if (typeof bindCanvasPointTooltip === 'function') bindCanvasPointTooltip(canvas, hoverPoints);
 }
 
 

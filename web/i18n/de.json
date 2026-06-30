@@ -104,7 +104,12 @@
     "avgExposure": "Ø Belichtungszeit",
     "avgDeviation": "Abweichung Ø",
     "totalOpenTime": "Totale Öffnungsdauer",
-    "flashSync": "Blitz-Sync"
+    "flashSync": "Blitz-Sync",
+    "exposureAndDeviation": "Belichtungszeit",
+    "frameSpread": "Spread über Frame",
+    "slitWidth": "Schlitzbreite",
+    "min": "min",
+    "max": "max"
   },
   "placeholders": {
     "projectNotes": "Notizen zu diesem Projekt…"
@@ -128,7 +133,7 @@
     "speedAxis": "GESCHWINDIGKEIT (m/s)",
     "targetSpeedAxis": "Zielzeit (1/x s)",
     "noCurtainMeasurements": "Noch keine Messungen mit Vorhanggeschwindigkeit",
-    "timeRelative": "ZEIT (ms, relativ zur ersten Öffnung)"
+    "timeRelative": "ZEIT (ms)"
   },
   "flash": {
     "within": "Blitz innerhalb der totalen Öffnung",
@@ -162,7 +167,17 @@
     "avgMeasurement": "Ø Messung",
     "grade": "Note",
     "flash": "Blitz",
-    "curtainSpeed": "Vorhanggeschwindigkeit"
+    "curtainSpeed": "Vorhanggeschwindigkeit",
+    "frameSpread": "Spread über Frame",
+    "slitWidth": "Schlitzbreite min-max",
+    "consistency": "Konsistenz",
+    "consistencySingle": "Einzelmessung",
+    "consistencyVeryStable": "sehr stabil",
+    "consistencyStable": "stabil",
+    "consistencyCheck": "prüfen",
+    "consistencyUneven": "ungleichmäßig",
+    "slitWidthMin": "Schlitzbreite min",
+    "slitWidthMax": "Schlitzbreite max"
   },
   "csv": {
     "note": "Notiz",
@@ -368,9 +383,9 @@
     "noFlashData": "Keine Blitzdaten in diesem Projekt",
     "notMeasured": "Nicht gemessen",
     "projectNote": "Projektnotiz",
-    "accuracyBody": "Bewertet die tatsächlichen Verschlusszeiten. Hohe Werte bedeuten: Die Kamera belichtet nah an der eingestellten Zeit und über das Bild gleichmäßig. Niedrige Werte weisen auf sichtbare Abweichungen oder Helligkeitsverlauf hin.",
+    "accuracyBody": "Vergleicht die Kamera mit jeder gewählten Verschlusszeit. Hohe Werte bedeuten, dass die gemessene Belichtung nah am Soll liegt und über das Bild gleichmäßig ist. Eine fehlende Zielzeit zählt als Fehler, weil diese Zeit offenbar kein gültiges Timing-Ergebnis liefert.",
     "reliabilityBody": "Bewertet, ob dieselbe Einstellung bei mehreren Auslösungen gleich bleibt. Das ist wichtig, wenn die Kamera nicht nur einmal korrekt, sondern reproduzierbar arbeiten soll. Ohne Wiederholungen ist die Aussage begrenzt.",
-    "curtainBody": "Bewertet den Lauf des Schlitzverschlusses. Gute Werte bedeuten, dass öffnender und schließender Vorhang gleichmäßig und passend zueinander laufen. Schlechte Werte deuten auf Justage- oder Servicebedarf.",
+    "curtainBody": "Bewertet den Lauf des Schlitzverschlusses. Gute Werte bedeuten, dass öffnender und schließender Vorhang gleichmäßig und passend zueinander laufen. Fehlende Zielzeiten senken diesen Wert, weil eine nicht nutzbare Zeit auf ein Timing-Problem des Verschlusses hinweisen kann.",
     "measurements": "Messungen",
     "targetTimes": "Zielzeiten",
     "mode": "Modus",
@@ -397,10 +412,13 @@
     "curtainBodyShort": "Gleichmäßigkeit und Parallelität",
     "scoresTitle": "Bewertung",
     "dataTitle": "Ergebnisse",
-    "exposureOffsetsExplanation": "Für jede eingestellte Verschlusszeit zeigt der Balken die mittlere Abweichung vom Sollwert. 0 EV ist ideal. Links ist die Kamera schneller, rechts langsamer. Die Fehlerlinie zeigt, wie stark die Belichtung über das Bild variiert.",
+    "exposureOffsetsExplanation": "Für jede eingestellte Verschlusszeit zeigt der Balken die mittlere Abweichung vom Sollwert. 0 EV ist ideal. Links ist die Kamera schneller, rechts langsamer. Die Fehlerlinie zeigt die Gleichmäßigkeit im Bild. Eine fehlende Zielzeit erscheint als Fehlerzeile und senkt Genauigkeit und Vorhangzustand.",
     "exposureBarLegend": "Balken: mittlere Zeitabweichung",
     "exposureErrorLegend": "Fehlerlinie: Bildgleichmäßigkeit",
     "curtainSpeedExplanation": "Die Linien zeigen, ob der öffnende und der schließende Vorhang über die gemessenen Zeiten ähnlich schnell und ruhig laufen. Ruhige, nahe Linien sprechen für einen sauberen Verschlusslauf; Sprünge oder großer Abstand können Justage- oder Servicebedarf bedeuten.",
-    "githubLink": "GitHub: benikum/OpenCurtainLab"
+    "githubLink": "GitHub: benikum/OpenCurtainLab",
+    "missingTargetChartLabel": "Keine gültige Messung",
+    "missingTargetRow": "Fehlende Zielzeit - zählt als Problem",
+    "missingTargetsProblem": "{count} fehlende Zielzeit(en) senken Genauigkeit und Vorhangzustand."
   }
 }

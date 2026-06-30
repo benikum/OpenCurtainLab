@@ -43,7 +43,7 @@ const DEFAULT_DEVICE_SETTINGS = {
 };
 const SENSOR_SENSITIVITIES = ['low', 'medium', 'high'];
 const DEFAULT_UI_SETTINGS = {
-  interpolateCharts: false,
+  interpolateCharts: true,
   pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
 };
 
@@ -163,8 +163,35 @@ function projectById(id) {
 
 // Normalize a measurement mode key to one of the supported current geometries.
 function normalizeMeasurementMode(mode) {
-  const key = String(mode || '').toLowerCase();
-  return key === 'vertical' ? 'vertical' : key === 'central' ? 'central' : 'horizontal';
+  const key = String(mode || '').toLowerCase().replace(/[\s_-]+/g, '');
+  if (key === 'vertical') return 'vertical';
+  if (key === 'central' || key === 'centralshutter' || key === 'leaf' || key === 'leafshutter' || key === 'lensshutter' || key === 'objektivverschluss' || key === 'zentralverschluss') return 'central';
+  return 'horizontal';
+}
+
+// Return whether a hint only describes low sensor coverage. This is valid for central shutters.
+function isLowSensorCoverageHint(hint) {
+  return hint === 'too_few_sensors' || hint === 'incomplete_sensor_coverage';
+}
+
+// Resolve a packet mode, falling back to the active camera project when old firmware omits the mode.
+function resolveMeasurementModeForPacket(packet = {}) {
+  const rawMode = packet.mode || packet.measurementMode || packet.shutterMode;
+  if (rawMode) return normalizeMeasurementMode(rawMode);
+  const p = activeProject();
+  if (p && !isDefaultProject(p) && p.mode) return normalizeMeasurementMode(p.mode);
+  return normalizeMeasurementMode(S.deviceSettings && S.deviceSettings.defaultMeasurementMode);
+}
+
+// Return the median of finite positive numbers, or 0 when none exist.
+function medianPositive(values) {
+  const arr = (Array.isArray(values) ? values : [])
+    .map(Number)
+    .filter(v => Number.isFinite(v) && v > 0)
+    .sort((a, b) => a - b);
+  if (!arr.length) return 0;
+  const mid = Math.floor(arr.length / 2);
+  return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
 }
 
 // Check whether a project accepts a measurement packet based on mode and target series.
@@ -184,10 +211,20 @@ function projectSupportsMeasurement(p, targetFrac, mode) {
 // Return whether a measurement must stay in the default diagnostics bucket.
 function isProjectInvalidMeasurement(entry) {
   if (!entry) return false;
+  const mode = normalizeMeasurementMode(entry.mode);
+  const hint = String(entry.hint || 'none');
+
+  // Central shutters reduce available sensor samples to one median timing value.
+  // A low sensor count is therefore not a project-blocking measurement fault here.
+  if (mode === 'central') {
+    if (isLowSensorCoverageHint(hint)) return false;
+    if (entry.valid === false) return true;
+    return hint === 'timeout_with_data';
+  }
+
   if (entry.valid === false) return true;
   const count = Number(entry.count);
   if (Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) return true;
-  const hint = String(entry.hint || 'none');
   return PROJECT_INVALID_HINTS.includes(hint);
 }
 
@@ -195,12 +232,20 @@ function isProjectInvalidMeasurement(entry) {
 function sanitizeMeasurementAssignments() {
   ensureDefaultProject();
   S.history.forEach(entry => {
+    const mode = normalizeMeasurementMode(entry.mode);
+    if (mode === 'central' && isLowSensorCoverageHint(entry.hint)) {
+      entry.valid = true;
+      entry.hint = 'none';
+      entry.hintText = '';
+      entry.warning = '';
+    }
+
     const p = projectById(entry.projId);
     const invalid = isProjectInvalidMeasurement(entry);
     if (invalid) {
       entry.valid = false;
       const count = Number(entry.count);
-      if ((!entry.hint || entry.hint === 'none') && Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) {
+      if (mode !== 'central' && (!entry.hint || entry.hint === 'none') && Number.isFinite(count) && count > 0 && count < MIN_VALID_SENSOR_COUNT) {
         entry.hint = 'too_few_sensors';
         entry.hintText = tx('measurementHints.too_few_sensors.title', 'Too few sensors were covered');
         entry.warning = entry.hintText;
@@ -317,7 +362,7 @@ function saveUiSettings() {
 function sanitizeUiSettings(input) {
   const raw = Object.assign({}, input || {});
   return {
-    interpolateCharts: raw.interpolateCharts === true,
+    interpolateCharts: raw.interpolateCharts !== false,
     pollIntervalMs: normalizePollIntervalMs(raw.pollIntervalMs),
   };
 }

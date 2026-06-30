@@ -10,6 +10,8 @@ const REPORT_EXPORT_CONFIG = Object.freeze({
   reliabilityWeight: 100,
   curtainUniformityWeight: 55,
   curtainParallelismWeight: 45,
+  // A configured target time with no valid measurement means this speed did not work in the camera project.
+  missingTargetScore: 0,
 });
 
 function exportConfig() {
@@ -54,21 +56,21 @@ function formatScore(score) {
 function formatReportTime(seconds) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return '-';
-  if (s >= 1) return s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s';
-  return (s * 1000).toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' ms';
+  if (s >= 1) return s.toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' s';
+  return (s * 1000).toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ms';
 }
 
 function formatFractionFromSeconds(seconds) {
   const s = Number(seconds);
   if (!Number.isFinite(s) || s <= 0) return '-';
   const frac = Math.round(1 / s);
-  return frac <= 1 ? s.toLocaleString(uiLocale(), { maximumFractionDigits: 3 }) + ' s' : '1/' + frac + ' s';
+  return frac <= 1 ? s.toLocaleString(uiLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' s' : '1/' + frac + ' s';
 }
 
 function signedEv(value) {
   const v = Number(value);
   if (!Number.isFinite(v)) return '-';
-  return (v >= 0 ? '+' : '') + v.toFixed(3) + ' EV';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + ' EV';
 }
 
 function safeFilenameName(name, fallback = 'camera') {
@@ -85,6 +87,7 @@ function targetLabel(targetFrac) {
 }
 
 function targetRowsForProject(project) {
+  const cfg = exportConfig();
   return (project.times || []).map(target => {
     const agg = aggregateForTarget(project.id, target);
     if (!agg) {
@@ -92,14 +95,16 @@ function targetRowsForProject(project) {
         targetFrac: target,
         targetSec: target > 0 ? 1 / target : null,
         measured: false,
+        missing: true,
         measurementCount: 0,
+        targetWeight: 1,
+        accuracyScore: cfg.missingTargetScore,
       };
     }
 
     const offsetScore = scoreFromTolerance(Math.abs(agg.avgDev), 0.15, 0.75, 25);
     const spreadScore = scoreFromTolerance(agg.avgSpread, 0.10, 0.55, 20);
     const reliabilityScore = agg.n >= 2 ? scoreFromTolerance(agg.sigmaEv, 0.05, 0.35, 30) : null;
-    const cfg = exportConfig();
     const accuracyScore = scoreBlend([
       { score: offsetScore, weight: cfg.accuracyOffsetWeight },
       { score: spreadScore, weight: cfg.accuracySpreadWeight },
@@ -109,7 +114,9 @@ function targetRowsForProject(project) {
       targetFrac: target,
       targetSec: 1 / target,
       measured: true,
+      missing: false,
       measurementCount: agg.n,
+      targetWeight: 1,
       avgFrac: agg.avgFrac,
       avgSec: agg.avgSec,
       avgMs: agg.avgSec * 1000,
@@ -134,6 +141,13 @@ function velocityCv(values) {
   const clean = values.filter(v => Number.isFinite(v) && v > 0);
   const avg = average(clean);
   return clean.length > 1 && avg ? stddev(clean) / avg : null;
+}
+
+function missingTargetStats(targetRows) {
+  const rows = Array.isArray(targetRows) ? targetRows : [];
+  const total = rows.length;
+  const missing = rows.filter(row => row && row.missing).length;
+  return { total, missing, missingFraction: total ? missing / total : 0 };
 }
 
 function curtainConditionForEntry(entry) {
@@ -162,16 +176,21 @@ function curtainConditionForEntry(entry) {
   };
 }
 
-function curtainConditionForProject(entries) {
+function curtainConditionForProject(entries, targetRows, project) {
+  const missingStats = missingTargetStats(targetRows);
+  const mode = project && typeof normalizeMeasurementMode === 'function' ? normalizeMeasurementMode(project.mode) : '';
+  const applyMissingPenalty = mode !== 'central';
+  const coverageFactor = applyMissingPenalty && missingStats.total ? Math.max(0, 1 - missingStats.missingFraction) : 1;
   const items = entries.map(curtainConditionForEntry).filter(Boolean);
   if (!items.length) return {
     uniformityCv: null,
     parallelEv: null,
     uniformityScore: null,
     parallelScore: null,
-    curtainScore: null,
+    curtainScore: applyMissingPenalty && missingStats.missing ? 0 : null,
     openAvg: null,
     closeAvg: null,
+    missingTargets: missingStats.missing,
   };
 
   const cfg = exportConfig();
@@ -179,18 +198,21 @@ function curtainConditionForProject(entries) {
   const parallelEv = average(items.map(x => x.parallelEv).filter(Number.isFinite));
   const uniformityScore = scoreFromTolerance(uniformityCv, 0.08, 0.35, 25);
   const parallelScore = scoreFromTolerance(parallelEv, 0.08, 0.45, 25);
+  const baseCurtainScore = scoreBlend([
+    { score: uniformityScore, weight: cfg.curtainUniformityWeight },
+    { score: parallelScore, weight: cfg.curtainParallelismWeight },
+  ]);
 
   return {
     uniformityCv,
     parallelEv,
     uniformityScore,
     parallelScore,
-    curtainScore: scoreBlend([
-      { score: uniformityScore, weight: cfg.curtainUniformityWeight },
-      { score: parallelScore, weight: cfg.curtainParallelismWeight },
-    ]),
+    curtainScore: Number.isFinite(baseCurtainScore) ? clampNumber(baseCurtainScore * coverageFactor, 0, 100) : null,
+    baseCurtainScore,
     openAvg: average(items.map(x => x.openAvg).filter(Number.isFinite)),
     closeAvg: average(items.map(x => x.closeAvg).filter(Number.isFinite)),
+    missingTargets: missingStats.missing,
   };
 }
 
@@ -220,11 +242,12 @@ function projectScoreModel(project) {
   const entries = getProjectEntries(project.id);
   const targetRows = targetRowsForProject(project);
   const measuredRows = targetRows.filter(row => row.measured);
+  const scoredRows = targetRows.filter(row => Number.isFinite(row.accuracyScore));
   const cfg = exportConfig();
-  const accuracyScore = weightedAverage(measuredRows, 'accuracyScore', 'measurementCount');
+  const accuracyScore = weightedAverage(scoredRows, 'accuracyScore', 'targetWeight');
   const repeatedRows = measuredRows.filter(row => row.measurementCount >= 2 && Number.isFinite(row.reliabilityScore));
   const reliabilityScore = repeatedRows.length ? weightedAverage(repeatedRows, 'reliabilityScore', 'measurementCount') : null;
-  const curtain = curtainConditionForProject(entries);
+  const curtain = curtainConditionForProject(entries, targetRows, project);
   const overall = scoreBlend([
     { score: accuracyScore, weight: 44 },
     { score: reliabilityScore, weight: cfg.reliabilityWeight ? 24 : 0 },
@@ -289,7 +312,7 @@ function exportProjCSV(projId) {
       'TARGET', targetLabel(row.targetFrac), csvNumber(row.targetSec, 6), row.measured ? ('1/' + row.avgFrac) : '', csvNumber(row.avgSec, 6), csvNumber(row.avgMs, 3),
       csvNumber(row.avgDev, 4), csvNumber(row.avgAbsDev, 4), csvNumber(row.avgSpread, 4), csvNumber(row.sigmaEv, 4),
       csvNumber(row.accuracyScore, 1), csvNumber(row.reliabilityScore, 1), csvNumber(row.openingSpeed, 4), csvNumber(row.closingSpeed, 4),
-      row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, row.measured ? reportGrade(row.accuracyScore) : ''
+      row.flashOk ?? '', row.flashLate ?? '', row.flashBad ?? '', row.flashDetected ?? '', row.measurementCount || 0, Number.isFinite(row.accuracyScore) ? reportGrade(row.accuracyScore) : ''
     ]));
   });
 
@@ -338,7 +361,7 @@ function formatReportDateTime(date = new Date()) {
 }
 
 function reportDensityClass(rows) {
-  const count = (rows || []).filter(r => r && r.measured).length;
+  const count = (rows || []).filter(Boolean).length;
   if (count >= 12) return 'dense-report';
   if (count >= 8) return 'compact-report';
   return '';
@@ -357,15 +380,16 @@ function reportScoreCard(title, score, body) {
 function reportRowsHtml(rows) {
   return rows.map(row => {
     if (!row.measured) {
-      return `<tr><td>${esc(targetLabel(row.targetFrac))}</td><td colspan="8" class="muted">${esc(tx('report.notMeasured', 'Not measured'))}</td></tr>`;
+      const label = row.missing ? tx('report.missingTargetRow', 'Missing target time - counted as a problem') : tx('report.notMeasured', 'Not measured');
+      return `<tr><td>${esc(targetLabel(row.targetFrac))}</td><td colspan="8" class="muted">${esc(label)}</td></tr>`;
     }
     return `<tr>
       <td>${esc(targetLabel(row.targetFrac))}</td>
       <td>${esc(formatFractionFromSeconds(row.avgSec))}</td>
       <td>${esc(formatReportTime(row.avgSec))}</td>
       <td>${esc(signedEv(row.avgDev))}</td>
-      <td>${esc(row.avgSpread.toFixed(3) + ' EV')}</td>
-      <td>${esc(row.sigmaEv.toFixed(3) + ' EV')}</td>
+      <td>${esc(formatFixed(row.avgSpread, 2) + ' EV')}</td>
+      <td>${esc(formatFixed(row.sigmaEv, 2) + ' EV')}</td>
       <td>${esc(formatScore(row.accuracyScore))}</td>
       <td>${row.openingSpeed != null && row.closingSpeed != null ? esc(row.openingSpeed.toFixed(2) + ' / ' + row.closingSpeed.toFixed(2)) : '-'}</td>
       <td>${row.flashDetected ? (row.flashBad ? '×' : (row.flashLate ? '●' : '●')) : '-'}</td>
@@ -380,8 +404,9 @@ function evChartTickStep(limit) {
 }
 
 function targetBarsSvg(rows) {
-  const measured = rows.filter(r => r.measured);
-  if (!measured.length) return '';
+  const chartRows = rows.filter(r => r && (r.measured || r.missing));
+  const measured = chartRows.filter(r => r.measured);
+  if (!chartRows.length) return '';
 
   const bounds = measured.flatMap(row => {
     const spread = Math.max(0, Number(row.avgSpread) || 0);
@@ -389,19 +414,19 @@ function targetBarsSvg(rows) {
     return [row.avgDev - halfSpread, row.avgDev + halfSpread, row.avgDev];
   }).filter(Number.isFinite);
 
-  const rawLimit = Math.max(0.5, ...bounds.map(v => Math.abs(v)));
+  const rawLimit = Math.max(0.5, ...(bounds.length ? bounds.map(v => Math.abs(v)) : [1]));
   const tickStep = evChartTickStep(rawLimit);
   const limit = Math.ceil(rawLimit / tickStep) * tickStep;
   const width = 820;
-  const dense = measured.length >= 12;
-  const compact = measured.length >= 8;
+  const dense = chartRows.length >= 12;
+  const compact = chartRows.length >= 8;
   const left = 90;
   const right = 68;
   const top = compact ? 24 : 32;
   const bottom = 24;
   const rowH = dense ? 12 : compact ? 16 : 22;
   const plotW = width - left - right;
-  const height = top + bottom + measured.length * rowH;
+  const height = top + bottom + chartRows.length * rowH;
   const zeroX = left + plotW / 2;
   const xFor = ev => left + ((ev + limit) / (2 * limit)) * plotW;
 
@@ -415,8 +440,18 @@ function targetBarsSvg(rows) {
     return `<line class="${cls}" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 14}" y2="${height - bottom + 5}"></line><text class="tick" x="${x.toFixed(1)}" y="${height - 10}" text-anchor="middle">${esc(label)}</text>`;
   }).join('');
 
-  const items = measured.map((row, i) => {
+  const items = chartRows.map((row, i) => {
     const y = top + i * rowH;
+    const barY = y - Math.max(5, rowH * 0.28);
+    const barH = Math.max(8, rowH * 0.52);
+
+    if (row.missing) {
+      const label = tx('report.missingTargetChartLabel', 'No valid measurement');
+      return `<text class="target missing-target" x="16" y="${y + 4}">${esc(targetLabel(row.targetFrac))}</text>` +
+        `<rect class="missing-band" x="${left}" y="${barY.toFixed(1)}" width="${plotW}" height="${barH.toFixed(1)}" rx="4"></rect>` +
+        `<text class="missing-label" x="${zeroX.toFixed(1)}" y="${y + 4}" text-anchor="middle">${esc(label)}</text>`;
+    }
+
     const dx = Number(row.avgDev) || 0;
     const spread = Math.max(0, Number(row.avgSpread) || 0);
     const halfSpread = spread / 2;
@@ -428,14 +463,14 @@ function targetBarsSvg(rows) {
     const errMaxX = xFor(dx + halfSpread);
     const valueX = dx >= 0 ? Math.min(width - 8, Math.max(errMaxX + 8, x1 + 8)) : Math.max(8, Math.min(errMinX - 8, x1 - 8));
     return `<text class="target" x="16" y="${y + 4}">${esc(targetLabel(row.targetFrac))}</text>` +
-      `<rect x="${barX.toFixed(1)}" y="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(8, rowH * 0.52).toFixed(1)}" rx="4"></rect>` +
+      `<rect x="${barX.toFixed(1)}" y="${barY.toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="4"></rect>` +
       `<line class="error" x1="${errMinX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${y - 1}" y2="${y - 1}"></line>` +
-      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
-      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${(y - Math.max(5, rowH * 0.28)).toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
+      `<line class="error-cap" x1="${errMinX.toFixed(1)}" x2="${errMinX.toFixed(1)}" y1="${barY.toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
+      `<line class="error-cap" x1="${errMaxX.toFixed(1)}" x2="${errMaxX.toFixed(1)}" y1="${barY.toFixed(1)}" y2="${(y + Math.max(4, rowH * 0.28)).toFixed(1)}"></line>` +
       `<text class="value" x="${valueX.toFixed(1)}" y="${y + 4}" text-anchor="${dx >= 0 ? 'start' : 'end'}">${esc(signedEv(row.avgDev))}</text>`;
   }).join('');
 
-  return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Exposure offset by target time">${axis}${items}</svg>`;
+  return `<svg class="offset-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="${esc(tx('report.exposureOffsets', 'Exposure offsets'))}">${axis}${items}</svg>`;
 }
 
 function niceSpeedMax(maxValue) {
@@ -449,24 +484,26 @@ function niceSpeedMax(maxValue) {
 function curtainSpeedSvg(project, rows) {
   if (project && typeof normalizeMeasurementMode === 'function' && normalizeMeasurementMode(project.mode) === 'central') return '';
 
-  const measured = rows
-    .filter(r => r.measured && (Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed)))
+  const chartRows = rows
+    .filter(r => r && (r.measured || r.missing))
     .sort((a, b) => a.targetFrac - b.targetFrac);
+  const measured = chartRows.filter(r => Number.isFinite(r.openingSpeed) || Number.isFinite(r.closingSpeed));
 
   if (!measured.length) return '';
 
   const width = 820;
-  const compact = measured.length >= 8;
-  const height = compact ? 204 : 230;
+  const compact = chartRows.length >= 8;
+  const manyTargets = chartRows.length >= 10;
   const left = 64;
   const right = 28;
   const top = 24;
-  const bottom = 46;
+  const bottom = manyTargets ? 70 : compact ? 58 : 46;
   const plotW = width - left - right;
-  const plotH = height - top - bottom;
+  const plotH = compact ? 134 : 160;
+  const height = top + plotH + bottom;
   const allSpeeds = measured.flatMap(row => [row.openingSpeed, row.closingSpeed]).filter(v => Number.isFinite(v) && v > 0);
   const maxV = niceSpeedMax(Math.max(...allSpeeds) * 1.18);
-  const xFor = index => left + (measured.length === 1 ? plotW / 2 : (index / (measured.length - 1)) * plotW);
+  const xFor = index => left + (chartRows.length === 1 ? plotW / 2 : (index / (chartRows.length - 1)) * plotW);
   const yFor = value => top + plotH * (1 - Math.max(0, value) / maxV);
 
   const grid = [];
@@ -475,19 +512,23 @@ function curtainSpeedSvg(project, rows) {
     const value = maxV * (1 - i / gridSteps);
     const y = top + plotH * (i / gridSteps);
     grid.push(`<line class="grid" x1="${left}" x2="${width - right}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"></line>`);
-    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(value.toFixed(maxV < 10 ? 1 : 0))}</text>`);
+    grid.push(`<text class="tick speed" x="${left - 9}" y="${(y + 4).toFixed(1)}" text-anchor="end">${esc(formatFixed(value, 2))}</text>`);
   }
 
-  const labelStride = measured.length >= 12 ? 2 : measured.length >= 8 ? 2 : 1;
-  const xAxis = measured.map((row, i) => {
+  const tickY = top + plotH + (manyTargets ? 24 : 18);
+  const xAxis = chartRows.map((row, i) => {
     const x = xFor(i);
-    const showLabel = i === 0 || i === measured.length - 1 || i % labelStride === 0;
+    const label = targetLabel(row.targetFrac).replace(' s', '');
+    const targetClass = row.missing ? 'tick target missing-target' : 'tick target';
+    const textAttrs = manyTargets
+      ? `x="${(x - 3).toFixed(1)}" y="${tickY.toFixed(1)}" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)} ${tickY.toFixed(1)})"`
+      : `x="${x.toFixed(1)}" y="${tickY.toFixed(1)}" text-anchor="middle"`;
     return `<line class="grid soft" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${top + plotH}"></line>` +
-      (showLabel ? `<text class="tick target" x="${x.toFixed(1)}" y="${height - 28}" text-anchor="middle">${esc(targetLabel(row.targetFrac).replace(' s', ''))}</text>` : '');
+      `<text class="${targetClass}" ${textAttrs}>${esc(label)}</text>`;
   }).join('');
 
   function lineFor(key, cls) {
-    const points = measured.map((row, i) => {
+    const points = chartRows.map((row, i) => {
       const v = row[key];
       return Number.isFinite(v) && v > 0 ? { x: xFor(i), y: yFor(v), v, row } : null;
     }).filter(Boolean);
@@ -518,10 +559,14 @@ function curtainSpeedReportSection(project, rows) {
 }
 
 function reportDataFieldsHtml(project, model, measuredCount, measuredTargets) {
+  const missingTargets = (model.targetRows || []).filter(row => row && row.missing).length;
+  const targetSub = missingTargets
+    ? tf('report.missingTargetsProblem', '{count} missing target time(s) lower accuracy and curtain condition.', { count: missingTargets })
+    : tx('report.measuredTargets', 'measured target speeds in this camera project');
   const fields = [
     { label: tx('report.maximumFlashTime', 'Maximum flash time'), value: model.flash.label, sub: model.flash.status },
     { label: tx('report.measurements', 'Measurements'), value: String(measuredCount), sub: tx('report.validProjectMeasurements', 'evaluated releases; more repeats make the rating more reliable') },
-    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: tx('report.measuredTargets', 'measured target speeds in this camera project') }
+    { label: tx('report.targetTimes', 'Target times'), value: measuredTargets + '/' + project.times.length, sub: targetSub }
   ];
   return `<section class="data-fields">${fields.map(field => `<div class="data-field"><span>${esc(field.label)}</span><strong>${esc(field.value)}</strong><small>${esc(field.sub || '')}</small></div>`).join('')}</section>`;
 }
@@ -543,9 +588,9 @@ async function standaloneReportHtml(project, model) {
   const measuredCount = model.entries.length;
   const measuredTargets = model.measuredRows.length;
   const title = tx('report.title', 'Camera measurement report');
-  const accBody = tx('report.accuracyBody', 'Rates the actual shutter speeds. High values mean the camera exposes close to the selected time and evenly across the frame. Low values point to visible timing error or brightness falloff.');
+  const accBody = tx('report.accuracyBody', 'Compares the camera with every selected shutter speed. High values mean the measured exposure is close to the target and even across the frame. A missing target speed counts as a fault because this speed apparently produced no valid timing result.');
   const relBody = tx('report.reliabilityBody', 'Rates whether the same setting stays consistent over repeated releases. This matters when the camera should work reproducibly, not only once. Without repeat measurements, the result is limited.');
-  const curtainBody = tx('report.curtainBody', 'Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Low values can indicate adjustment or service needs.');
+  const curtainBody = tx('report.curtainBody', 'Rates focal-plane shutter travel. Good values mean the opening and closing curtains move smoothly and match each other. Missing target speeds lower this value because an unusable speed can indicate a shutter timing problem.');
   const overallLabel = scoreLabel(model.overall);
   const note = project.note ? `<section class="note"><h2>${esc(tx('report.projectNote', 'Project note'))}</h2><p>${esc(project.note)}</p></section>` : '';
   const template = await reportTemplateHtml();
@@ -574,7 +619,7 @@ async function standaloneReportHtml(project, model) {
     ].join(''),
     DATA_TITLE: esc(tx('report.dataTitle', 'Results')), 
     EXPOSURE_OFFSETS_TITLE: esc(tx('report.exposureOffsets', 'Exposure offsets')),
-    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows how much exposure varies across the frame.')),
+    EXPOSURE_OFFSETS_EXPLANATION: esc(tx('report.exposureOffsetsExplanation', 'For each selected shutter speed, the bar shows the average timing error against the target. 0 EV is ideal. Left means the camera is faster, right means slower. The whisker shows frame evenness. A missing target speed is shown as a failed row and lowers the accuracy and curtain-condition scores.')),
     EXPOSURE_BAR_LEGEND: esc(tx('report.exposureBarLegend', 'Bar: average timing error')),
     EXPOSURE_ERROR_LEGEND: esc(tx('report.exposureErrorLegend', 'Whisker: frame evenness')),
     OFFSET_CHART: targetBarsSvg(model.targetRows),

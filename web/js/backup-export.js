@@ -50,6 +50,41 @@ function calcCurtain(entry) {
   return { v1: avg(profile.open), v2: avg(profile.close) };
 }
 
+// Estimate focal-plane slit width from sensor exposure duration and curtain
+// travel speed. Since 1 m/s equals 1 mm/ms, exposure in ms multiplied by the
+// local curtain speed gives the slit width in mm.
+function slitWidthStatsForEntry(entry) {
+  if (!entry || normalizeMeasurementMode(entry.mode) === 'central') return null;
+  const curtain = calcCurtain(entry);
+  const speeds = [curtain && curtain.v1, curtain && curtain.v2].filter(v => Number.isFinite(v) && v > 0);
+  const speed = average(speeds);
+  if (!Number.isFinite(speed) || speed <= 0) return null;
+
+  const widths = (entry.sensors || [])
+    .filter(s => s.activated && Number.isFinite(s.seconds) && s.seconds > 0)
+    .map(s => s.seconds * 1000 * speed)
+    .filter(v => Number.isFinite(v) && v > 0);
+  if (!widths.length) return null;
+
+  return {
+    min: Math.min(...widths),
+    max: Math.max(...widths),
+    avg: average(widths),
+    n: widths.length,
+  };
+}
+
+function slitWidthStatsForEntries(entries) {
+  const stats = (entries || []).map(slitWidthStatsForEntry).filter(Boolean);
+  if (!stats.length) return null;
+  return {
+    min: Math.min(...stats.map(x => x.min)),
+    max: Math.max(...stats.map(x => x.max)),
+    avg: average(stats.map(x => x.avg).filter(Number.isFinite)),
+    n: stats.reduce((sum, x) => sum + (x.n || 0), 0),
+  };
+}
+
 
 // Move one measurement back to the default project without changing the active project.
 function moveMeasurementToDefault(id) {
@@ -189,24 +224,32 @@ function normalizeImportedBackup(data) {
     const targetSec = 1 / target;
     const baseUs = finiteNumber(raw.baseUs || (raw.raw && raw.raw.baseUs), 0);
     const sensors = raw.sensors.slice(0, 5).map((sensor, idx) => normalizeImportedSensor(sensor, idx, baseUs, targetSec));
+    const rawProjId = String(raw.projId || '');
+    const mappedProjId = projectIdMap.get(rawProjId) || DEFAULT_PROJECT_ID;
+    const importedProject = projects.find(project => project.id === mappedProjId);
+    const mode = raw.mode || raw.measurementMode || raw.shutterMode
+      ? normalizeMeasurementMode(raw.mode || raw.measurementMode || raw.shutterMode)
+      : normalizeMeasurementMode(importedProject && importedProject.mode);
     const active = sensors.filter(sensor => sensor.activated && sensor.seconds > 0);
     if (!active.length) continue;
 
     const durations = active.map(sensor => sensor.seconds);
-    const avgSec = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    const avgSec = mode === 'central'
+      ? medianPositive(durations)
+      : durations.reduce((sum, value) => sum + value, 0) / durations.length;
     const minSec = Math.min(...durations);
     const maxSec = Math.max(...durations);
     const flash = normalizeImportedFlash(raw.flash, baseUs);
-    const hint = evaluateMeasurementHintFromData({ sensors, flash });
-    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length });
+    const hint = evaluateMeasurementHintFromData({ sensors, flash, mode });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length, mode });
     const geometry = currentMeasurementGeometry();
     const x = Number(raw.sensorDistanceXmm);
     const y = Number(raw.sensorDistanceYmm);
 
     const entry = Object.assign({}, raw, {
       id: makeSafeInternalId('m'),
-      projId: projectInvalid ? DEFAULT_PROJECT_ID : (projectIdMap.get(String(raw.projId || '')) || DEFAULT_PROJECT_ID),
-      mode: normalizeMeasurementMode(raw.mode),
+      projId: projectInvalid ? DEFAULT_PROJECT_ID : mappedProjId,
+      mode,
       targetFrac: target,
       ts: Number.isFinite(Number(raw.ts)) ? Number(raw.ts) : Date.now(),
       valid: !projectInvalid,
@@ -215,7 +258,7 @@ function normalizeImportedBackup(data) {
       avgFrac: avgSec > 0 ? Math.round(1 / avgSec) : 0,
       avgSec,
       avgDev: avgSec > 0 ? Math.log2(avgSec / targetSec) : 0,
-      spread: durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0,
+      spread: mode === 'central' ? 0 : (durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0),
       count: active.length,
       sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
       sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,

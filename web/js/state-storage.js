@@ -268,6 +268,43 @@ function projectEntries(projId, includeErrors = true) {
   return S.history.filter(h => h.projId === projId && (includeErrors || (!h.isError && h.valid !== false)));
 }
 
+// Sort the visible history order for one project by target time and measured exposure time.
+// New measurements are still inserted at the top; this is only called when a project view is rebuilt.
+function measurementHistorySortValue(value, fallback = Number.POSITIVE_INFINITY) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function compareMeasurementsByTargetAndActualTime(a, b) {
+  const targetA = measurementHistorySortValue(a && a.targetFrac);
+  const targetB = measurementHistorySortValue(b && b.targetFrac);
+  if (targetA !== targetB) return targetA - targetB;
+
+  const actualA = measurementHistorySortValue(a && a.avgSec);
+  const actualB = measurementHistorySortValue(b && b.avgSec);
+  if (actualA !== actualB) return actualA - actualB;
+
+  const tsA = Number(a && a.ts);
+  const tsB = Number(b && b.ts);
+  if (Number.isFinite(tsA) && Number.isFinite(tsB) && tsA !== tsB) return tsB - tsA;
+  return String(b && b.id || '').localeCompare(String(a && a.id || ''));
+}
+
+function sortHistoryForProjectView(projId) {
+  if (!projId || !Array.isArray(S.history)) return;
+  const sorted = S.history
+    .filter(entry => entry && entry.projId === projId)
+    .slice()
+    .sort(compareMeasurementsByTargetAndActualTime);
+  if (sorted.length < 2) return;
+
+  let index = 0;
+  S.history = S.history.map(entry => {
+    if (!entry || entry.projId !== projId) return entry;
+    return sorted[index++] || entry;
+  });
+}
+
 // Return all measurements for the selected project.
 function currentProjectEntries(includeErrors = true) {
   const p = activeProject();
@@ -326,13 +363,94 @@ function makeSafeInternalId(prefix) {
   return cleanPrefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+
+// Return a finite number or a fallback while preserving raw packet semantics.
+function finiteOr(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+// Keep only raw measurement packet data plus measurement-time geometry.
+function rawMeasurementPacketForStorage(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const source = entry.raw && typeof entry.raw === 'object' ? entry.raw : entry;
+  const id = String(source.id || entry.id || '').trim();
+  const target = finiteOr(source.target ?? source.targetFrac ?? entry.targetFrac, 0);
+  const baseUs = finiteOr(source.baseUs ?? entry.baseUs, 0);
+  const mode = normalizeMeasurementMode(source.mode || source.measurementMode || source.shutterMode || entry.mode);
+  const geometry = currentMeasurementGeometry();
+  const sensorDistanceXmm = finiteOr(source.sensorDistanceXmm ?? entry.sensorDistanceXmm, geometry.sensorDistanceXmm);
+  const sensorDistanceYmm = finiteOr(source.sensorDistanceYmm ?? entry.sensorDistanceYmm, geometry.sensorDistanceYmm);
+  const sensorSource = Array.isArray(source.sensors) ? source.sensors : (Array.isArray(entry.sensors) ? entry.sensors : []);
+  if (!id || !target || !sensorSource.length) return null;
+
+  const sensors = sensorSource.map((sensor, idx) => {
+    const s = sensor && typeof sensor === 'object' ? sensor : {};
+    return {
+      id: Number.isInteger(Number(s.id)) ? Number(s.id) : idx,
+      pin: Number.isInteger(Number(s.pin)) ? Number(s.pin) : undefined,
+      activated: s.activated !== false,
+      raw: finiteOr(s.raw, 0),
+      openUs: finiteOr(s.openUs, 0),
+      closeUs: finiteOr(s.closeUs, 0),
+    };
+  });
+
+  const flashSource = source.flash && typeof source.flash === 'object'
+    ? source.flash
+    : (entry.flash && typeof entry.flash === 'object' ? entry.flash : null);
+  const flash = flashSource ? {
+    detected: !!flashSource.detected,
+    pin: Number.isInteger(Number(flashSource.pin)) ? Number(flashSource.pin) : undefined,
+    raw: finiteOr(flashSource.raw, 0),
+    triggerUs: finiteOr(flashSource.triggerUs, 0),
+  } : null;
+
+  return {
+    id,
+    valid: source.valid !== false,
+    target,
+    mode,
+    baseUs,
+    sensorDistanceXmm: sensorDistanceXmm > 0 ? sensorDistanceXmm : geometry.sensorDistanceXmm,
+    sensorDistanceYmm: sensorDistanceYmm > 0 ? sensorDistanceYmm : geometry.sensorDistanceYmm,
+    sensors,
+    flash,
+  };
+}
+
+// Store history without calculated values. UI entries are rebuilt from this raw packet on load.
+function historyEntryForStorage(entry) {
+  const raw = rawMeasurementPacketForStorage(entry);
+  if (!raw) return null;
+  return {
+    id: raw.id,
+    ts: Number.isFinite(Number(entry.ts)) ? Number(entry.ts) : Date.now(),
+    projId: isSafeInternalId(entry.projId) ? entry.projId : DEFAULT_PROJECT_ID,
+    raw,
+  };
+}
+
+// Rebuild a full in-memory measurement entry from a raw-only stored history record.
+function rebuildHistoryEntry(stored) {
+  if (!stored || typeof stored !== 'object') return null;
+  const raw = rawMeasurementPacketForStorage(stored.raw && typeof stored.raw === 'object' ? stored : { raw: stored });
+  if (!raw || typeof buildEntryFromPacket !== 'function') return null;
+  const entry = buildEntryFromPacket(raw);
+  if (!entry) return null;
+  entry.ts = Number.isFinite(Number(stored.ts)) ? Number(stored.ts) : entry.ts;
+  if (isSafeInternalId(stored.projId)) entry.projId = stored.projId;
+  return entry;
+}
+
 // Persist the measurement history.
 function saveHistory() {
   writeJsonStorage(LS_HISTORY_KEY, {
-    version: 1,
+    version: 2,
+    storage: 'raw-only',
     lastMeasId: S.lastMeasId,
     selectedEntryId: S.selId,
-    history: S.history
+    history: S.history.map(historyEntryForStorage).filter(Boolean)
   });
 }
 
@@ -396,18 +514,16 @@ function load() {
       ? p.customTargetTimes.map(Number).filter(v => Number.isFinite(v) && v > 0).sort((a,b)=>a-b)
       : [];
   });
-  S.history = Array.isArray(historyStore.history) ? historyStore.history : [];
-  S.history.forEach(h => {
-    if (!isSafeInternalId(h.id)) h.id = makeSafeInternalId('m');
-    const oldProjId = String(h.projId || '');
-    if (loadedProjectIdMap.has(oldProjId)) h.projId = loadedProjectIdMap.get(oldProjId);
-    else if (!isSafeInternalId(h.projId)) h.projId = DEFAULT_PROJECT_ID;
-    const x = Number(h.sensorDistanceXmm);
-    const y = Number(h.sensorDistanceYmm);
-    h.sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : DEFAULT_SENSOR_DISTANCE_X_MM;
-    h.sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : DEFAULT_SENSOR_DISTANCE_Y_MM;
-    if (h.flash && typeof h.flash === 'object') delete h.flash['enabled'];
-  });
+  const storedHistory = Array.isArray(historyStore.history) ? historyStore.history : [];
+  S.history = storedHistory.map(stored => {
+    const rawOldProjId = String(stored && stored.projId || '');
+    const rebuilt = rebuildHistoryEntry(stored);
+    if (!rebuilt) return null;
+    const oldProjId = rawOldProjId || String(rebuilt.projId || '');
+    if (loadedProjectIdMap.has(oldProjId)) rebuilt.projId = loadedProjectIdMap.get(oldProjId);
+    else if (!isSafeInternalId(rebuilt.projId)) rebuilt.projId = DEFAULT_PROJECT_ID;
+    return rebuilt;
+  }).filter(Boolean);
   S.selectedProjId = loadedProjectIdMap.get(String(projectsStore.selectedProjId || '')) || projectsStore.selectedProjId || null;
   if (S.selectedProjId && !S.projects.some(p => p.id === S.selectedProjId)) S.selectedProjId = null;
   S.lastMeasId = historyStore.lastMeasId || (S.history.length ? S.history[0].id : null);

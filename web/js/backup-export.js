@@ -121,11 +121,12 @@ function redirectToLatestMeasurement() {
 function exportBackupJSON() {
   const payload = {
     app: 'OpenCurtainLab',
-    version: 5,
+    version: 6,
+    storage: 'raw-only',
     exportedAt: new Date().toISOString(),
     selectedProjId: S.selectedProjId,
     projects: S.projects,
-    history: S.history,
+    history: S.history.map(historyEntryForStorage).filter(Boolean),
     uiSettings: S.uiSettings,
   };
   const json = JSON.stringify(payload, null, 2);
@@ -218,36 +219,49 @@ function normalizeImportedBackup(data) {
 
   const history = [];
   for (const raw of sourceHistory) {
-    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sensors)) continue;
-    const target = positiveNumber(raw.targetFrac || raw.target);
+    if (!raw || typeof raw !== 'object') continue;
+    const packet = raw.raw && typeof raw.raw === 'object' ? raw.raw : raw;
+    const packetSensors = Array.isArray(packet.sensors) ? packet.sensors : (Array.isArray(raw.sensors) ? raw.sensors : []);
+    if (!packetSensors.length) continue;
+    const target = positiveNumber(packet.target || packet.targetFrac || raw.targetFrac || raw.target);
     if (!target) continue;
     const targetSec = 1 / target;
-    const baseUs = finiteNumber(raw.baseUs || (raw.raw && raw.raw.baseUs), 0);
-    const sensors = raw.sensors.slice(0, 5).map((sensor, idx) => normalizeImportedSensor(sensor, idx, baseUs, targetSec));
+    const baseUs = finiteNumber(packet.baseUs || raw.baseUs, 0);
+    const sensors = packetSensors.slice(0, 5).map((sensor, idx) => normalizeImportedSensor(sensor, idx, baseUs, targetSec));
     const rawProjId = String(raw.projId || '');
     const mappedProjId = projectIdMap.get(rawProjId) || DEFAULT_PROJECT_ID;
     const importedProject = projects.find(project => project.id === mappedProjId);
-    const mode = raw.mode || raw.measurementMode || raw.shutterMode
-      ? normalizeMeasurementMode(raw.mode || raw.measurementMode || raw.shutterMode)
+    const mode = packet.mode || packet.measurementMode || packet.shutterMode || raw.mode || raw.measurementMode || raw.shutterMode
+      ? normalizeMeasurementMode(packet.mode || packet.measurementMode || packet.shutterMode || raw.mode || raw.measurementMode || raw.shutterMode)
       : normalizeMeasurementMode(importedProject && importedProject.mode);
     const active = sensors.filter(sensor => sensor.activated && sensor.seconds > 0);
     if (!active.length) continue;
 
     const durations = active.map(sensor => sensor.seconds);
-    const avgSec = mode === 'central'
-      ? medianPositive(durations)
-      : durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    const avgSec = medianPositive(durations);
     const minSec = Math.min(...durations);
     const maxSec = Math.max(...durations);
-    const flash = normalizeImportedFlash(raw.flash, baseUs);
+    const flash = normalizeImportedFlash(packet.flash || raw.flash, baseUs);
     const hint = evaluateMeasurementHintFromData({ sensors, flash, mode });
-    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : raw.valid !== false, count: active.length, mode });
+    const projectInvalid = isProjectInvalidMeasurement({ hint: hint.hint, valid: hint.hint === 'too_few_sensors' ? false : packet.valid !== false && raw.valid !== false, count: active.length, mode });
     const geometry = currentMeasurementGeometry();
-    const x = Number(raw.sensorDistanceXmm);
-    const y = Number(raw.sensorDistanceYmm);
+    const x = Number(packet.sensorDistanceXmm ?? raw.sensorDistanceXmm);
+    const y = Number(packet.sensorDistanceYmm ?? raw.sensorDistanceYmm);
 
+    const newId = makeSafeInternalId('m');
+    const sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm;
+    const sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm;
+    const rawPacket = rawMeasurementPacketForStorage({
+      raw: Object.assign({}, packet, { id: newId, target, mode, baseUs, sensorDistanceXmm, sensorDistanceYmm }),
+      sensors,
+      flash,
+      targetFrac: target,
+      mode,
+      sensorDistanceXmm,
+      sensorDistanceYmm,
+    });
     const entry = Object.assign({}, raw, {
-      id: makeSafeInternalId('m'),
+      id: newId,
       projId: projectInvalid ? DEFAULT_PROJECT_ID : mappedProjId,
       mode,
       targetFrac: target,
@@ -260,11 +274,12 @@ function normalizeImportedBackup(data) {
       avgDev: avgSec > 0 ? Math.log2(avgSec / targetSec) : 0,
       spread: mode === 'central' ? 0 : (durations.length > 1 && minSec > 0 ? Math.log2(maxSec / minSec) : 0),
       count: active.length,
-      sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
-      sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,
+      sensorDistanceXmm,
+      sensorDistanceYmm,
       hint: hint.hint,
       hintText: hint.hintText,
       warning: hint.hasHint ? hint.hintText : '',
+      raw: rawPacket,
     });
     entry.flashSyncOk = isFlashSyncOk(entry);
     history.push(entry);

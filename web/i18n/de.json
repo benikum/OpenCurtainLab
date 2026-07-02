@@ -133,7 +133,7 @@
     "speedAxis": "GESCHWINDIGKEIT (m/s)",
     "targetSpeedAxis": "Zielzeit (1/x s)",
     "noCurtainMeasurements": "Noch keine Messungen mit Vorhanggeschwindigkeit",
-    "timeRelative": "ZEIT (ms)"
+    "timeRelative": "ZEIT (ms, relativ zur ersten Öffnung)"
   },
   "flash": {
     "within": "Blitz innerhalb der totalen Öffnung",
@@ -177,7 +177,23 @@
     "consistencyCheck": "prüfen",
     "consistencyUneven": "ungleichmäßig",
     "slitWidthMin": "Schlitzbreite min",
-    "slitWidthMax": "Schlitzbreite max"
+    "slitWidthMax": "Schlitzbreite max",
+    "targetHeadA": "Zielzeit",
+    "targetHeadB": "",
+    "avgMeasurementHeadA": "Ø",
+    "avgMeasurementHeadB": "Messung",
+    "frameSpreadHeadA": "Spread",
+    "frameSpreadHeadB": "Frame",
+    "slitWidthMinHeadA": "Schlitzbreite",
+    "slitWidthMinHeadB": "min",
+    "slitWidthMaxHeadA": "Schlitzbreite",
+    "slitWidthMaxHeadB": "max",
+    "flashHeadA": "Blitz",
+    "flashHeadB": "",
+    "consistencyHeadA": "Konsistenz",
+    "consistencyHeadB": "",
+    "gradeHeadA": "Note",
+    "gradeHeadB": ""
   },
   "csv": {
     "note": "Notiz",

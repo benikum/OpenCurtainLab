@@ -428,6 +428,19 @@ header {
   color: var(--amber);
   line-height: 1;
 }
+.exposure-val {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+}
+.exposure-frac,
+.exposure-offset {
+  display: inline-block;
+  white-space: nowrap;
+}
+.exposure-offset { font-size: 16px; }
+.metric-neutral { color: var(--tx1); }
 .m-sub { font-size: 10px; color: var(--tx3); margin-top: 3px; }
 
 /* ── ID ROW ─────────────────────────────── */
@@ -491,6 +504,21 @@ th {
   text-transform: uppercase;
   color: var(--tx3);
   white-space: nowrap;
+}
+.project-table th {
+  padding-left: 7px;
+  padding-right: 7px;
+  line-height: 1.08;
+  letter-spacing: 1.4px;
+  vertical-align: bottom;
+}
+.project-table th .th-line {
+  display: block;
+  white-space: nowrap;
+}
+.project-table td {
+  padding-left: 7px;
+  padding-right: 7px;
 }
 td { padding: 6px 10px; border-bottom: 1px solid var(--bdr); color: var(--tx2); }
 tr:last-child td { border-bottom: none; }

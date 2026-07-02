@@ -221,6 +221,12 @@ function aggregateForTarget(projId, targetFrac) {
   return { n, entries, avgFrac, avgSec, avgDev, avgAbsDev, sigmaEv, score, accuracyScore, reliabilityScore, avgSpread, avgV1, avgV2, slitWidth, flashDetected, flashOk, flashLate, flashBad };
 }
 
+// Return a two-line table header cell for compact project tables.
+function projectTableHeader(top, bottom = '') {
+  const second = bottom ? `<span class="th-line">${esc(bottom)}</span>` : '';
+  return `<th><span class="th-line">${esc(top)}</span>${second}</th>`;
+}
+
 // Build the per-target project analysis table.
 function buildProjectTable(p) {
   const rows = p.times.map(tgt => {
@@ -259,18 +265,18 @@ function buildProjectTable(p) {
   }).join('');
 
   return `<div class="tbl-wrap">
-    <table>
+    <table class="project-table">
       <thead>
         <tr>
-          <th>${tx('table.target', 'Target')}</th>
-          <th>${tx('table.avgMeasurement', 'Avg measurement')}</th>
-          <th>${tx('table.frameSpread', 'Spread over frame')}</th>
-          <th>${tx('table.slitWidthMin', 'Slit width min')}</th>
-          <th>${tx('table.slitWidthMax', 'Slit width max')}</th>
-          <th>${tx('table.flash', 'Flash')}</th>
-          <th>${tx('table.consistency', 'Consistency')}</th>
-          <th>${tx('table.grade', 'Grade')}</th>
-          <th>n</th>
+          ${projectTableHeader(tx('table.targetHeadA', 'Target'), tx('table.targetHeadB', ''))}
+          ${projectTableHeader(tx('table.avgMeasurementHeadA', 'Avg'), tx('table.avgMeasurementHeadB', 'measurement'))}
+          ${projectTableHeader(tx('table.frameSpreadHeadA', 'Spread'), tx('table.frameSpreadHeadB', 'frame'))}
+          ${projectTableHeader(tx('table.slitWidthMinHeadA', 'Slit width'), tx('table.slitWidthMinHeadB', 'min'))}
+          ${projectTableHeader(tx('table.slitWidthMaxHeadA', 'Slit width'), tx('table.slitWidthMaxHeadB', 'max'))}
+          ${projectTableHeader(tx('table.flashHeadA', 'Flash'), tx('table.flashHeadB', ''))}
+          ${projectTableHeader(tx('table.consistencyHeadA', 'Consistency'), tx('table.consistencyHeadB', ''))}
+          ${projectTableHeader(tx('table.gradeHeadA', 'Grade'), tx('table.gradeHeadB', ''))}
+          ${projectTableHeader('n')}
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -284,6 +290,7 @@ function showProject(projId) {
   if (!p) return;
   S.selectedProjId = projId;
   S.selId = null;
+  sortHistoryForProjectView(projId);
   saveAppData();
   if (!isDefaultProject(p)) syncProjectSettingsToDevice(p);
   renderProjList();

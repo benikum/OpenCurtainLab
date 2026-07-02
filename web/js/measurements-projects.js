@@ -212,9 +212,7 @@ function buildEntryFromPacket(d) {
     const act = sensors.filter(s => s.activated);
     const mode = resolveMeasurementModeForPacket(d);
     const durs = act.map(s => s.seconds).filter(v => v > 0);
-    const avgSec = mode === 'central'
-      ? medianPositive(durs)
-      : (act.length ? act.reduce((a,s)=>a+s.seconds,0) / act.length : 0);
+    const avgSec = medianPositive(durs);
     const minSec = durs.length ? Math.min(...durs) : 0;
     const maxSec = durs.length ? Math.max(...durs) : 0;
 
@@ -237,6 +235,31 @@ function buildEntryFromPacket(d) {
     const geometry = currentMeasurementGeometry();
     const x = Number(d.sensorDistanceXmm);
     const y = Number(d.sensorDistanceYmm);
+    const sensorDistanceXmm = Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm;
+    const sensorDistanceYmm = Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm;
+    const rawPacket = {
+      id: d.id,
+      valid: d.valid !== false,
+      target,
+      mode,
+      baseUs,
+      sensorDistanceXmm,
+      sensorDistanceYmm,
+      sensors: d.sensors.map((s, idx) => ({
+        id: s.id ?? idx,
+        pin: s.pin,
+        activated: !!s.activated,
+        raw: s.raw,
+        openUs: Number(s.openUs || 0),
+        closeUs: Number(s.closeUs || 0),
+      })),
+      flash: d.flash ? {
+        detected: !!d.flash.detected,
+        pin: d.flash.pin,
+        raw: d.flash.raw,
+        triggerUs: Number(d.flash.triggerUs || 0),
+      } : null,
+    };
     const entry = {
       id: d.id,
       valid: !projectInvalid,
@@ -250,13 +273,13 @@ function buildEntryFromPacket(d) {
       count: act.length,
       sensors,
       flash,
-      sensorDistanceXmm: Number.isFinite(x) && x > 0 ? x : geometry.sensorDistanceXmm,
-      sensorDistanceYmm: Number.isFinite(y) && y > 0 ? y : geometry.sensorDistanceYmm,
+      sensorDistanceXmm,
+      sensorDistanceYmm,
       hint: h.hint,
       hintText: h.hintText,
       warning: h.hasHint ? h.hintText : '',
       projId: projectInvalid ? DEFAULT_PROJECT_ID : activeProjectIdForMeasurement(target, mode),
-      raw: d,
+      raw: rawPacket,
     };
     entry.flashSyncOk = isFlashSyncOk(entry);
     return entry;
@@ -573,7 +596,7 @@ function renderDetailView(id) {
         <div class="metrics-row">
           <div class="metric">
             <div class="m-label">${tx('metrics.exposureAndDeviation', 'Exposure time')}</div>
-            <div class="m-val">1/${e.avgFrac} <span style="color:${devC};font-size:16px;">(${ds} EV)</span></div>
+            <div class="m-val exposure-val"><span class="exposure-frac">1/${e.avgFrac}</span><span class="exposure-offset" style="color:${devC};">(${ds} EV)</span></div>
             <div class="m-sub">${formatMs(e.avgSec * 1000)}</div>
           </div>
           ${isCentral ? '' : `<div class="metric">
@@ -583,12 +606,12 @@ function renderDetailView(id) {
           </div>
           <div class="metric">
             <div class="m-label">${tx('metrics.slitWidth', 'Slit width')}</div>
-            <div class="m-val metric-lines"><span>${tx('metrics.min', 'min')}: ${formatMm((slitWidthStatsForEntry(e) || {}).min)}</span><span>${tx('metrics.max', 'max')}: ${formatMm((slitWidthStatsForEntry(e) || {}).max)}</span></div>
+            <div class="m-val metric-lines metric-neutral"><span>${tx('metrics.min', 'min')}: ${formatMm((slitWidthStatsForEntry(e) || {}).min)}</span><span>${tx('metrics.max', 'max')}: ${formatMm((slitWidthStatsForEntry(e) || {}).max)}</span></div>
             <div class="m-sub">&nbsp;</div>
           </div>`}
           <div class="metric">
             <div class="m-label">${tx('metrics.totalOpenTime', 'Total open time')}</div>
-            <div class="m-val" style="font-size:18px;">${formatMs(calcTotalOpenTime(e))}</div>
+            <div class="m-val metric-neutral" style="font-size:18px;">${formatMs(calcTotalOpenTime(e))}</div>
             <div class="m-sub">&nbsp;</div>
           </div>
           <div class="metric">

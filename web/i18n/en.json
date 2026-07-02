@@ -133,7 +133,7 @@
     "speedAxis": "SPEED (m/s)",
     "targetSpeedAxis": "Target speed (1/x s)",
     "noCurtainMeasurements": "No measurements with curtain speed data yet",
-    "timeRelative": "TIME (ms)"
+    "timeRelative": "TIME (ms, relative to first opening)"
   },
   "flash": {
     "within": "Flash within total opening",
@@ -177,7 +177,23 @@
     "consistencyCheck": "check",
     "consistencyUneven": "uneven",
     "slitWidthMin": "Slit width min",
-    "slitWidthMax": "Slit width max"
+    "slitWidthMax": "Slit width max",
+    "targetHeadA": "Target",
+    "targetHeadB": "",
+    "avgMeasurementHeadA": "Avg",
+    "avgMeasurementHeadB": "measurement",
+    "frameSpreadHeadA": "Spread",
+    "frameSpreadHeadB": "frame",
+    "slitWidthMinHeadA": "Slit width",
+    "slitWidthMinHeadB": "min",
+    "slitWidthMaxHeadA": "Slit width",
+    "slitWidthMaxHeadB": "max",
+    "flashHeadA": "Flash",
+    "flashHeadB": "",
+    "consistencyHeadA": "Consistency",
+    "consistencyHeadB": "",
+    "gradeHeadA": "Grade",
+    "gradeHeadB": ""
   },
   "csv": {
     "note": "Note",

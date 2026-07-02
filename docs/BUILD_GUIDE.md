@@ -24,7 +24,6 @@ Use parts with equivalent electrical ratings and dimensions.
 | 1 | 3.5 mm jack socket or matching sync connector | Flash-sync input | Use 2 or 3 poles version. |
 | 1 | Flash-sync cable or hot-shoe adapter | Camera connection | Needed to measure flash timing. |
 | 1 | 3.3 V regulator or suitable ESP32 power path | Power supply | Required to use with a 9v battery. Or use USB power. |
-| 1 | 9V battery | Power source | A rechargeable 9v battery is recommended. |
 | 1 | 330 kΩ resistor | Battery divider high side | Optional battery monitor. |
 | 1 | 100 kΩ resistor | Battery divider low side | Optional battery monitor. |
 | as needed | Perfboard | Electronics carrier | Boards for sensors, buttons and power distributor. |

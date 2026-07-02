@@ -154,6 +154,11 @@ def validate_manifest(manifest: dict, version: str) -> None:
 
 # JavaScript cleanup --------------------------------------------------------
 
+def strip_empty_lines(source: str) -> str:
+    """Remove empty output lines and trailing whitespace from generated text."""
+    return '\n'.join(line.rstrip() for line in source.splitlines() if line.strip())
+
+
 def strip_js_comment_lines(source: str) -> str:
     """Remove standalone JavaScript comment lines without touching executable code lines."""
     out: list[str] = []
@@ -163,7 +168,6 @@ def strip_js_comment_lines(source: str) -> str:
         stripped = line.strip()
 
         if not stripped:
-            out.append(line)
             continue
 
         if in_block_comment:
@@ -226,7 +230,7 @@ def build_setup_portal(
     require_files([(source_path, 'setup portal HTML')])
 
     source_text = source_path.read_text(encoding='utf-8')
-    cleaned_text = strip_js_comment_lines_from_html(source_text)
+    cleaned_text = strip_empty_lines(strip_js_comment_lines_from_html(source_text))
     compressed = gzip.compress(cleaned_text.encode('utf-8'), compresslevel=9, mtime=0)
     header = f"""/*
  * Stores the gzip-compressed captive-portal HTML page used to configure WiFi credentials.
@@ -415,7 +419,7 @@ def build_webui(
     if missing:
         raise RuntimeError('Unreplaced build markers: ' + ', '.join(missing))
 
-    html_out = strip_js_comment_lines_from_html(html_out) + '\n'
+    html_out = strip_empty_lines(strip_js_comment_lines_from_html(html_out)) + '\n'
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html_out, encoding='utf-8')
